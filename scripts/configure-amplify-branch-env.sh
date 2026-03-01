@@ -87,6 +87,7 @@ API_BASE_URL="$(get_stack_output "NetPulseHttpApiUrl")"
 WS_URL="$(get_stack_output "NetPulseWebSocketUrl")"
 COGNITO_USER_POOL_ID="$(get_stack_output "NetPulseUserPoolId")"
 COGNITO_USER_POOL_CLIENT_ID="$(get_stack_output "NetPulseUserPoolClientId")"
+API_BASE_URL="${API_BASE_URL%/}"
 
 if [ -z "$API_BASE_URL" ] || [ "$API_BASE_URL" = "None" ]; then
   echo "Could not resolve API URL from $STACK_NAME outputs" >&2

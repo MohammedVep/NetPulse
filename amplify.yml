@@ -9,6 +9,7 @@ applications:
             - npm ci
         build:
           commands:
+            - npm run build --workspace @netpulse/shared
             - npm run build --workspace @netpulse/web
       artifacts:
         baseDirectory: apps/web/.next

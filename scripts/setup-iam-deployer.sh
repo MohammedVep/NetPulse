@@ -124,6 +124,7 @@ cat >"$CFN_EXEC_POLICY_FILE" <<JSON
         "logs:*",
         "s3:*",
         "sns:*",
+        "ssm:GetParameters",
         "sqs:*"
       ],
       "Resource": "*"

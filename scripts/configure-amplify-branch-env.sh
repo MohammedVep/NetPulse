@@ -6,15 +6,19 @@ if ! command -v aws >/dev/null 2>&1; then
   echo "aws CLI is required" >&2
   exit 1
 fi
+if ! command -v jq >/dev/null 2>&1; then
+  echo "jq is required" >&2
+  exit 1
+fi
 
 usage() {
-  cat <<EOF
+  cat <<USAGE
 Usage:
-  $(basename "$0") --env <dev|staging|prod> --app-id <AMPLIFY_APP_ID> --branch <BRANCH_NAME> [--profile <aws-profile>] [--region <aws-region>] [--dry-run]
+  $(basename "$0") --env <dev|staging|prod> --app-id <AMPLIFY_APP_ID> --branch <BRANCH_NAME> [--profile <aws-profile>] [--region <aws-region>] [--demo-org-id <org_id>] [--dry-run]
 
 Example:
-  $(basename "$0") --env dev --app-id d123example --branch dev --profile netpulse-dev
-EOF
+  $(basename "$0") --env dev --app-id d123example --branch dev --profile netpulse-base --demo-org-id org_demo_public
+USAGE
 }
 
 ENV_NAME=""
@@ -22,6 +26,7 @@ APP_ID=""
 BRANCH_NAME=""
 PROFILE=""
 REGION="${AWS_REGION:-us-east-1}"
+DEMO_ORG_ID="org_demo_public"
 DRY_RUN="false"
 
 while [ $# -gt 0 ]; do
@@ -44,6 +49,10 @@ while [ $# -gt 0 ]; do
       ;;
     --region)
       REGION="$2"
+      shift 2
+      ;;
+    --demo-org-id)
+      DEMO_ORG_ID="$2"
       shift 2
       ;;
     --dry-run)
@@ -99,11 +108,13 @@ ENV_JSON="$(jq -n \
   --arg ws "$WS_URL" \
   --arg pool "$COGNITO_USER_POOL_ID" \
   --arg client "$COGNITO_USER_POOL_CLIENT_ID" \
+  --arg demo "$DEMO_ORG_ID" \
   '{
     NEXT_PUBLIC_API_BASE_URL: $api,
     NEXT_PUBLIC_WS_URL: $ws,
     NEXT_PUBLIC_COGNITO_USER_POOL_ID: $pool,
-    NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID: $client
+    NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID: $client,
+    NEXT_PUBLIC_DEMO_ORG_ID: $demo
   }')"
 
 echo "Resolved environment values for $ENV_NAME:"

@@ -27,15 +27,21 @@ export function getBody<T>(rawBody?: string | null): T {
 
 export function fail(error: unknown, requestId?: string): APIGatewayProxyStructuredResultV2 {
   const message = error instanceof Error ? error.message : "Unknown error";
-  const statusCode = message.includes("permission") ||
-    message.includes("active org member") ||
-    message.includes("lacks permission")
-    ? 403
-    : message.includes("not found")
-      ? 404
-      : message.includes("required") || message.includes("Invalid") || message.includes("validation")
-        ? 400
-        : 500;
+  const lower = message.toLowerCase();
+
+  const statusCode = lower.includes("unauthorized") || lower.includes("authenticated identity")
+    ? 401
+    : lower.includes("permission") ||
+      lower.includes("forbidden") ||
+      lower.includes("active org member") ||
+      lower.includes("lacks permission") ||
+      lower.includes("public demo access")
+      ? 403
+      : lower.includes("not found")
+        ? 404
+        : lower.includes("required") || lower.includes("invalid") || lower.includes("validation")
+          ? 400
+          : 500;
 
   return json(statusCode, {
     code: `ERR_${statusCode}`,

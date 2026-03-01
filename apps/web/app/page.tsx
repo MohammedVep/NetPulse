@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { config } from "@/lib/config";
 
 export default function HomePage() {
   const router = useRouter();
-  const [orgId, setOrgId] = useState("");
+  const [orgId, setOrgId] = useState(config.demoOrgId);
   const [token, setToken] = useState("");
 
   return (
@@ -44,7 +45,19 @@ export default function HomePage() {
           >
             Open Dashboard
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              window.localStorage.removeItem("netpulse_token");
+              router.push(`/org/${encodeURIComponent(config.demoOrgId)}`);
+            }}
+          >
+            Open Public Demo
+          </button>
         </div>
+        <p className="small" style={{ marginTop: 10 }}>
+          Public demo is read-only and does not require login.
+        </p>
       </section>
     </main>
   );

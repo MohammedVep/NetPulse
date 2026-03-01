@@ -215,7 +215,9 @@ export class NetPulseStack extends Stack {
         INCIDENTS_TABLE: incidentsTable.tableName,
         WS_CONNECTIONS_TABLE: wsConnectionsTable.tableName,
         ALERT_CHANNELS_TABLE: alertChannelsTable.tableName,
-        ENDPOINT_LIMIT_DEFAULT: "2000"
+        ENDPOINT_LIMIT_DEFAULT: "2000",
+        PUBLIC_DEMO_ENABLED: "true",
+        PUBLIC_DEMO_ORG_ID: "org_demo_public"
       }
     });
 
@@ -452,6 +454,12 @@ export class NetPulseStack extends Stack {
       methods: [HttpMethod.GET, HttpMethod.POST, HttpMethod.PATCH, HttpMethod.DELETE],
       integration: restIntegration,
       authorizer: jwtAuthorizer
+    });
+
+    httpApi.addRoutes({
+      path: "/v1/public/{proxy+}",
+      methods: [HttpMethod.GET],
+      integration: restIntegration
     });
 
     const wsApi = new WebSocketApi(this, "NetPulseWebSocketApi", {

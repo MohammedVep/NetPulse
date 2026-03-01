@@ -7,13 +7,14 @@ import type {
   EndpointSlaReport,
   ProbeResult
 } from "../../../packages/shared/src/types";
-import { apiClient } from "@/lib/netpulse-client";
+import { apiClient, hasAuthToken } from "@/lib/netpulse-client";
 
 interface EndpointDetailProps {
   endpointId: string;
 }
 
 type MutableSimulationMode = "FORCE_FAIL" | "FLAKY" | "LATENCY_SPIKE";
+const READ_ONLY_MESSAGE = "Public demo is read-only. Add a JWT token on the home page to enable write actions.";
 
 export function EndpointDetail({ endpointId }: EndpointDetailProps) {
   const [endpoint, setEndpoint] = useState<Endpoint | null>(null);
@@ -25,6 +26,7 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
   const [simulationFailureRate, setSimulationFailureRate] = useState("50");
   const [simulationLatencyMs, setSimulationLatencyMs] = useState("5000");
   const [simulationUntil, setSimulationUntil] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const load = useCallback(async () => {
     const now = new Date();
@@ -50,12 +52,20 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
   }, [endpointId]);
 
   useEffect(() => {
+    setIsAuthenticated(hasAuthToken());
     void load();
   }, [load]);
 
   const recentFailures = useMemo(() => checks.filter((check) => !check.ok).slice(0, 10), [checks]);
 
   const applySimulation = useCallback(async () => {
+    const authenticated = hasAuthToken();
+    setIsAuthenticated(authenticated);
+    if (!authenticated) {
+      setError(READ_ONLY_MESSAGE);
+      return;
+    }
+
     try {
       setError(null);
       const payload: {
@@ -99,9 +109,16 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
       const message = err instanceof Error ? err.message : "Failed to set simulation";
       setError(message);
     }
-  }, [endpointId, load, simulationFailureRate, simulationLatencyMs, simulationMode, simulationUntil]);
+  }, [endpointId, isAuthenticated, load, simulationFailureRate, simulationLatencyMs, simulationMode, simulationUntil]);
 
   const clearSimulation = useCallback(async () => {
+    const authenticated = hasAuthToken();
+    setIsAuthenticated(authenticated);
+    if (!authenticated) {
+      setError(READ_ONLY_MESSAGE);
+      return;
+    }
+
     try {
       setError(null);
       const updatedEndpoint = await apiClient.clearFailureSimulation(endpointId);
@@ -111,7 +128,7 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
       const message = err instanceof Error ? err.message : "Failed to clear simulation";
       setError(message);
     }
-  }, [endpointId, load]);
+  }, [endpointId, isAuthenticated, load]);
 
   if (error) {
     return (
@@ -132,6 +149,7 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
         <p className="small" style={{ fontFamily: "var(--font-mono)" }}>
           {endpoint?.url ?? "Loading..."}
         </p>
+        {!isAuthenticated ? <p className="small">{READ_ONLY_MESSAGE}</p> : null}
         {endpoint ? <p className={`status ${endpoint.status}`}>Status: {endpoint.status}</p> : null}
       </section>
 
@@ -190,6 +208,7 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
           <select
             value={simulationMode}
             onChange={(event) => setSimulationMode(event.currentTarget.value as MutableSimulationMode)}
+            disabled={!isAuthenticated}
           >
             <option value="FORCE_FAIL">FORCE_FAIL</option>
             <option value="FLAKY">FLAKY</option>
@@ -203,6 +222,7 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
               value={simulationFailureRate}
               onChange={(event) => setSimulationFailureRate(event.currentTarget.value)}
               placeholder="Failure rate %"
+              disabled={!isAuthenticated}
             />
           ) : null}
           {simulationMode === "LATENCY_SPIKE" ? (
@@ -213,17 +233,19 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
               value={simulationLatencyMs}
               onChange={(event) => setSimulationLatencyMs(event.currentTarget.value)}
               placeholder="Extra latency ms"
+              disabled={!isAuthenticated}
             />
           ) : null}
           <input
             type="datetime-local"
             value={simulationUntil}
             onChange={(event) => setSimulationUntil(event.currentTarget.value)}
+            disabled={!isAuthenticated}
           />
-          <button type="button" onClick={() => void applySimulation()}>
+          <button type="button" disabled={!isAuthenticated} onClick={() => void applySimulation()}>
             Apply Simulation
           </button>
-          <button type="button" onClick={() => void clearSimulation()}>
+          <button type="button" disabled={!isAuthenticated} onClick={() => void clearSimulation()}>
             Clear Simulation
           </button>
         </div>

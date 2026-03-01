@@ -9,7 +9,7 @@ import type {
   MetricsWindow,
   MonitoringRegion
 } from "../../../packages/shared/src/types";
-import { apiClient } from "@/lib/netpulse-client";
+import { apiClient, hasAuthToken } from "@/lib/netpulse-client";
 import { config } from "@/lib/config";
 
 interface DashboardShellProps {
@@ -30,6 +30,7 @@ interface StreamEvent {
 
 const windows: MetricsWindow[] = ["24h", "7d", "30d"];
 const availableRegions: MonitoringRegion[] = ["us-east-1", "us-west-2", "eu-west-1", "ap-southeast-1"];
+const READ_ONLY_MESSAGE = "Public demo is read-only. Add a JWT token on the home page to enable write actions.";
 
 export function DashboardShell({ orgId }: DashboardShellProps) {
   const [selectedWindow, setSelectedWindow] = useState<MetricsWindow>("24h");
@@ -44,9 +45,11 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
   const [alertEmail, setAlertEmail] = useState("");
   const [slackWebhook, setSlackWebhook] = useState("");
   const [genericWebhook, setGenericWebhook] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
+      setIsAuthenticated(hasAuthToken());
       setError(null);
       const [summaryResponse, endpointResponse, incidentResponse] = await Promise.all([
         apiClient.getDashboardSummary(orgId, selectedWindow),
@@ -64,6 +67,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
   }, [orgId, selectedWindow]);
 
   useEffect(() => {
+    setIsAuthenticated(hasAuthToken());
     void refresh();
   }, [refresh]);
 
@@ -76,6 +80,10 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
   }, [refresh]);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
     const ws = new WebSocket(config.wsUrl);
 
     ws.addEventListener("open", () => {
@@ -145,7 +153,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
     return () => {
       ws.close();
     };
-  }, [orgId]);
+  }, [isAuthenticated, orgId]);
 
   const totals = useMemo(() => {
     return {
@@ -156,6 +164,13 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
   }, [endpoints]);
 
   const createEndpoint = useCallback(async () => {
+    const authenticated = hasAuthToken();
+    setIsAuthenticated(authenticated);
+    if (!authenticated) {
+      setError(READ_ONLY_MESSAGE);
+      return;
+    }
+
     if (!newEndpointName.trim() || !newEndpointUrl.trim()) {
       return;
     }
@@ -185,10 +200,17 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
       const message = err instanceof Error ? err.message : "Failed to create endpoint";
       setError(message);
     }
-  }, [newEndpointName, newEndpointRegions, newEndpointSlaTarget, newEndpointUrl, orgId, refresh]);
+  }, [isAuthenticated, newEndpointName, newEndpointRegions, newEndpointSlaTarget, newEndpointUrl, orgId, refresh]);
 
   const togglePause = useCallback(
     async (endpoint: Endpoint) => {
+      const authenticated = hasAuthToken();
+      setIsAuthenticated(authenticated);
+      if (!authenticated) {
+        setError(READ_ONLY_MESSAGE);
+        return;
+      }
+
       try {
         setError(null);
         await apiClient.patchEndpoint(endpoint.endpointId, { paused: !endpoint.paused });
@@ -198,11 +220,18 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
         setError(message);
       }
     },
-    [refresh]
+    [isAuthenticated, refresh]
   );
 
   const deleteEndpoint = useCallback(
     async (endpointId: string) => {
+      const authenticated = hasAuthToken();
+      setIsAuthenticated(authenticated);
+      if (!authenticated) {
+        setError(READ_ONLY_MESSAGE);
+        return;
+      }
+
       try {
         setError(null);
         await apiClient.deleteEndpoint(endpointId);
@@ -212,7 +241,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
         setError(message);
       }
     },
-    [refresh]
+    [isAuthenticated, refresh]
   );
 
   const toggleRegionSelection = useCallback((region: MonitoringRegion) => {
@@ -228,6 +257,13 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
   }, []);
 
   const registerEmailAlert = useCallback(async () => {
+    const authenticated = hasAuthToken();
+    setIsAuthenticated(authenticated);
+    if (!authenticated) {
+      setError(READ_ONLY_MESSAGE);
+      return;
+    }
+
     if (!alertEmail.trim()) return;
 
     try {
@@ -238,9 +274,16 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
       const message = err instanceof Error ? err.message : "Failed to register email alert";
       setError(message);
     }
-  }, [alertEmail, orgId]);
+  }, [alertEmail, isAuthenticated, orgId]);
 
   const registerSlackAlert = useCallback(async () => {
+    const authenticated = hasAuthToken();
+    setIsAuthenticated(authenticated);
+    if (!authenticated) {
+      setError(READ_ONLY_MESSAGE);
+      return;
+    }
+
     if (!slackWebhook.trim()) return;
 
     try {
@@ -251,9 +294,16 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
       const message = err instanceof Error ? err.message : "Failed to register Slack alert";
       setError(message);
     }
-  }, [orgId, slackWebhook]);
+  }, [isAuthenticated, orgId, slackWebhook]);
 
   const registerWebhookAlert = useCallback(async () => {
+    const authenticated = hasAuthToken();
+    setIsAuthenticated(authenticated);
+    if (!authenticated) {
+      setError(READ_ONLY_MESSAGE);
+      return;
+    }
+
     if (!genericWebhook.trim()) return;
 
     try {
@@ -264,7 +314,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
       const message = err instanceof Error ? err.message : "Failed to register webhook alert";
       setError(message);
     }
-  }, [genericWebhook, orgId]);
+  }, [genericWebhook, isAuthenticated, orgId]);
 
   return (
     <main>
@@ -273,6 +323,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
         <p className="small" style={{ marginTop: 4 }}>
           Organization <code>{orgId}</code>
         </p>
+        {!isAuthenticated ? <p className="small" style={{ marginTop: 8 }}>{READ_ONLY_MESSAGE}</p> : null}
         <div className="input-row" style={{ marginTop: 12 }}>
           <label className="small" htmlFor="window">
             Window
@@ -349,7 +400,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
             onChange={(event) => setNewEndpointSlaTarget(event.currentTarget.value)}
             style={{ width: 130 }}
           />
-          <button type="button" onClick={() => void createEndpoint()}>
+          <button type="button" disabled={!isAuthenticated} onClick={() => void createEndpoint()}>
             Add Endpoint
           </button>
         </div>
@@ -398,11 +449,12 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
               </div>
               <div className="small">SLA target: {endpoint.slaTargetPct ?? 99.9}%</div>
               <div className="input-row" style={{ marginTop: 10 }}>
-                <button type="button" onClick={() => void togglePause(endpoint)}>
+                <button type="button" disabled={!isAuthenticated} onClick={() => void togglePause(endpoint)}>
                   {endpoint.paused ? "Resume" : "Pause"}
                 </button>
                 <button
                   type="button"
+                  disabled={!isAuthenticated}
                   onClick={() => void deleteEndpoint(endpoint.endpointId)}
                   style={{ background: "linear-gradient(135deg, #8f2f46, #d2555f)" }}
                 >
@@ -440,7 +492,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
               onChange={(event) => setAlertEmail(event.currentTarget.value)}
               style={{ minWidth: 280 }}
             />
-            <button type="button" onClick={() => void registerEmailAlert()}>
+            <button type="button" disabled={!isAuthenticated} onClick={() => void registerEmailAlert()}>
               Add Email Channel
             </button>
           </div>
@@ -452,7 +504,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
               onChange={(event) => setSlackWebhook(event.currentTarget.value)}
               style={{ minWidth: 380 }}
             />
-            <button type="button" onClick={() => void registerSlackAlert()}>
+            <button type="button" disabled={!isAuthenticated} onClick={() => void registerSlackAlert()}>
               Add Slack Channel
             </button>
           </div>
@@ -464,7 +516,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
               onChange={(event) => setGenericWebhook(event.currentTarget.value)}
               style={{ minWidth: 380 }}
             />
-            <button type="button" onClick={() => void registerWebhookAlert()}>
+            <button type="button" disabled={!isAuthenticated} onClick={() => void registerWebhookAlert()}>
               Add Webhook Channel
             </button>
           </div>

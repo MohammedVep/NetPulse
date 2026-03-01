@@ -13,4 +13,9 @@ describe('web config', () => {
     expect(typeof config.cognitoUserPoolId).toBe('string');
     expect(typeof config.cognitoUserPoolClientId).toBe('string');
   });
+
+  it('exposes a demo org id', () => {
+    expect(typeof config.demoOrgId).toBe('string');
+    expect(config.demoOrgId.length).toBeGreaterThan(0);
+  });
 });

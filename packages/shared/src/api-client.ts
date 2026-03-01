@@ -15,6 +15,7 @@ import type {
 export interface ApiClientOptions {
   baseUrl: string;
   getToken: () => Promise<string | null>;
+  mapPath?: (path: string) => string;
 }
 
 async function request<T>(
@@ -23,7 +24,8 @@ async function request<T>(
   init?: RequestInit
 ): Promise<T> {
   const token = await options.getToken();
-  const response = await fetch(`${options.baseUrl}${path}`, {
+  const resolvedPath = options.mapPath ? options.mapPath(path) : path;
+  const response = await fetch(`${options.baseUrl}${resolvedPath}`, {
     ...init,
     headers: {
       "content-type": "application/json",

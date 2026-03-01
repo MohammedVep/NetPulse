@@ -1,0 +1,23 @@
+{
+  "name": "@netpulse/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/handlers/rest.js",
+  "types": "dist/handlers/rest.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --pretty false",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "3.1000.0",
+    "@aws-sdk/client-secrets-manager": "3.1000.0",
+    "@aws-sdk/lib-dynamodb": "3.1000.0",
+    "@netpulse/authz": "0.1.0",
+    "@netpulse/shared": "0.1.0",
+    "@types/aws-lambda": "^8.10.149",
+    "aws-jwt-verify": "^5.1.0",
+    "zod": "^3.24.4"
+  }
+}

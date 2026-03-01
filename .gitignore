@@ -1,0 +1,10 @@
+node_modules
+.npm-cache
+.next
+cdk.out
+coverage
+*.log
+.env
+.env.*
+.DS_Store
+dist

@@ -1,0 +1,2467 @@
+{
+  "version": "50.0.0",
+  "artifacts": {
+    "NetPulse-dev.assets": {
+      "type": "cdk:asset-manifest",
+      "properties": {
+        "file": "NetPulse-dev.assets.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+      }
+    },
+    "NetPulse-dev": {
+      "type": "aws:cloudformation:stack",
+      "environment": "aws://unknown-account/unknown-region",
+      "properties": {
+        "templateFile": "NetPulse-dev.template.json",
+        "terminationProtection": false,
+        "validateOnSynth": false,
+        "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-${AWS::Region}",
+        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-${AWS::Region}",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/b733124f794c80ef12a12dc38913b60cfa3253a4c291c2987aa0438d34905c34.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
+        "additionalDependencies": [
+          "NetPulse-dev.assets"
+        ],
+        "lookupRole": {
+          "arn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-lookup-role-${AWS::AccountId}-${AWS::Region}",
+          "requiresBootstrapStackVersion": 8,
+          "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+        }
+      },
+      "dependencies": [
+        "NetPulse-dev.assets"
+      ],
+      "metadata": {
+        "/NetPulse-dev/OrganizationsTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "OrganizationsTable01047E98"
+            }
+          }
+        ],
+        "/NetPulse-dev/OrganizationsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "OrganizationsTable01047E98"
+          }
+        ],
+        "/NetPulse-dev/MembershipsTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "MembershipsTableC2B86291"
+            }
+          }
+        ],
+        "/NetPulse-dev/MembershipsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "MembershipsTableC2B86291"
+          }
+        ],
+        "/NetPulse-dev/EndpointsTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "EndpointsTableEB6D930A"
+            }
+          }
+        ],
+        "/NetPulse-dev/EndpointsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "EndpointsTableEB6D930A"
+          }
+        ],
+        "/NetPulse-dev/ProbeResultsTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "ProbeResultsTableC82040F5"
+            }
+          }
+        ],
+        "/NetPulse-dev/ProbeResultsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeResultsTableC82040F5"
+          }
+        ],
+        "/NetPulse-dev/IncidentsTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "IncidentsTable307EBBA6"
+            }
+          }
+        ],
+        "/NetPulse-dev/IncidentsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IncidentsTable307EBBA6"
+          }
+        ],
+        "/NetPulse-dev/WsConnectionsTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "WsConnectionsTable9E1AC3EB"
+            }
+          }
+        ],
+        "/NetPulse-dev/WsConnectionsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsConnectionsTable9E1AC3EB"
+          }
+        ],
+        "/NetPulse-dev/AlertChannelsTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "AlertChannelsTable22371497"
+            }
+          }
+        ],
+        "/NetPulse-dev/AlertChannelsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AlertChannelsTable22371497"
+          }
+        ],
+        "/NetPulse-dev/AlertDedupeTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "AlertDedupeTable6AE2BF97"
+            }
+          }
+        ],
+        "/NetPulse-dev/AlertDedupeTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AlertDedupeTable6AE2BF97"
+          }
+        ],
+        "/NetPulse-dev/ReportsBucket/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ReportsBucket4E7C5994"
+          }
+        ],
+        "/NetPulse-dev/ProbeDlq/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeDlq26557050"
+          }
+        ],
+        "/NetPulse-dev/ProbeJobsQueue/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeJobsQueue7E88AD9F"
+          }
+        ],
+        "/NetPulse-dev/IncidentEventsQueue/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IncidentEventsQueue23E85395"
+          }
+        ],
+        "/NetPulse-dev/WsEventsQueue/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsEventsQueue1C56C7DB"
+          }
+        ],
+        "/NetPulse-dev/EmailAlertsTopic/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "EmailAlertsTopicE790C265"
+          }
+        ],
+        "/NetPulse-dev/NetPulseUserPool/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseUserPoolEF51FD68"
+          }
+        ],
+        "/NetPulse-dev/NetPulseUserPoolClient/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseUserPoolClient9AD37A70"
+          }
+        ],
+        "/NetPulse-dev/ApiRestLambda/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiRestLambdaServiceRoleA5808D1C"
+          }
+        ],
+        "/NetPulse-dev/ApiRestLambda/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiRestLambdaServiceRoleDefaultPolicyA747CCB7"
+          }
+        ],
+        "/NetPulse-dev/ApiRestLambda/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiRestLambda1CBA74F8"
+          }
+        ],
+        "/NetPulse-dev/ApiRestLambda/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiRestLambdaLogRetention70F85F28"
+          }
+        ],
+        "/NetPulse-dev/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB"
+          }
+        ],
+        "/NetPulse-dev/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB"
+          }
+        ],
+        "/NetPulse-dev/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A"
+          }
+        ],
+        "/NetPulse-dev/ApiWebsocketLambda/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiWebsocketLambdaServiceRoleD6C7F324"
+          }
+        ],
+        "/NetPulse-dev/ApiWebsocketLambda/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiWebsocketLambdaServiceRoleDefaultPolicyC963134C"
+          }
+        ],
+        "/NetPulse-dev/ApiWebsocketLambda/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiWebsocketLambdaD9F56E0F"
+          }
+        ],
+        "/NetPulse-dev/ApiWebsocketLambda/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiWebsocketLambdaLogRetention708203B2"
+          }
+        ],
+        "/NetPulse-dev/SchedulerLambda/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SchedulerLambdaServiceRoleD4D6A486"
+          }
+        ],
+        "/NetPulse-dev/SchedulerLambda/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SchedulerLambdaServiceRoleDefaultPolicyD483C1E1"
+          }
+        ],
+        "/NetPulse-dev/SchedulerLambda/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SchedulerLambdaBF444921"
+          }
+        ],
+        "/NetPulse-dev/SchedulerLambda/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SchedulerLambdaLogRetention55FA778C"
+          }
+        ],
+        "/NetPulse-dev/ProbeWorkerLambda/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeWorkerLambdaServiceRole908EE38F"
+          }
+        ],
+        "/NetPulse-dev/ProbeWorkerLambda/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeWorkerLambdaServiceRoleDefaultPolicyA88F298F"
+          }
+        ],
+        "/NetPulse-dev/ProbeWorkerLambda/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeWorkerLambda51863596"
+          }
+        ],
+        "/NetPulse-dev/ProbeWorkerLambda/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeWorkerLambdaLogRetention2C48502A"
+          }
+        ],
+        "/NetPulse-dev/ProbeWorkerLambda/SqsEventSource:NetPulsedevProbeJobsQueue95F34174/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeWorkerLambdaSqsEventSourceNetPulsedevProbeJobsQueue95F3417439DE9373"
+          }
+        ],
+        "/NetPulse-dev/IncidentNotifierLambda/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IncidentNotifierLambdaServiceRole39F40C9F"
+          }
+        ],
+        "/NetPulse-dev/IncidentNotifierLambda/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IncidentNotifierLambdaServiceRoleDefaultPolicy6E00D537"
+          }
+        ],
+        "/NetPulse-dev/IncidentNotifierLambda/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IncidentNotifierLambda710DF8FA"
+          }
+        ],
+        "/NetPulse-dev/IncidentNotifierLambda/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IncidentNotifierLambdaLogRetentionD4672673"
+          }
+        ],
+        "/NetPulse-dev/IncidentNotifierLambda/SqsEventSource:NetPulsedevIncidentEventsQueueBD7BBD63/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IncidentNotifierLambdaSqsEventSourceNetPulsedevIncidentEventsQueueBD7BBD63B9AFD6E2"
+          }
+        ],
+        "/NetPulse-dev/WsBroadcasterLambda/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsBroadcasterLambdaServiceRole971F40F7"
+          }
+        ],
+        "/NetPulse-dev/WsBroadcasterLambda/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsBroadcasterLambdaServiceRoleDefaultPolicyFC4B3149"
+          }
+        ],
+        "/NetPulse-dev/WsBroadcasterLambda/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsBroadcasterLambda938B655C"
+          }
+        ],
+        "/NetPulse-dev/WsBroadcasterLambda/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsBroadcasterLambdaLogRetentionBF632EA5"
+          }
+        ],
+        "/NetPulse-dev/WsBroadcasterLambda/SqsEventSource:NetPulsedevWsEventsQueue0DEC0E65/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsBroadcasterLambdaSqsEventSourceNetPulsedevWsEventsQueue0DEC0E65BC538C95"
+          }
+        ],
+        "/NetPulse-dev/MonthlyExporterLambda/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "MonthlyExporterLambdaServiceRole8BA634AB"
+          }
+        ],
+        "/NetPulse-dev/MonthlyExporterLambda/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "MonthlyExporterLambdaServiceRoleDefaultPolicyACD30E46"
+          }
+        ],
+        "/NetPulse-dev/MonthlyExporterLambda/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "MonthlyExporterLambdaDA35F579"
+          }
+        ],
+        "/NetPulse-dev/MonthlyExporterLambda/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "MonthlyExporterLambdaLogRetention6BB76FFA"
+          }
+        ],
+        "/NetPulse-dev/ProbeScheduleRule/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeScheduleRule6AF74D8F"
+          }
+        ],
+        "/NetPulse-dev/ProbeScheduleRule/AllowEventRuleNetPulsedevSchedulerLambdaD15D16D0": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeScheduleRuleAllowEventRuleNetPulsedevSchedulerLambdaD15D16D059365F79"
+          }
+        ],
+        "/NetPulse-dev/MonthlyExportRule/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "MonthlyExportRule2084872D"
+          }
+        ],
+        "/NetPulse-dev/MonthlyExportRule/AllowEventRuleNetPulsedevMonthlyExporterLambdaC59F4346": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "MonthlyExportRuleAllowEventRuleNetPulsedevMonthlyExporterLambdaC59F4346708346D4"
+          }
+        ],
+        "/NetPulse-dev/NetPulseHttpApi/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiBA5529FD"
+          }
+        ],
+        "/NetPulse-dev/NetPulseHttpApi/DefaultStage/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiDefaultStageA55A6350"
+          }
+        ],
+        "/NetPulse-dev/NetPulseHttpApi/GET--v1--{proxy+}/NetPulseRestIntegration/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiGETv1proxyNetPulseRestIntegration10762463"
+          }
+        ],
+        "/NetPulse-dev/NetPulseHttpApi/GET--v1--{proxy+}/NetPulseRestIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiGETv1proxyNetPulseRestIntegrationPermissionDA46840C"
+          }
+        ],
+        "/NetPulse-dev/NetPulseHttpApi/GET--v1--{proxy+}/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiGETv1proxy55A83E2F"
+          }
+        ],
+        "/NetPulse-dev/NetPulseHttpApi/NetPulseJwtAuthorizer/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiNetPulseJwtAuthorizer654F2F74"
+          }
+        ],
+        "/NetPulse-dev/NetPulseHttpApi/POST--v1--{proxy+}/NetPulseRestIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiPOSTv1proxyNetPulseRestIntegrationPermission919C6B6E"
+          }
+        ],
+        "/NetPulse-dev/NetPulseHttpApi/POST--v1--{proxy+}/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiPOSTv1proxyA9DA6E3C"
+          }
+        ],
+        "/NetPulse-dev/NetPulseHttpApi/PATCH--v1--{proxy+}/NetPulseRestIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiPATCHv1proxyNetPulseRestIntegrationPermission071B497B"
+          }
+        ],
+        "/NetPulse-dev/NetPulseHttpApi/PATCH--v1--{proxy+}/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiPATCHv1proxyFB503AB8"
+          }
+        ],
+        "/NetPulse-dev/NetPulseHttpApi/DELETE--v1--{proxy+}/NetPulseRestIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiDELETEv1proxyNetPulseRestIntegrationPermission2D52BD07"
+          }
+        ],
+        "/NetPulse-dev/NetPulseHttpApi/DELETE--v1--{proxy+}/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiDELETEv1proxyAC183927"
+          }
+        ],
+        "/NetPulse-dev/NetPulseWebSocketApi/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApiFDB6BD5F"
+          }
+        ],
+        "/NetPulse-dev/NetPulseWebSocketApi/$connect-Route/ConnectIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApiconnectRouteConnectIntegrationPermission3FB107B8"
+          }
+        ],
+        "/NetPulse-dev/NetPulseWebSocketApi/$connect-Route/ConnectIntegration/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApiconnectRouteConnectIntegration42DF2DA6"
+          }
+        ],
+        "/NetPulse-dev/NetPulseWebSocketApi/$connect-Route/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApiconnectRoute5E575C5C"
+          }
+        ],
+        "/NetPulse-dev/NetPulseWebSocketApi/$disconnect-Route/DisconnectIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApidisconnectRouteDisconnectIntegrationPermissionB305A346"
+          }
+        ],
+        "/NetPulse-dev/NetPulseWebSocketApi/$disconnect-Route/DisconnectIntegration/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApidisconnectRouteDisconnectIntegrationE3A3DEF3"
+          }
+        ],
+        "/NetPulse-dev/NetPulseWebSocketApi/$disconnect-Route/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApidisconnectRouteB702905E"
+          }
+        ],
+        "/NetPulse-dev/NetPulseWebSocketApi/$default-Route/DefaultIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApidefaultRouteDefaultIntegrationPermissionFCC01F30"
+          }
+        ],
+        "/NetPulse-dev/NetPulseWebSocketApi/$default-Route/DefaultIntegration/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApidefaultRouteDefaultIntegration0F31BA34"
+          }
+        ],
+        "/NetPulse-dev/NetPulseWebSocketApi/$default-Route/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApidefaultRoute1C0F5D52"
+          }
+        ],
+        "/NetPulse-dev/NetPulseWebSocketApi/subscribe-Route/SubscribeIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApisubscribeRouteSubscribeIntegrationPermission118C139E"
+          }
+        ],
+        "/NetPulse-dev/NetPulseWebSocketApi/subscribe-Route/SubscribeIntegration/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApisubscribeRouteSubscribeIntegration5EC0FFE3"
+          }
+        ],
+        "/NetPulse-dev/NetPulseWebSocketApi/subscribe-Route/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApisubscribeRouteA7EDD218"
+          }
+        ],
+        "/NetPulse-dev/NetPulseWebSocketApi/unsubscribe-Route/UnsubscribeIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApiunsubscribeRouteUnsubscribeIntegrationPermission219CAFD3"
+          }
+        ],
+        "/NetPulse-dev/NetPulseWebSocketApi/unsubscribe-Route/UnsubscribeIntegration/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApiunsubscribeRouteUnsubscribeIntegration51677816"
+          }
+        ],
+        "/NetPulse-dev/NetPulseWebSocketApi/unsubscribe-Route/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApiunsubscribeRouteDD368E8D"
+          }
+        ],
+        "/NetPulse-dev/NetPulseWebSocketStage/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketStageD7804083"
+          }
+        ],
+        "/NetPulse-dev/ProbeQueueAgeAlarm/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeQueueAgeAlarm587ECE35"
+          }
+        ],
+        "/NetPulse-dev/WorkerErrorsAlarm/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WorkerErrorsAlarm1932B217"
+          }
+        ],
+        "/NetPulse-dev/ApiErrorsAlarm/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiErrorsAlarm77A8953B"
+          }
+        ],
+        "/NetPulse-dev/WsBroadcasterErrorsAlarm/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsBroadcasterErrorsAlarmED172E25"
+          }
+        ],
+        "/NetPulse-dev/ExportNetPulseHttpApiUrl-dev": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportNetPulseHttpApiUrldev"
+          }
+        ],
+        "/NetPulse-dev/ExportNetPulseWebSocketUrl-dev": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportNetPulseWebSocketUrldev"
+          }
+        ],
+        "/NetPulse-dev/ExportNetPulseUserPoolId-dev": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportNetPulseUserPoolIddev"
+          }
+        ],
+        "/NetPulse-dev/ExportNetPulseUserPoolClientId-dev": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportNetPulseUserPoolClientIddev"
+          }
+        ],
+        "/NetPulse-dev/ExportNetPulseEmailTopicArn-dev": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportNetPulseEmailTopicArndev"
+          }
+        ],
+        "/NetPulse-dev/CDKMetadata/Default": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CDKMetadata"
+          }
+        ],
+        "/NetPulse-dev/CDKMetadata/Condition": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CDKMetadataAvailable"
+          }
+        ],
+        "/NetPulse-dev/BootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BootstrapVersion"
+          }
+        ],
+        "/NetPulse-dev/CheckBootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CheckBootstrapVersion"
+          }
+        ]
+      },
+      "displayName": "NetPulse-dev"
+    },
+    "NetPulse-staging.assets": {
+      "type": "cdk:asset-manifest",
+      "properties": {
+        "file": "NetPulse-staging.assets.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+      }
+    },
+    "NetPulse-staging": {
+      "type": "aws:cloudformation:stack",
+      "environment": "aws://unknown-account/unknown-region",
+      "properties": {
+        "templateFile": "NetPulse-staging.template.json",
+        "terminationProtection": false,
+        "validateOnSynth": false,
+        "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-${AWS::Region}",
+        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-${AWS::Region}",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/443c18b1e3a30975681c84e4be9e4af8b2ed0467d33e603628923ba24599d893.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
+        "additionalDependencies": [
+          "NetPulse-staging.assets"
+        ],
+        "lookupRole": {
+          "arn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-lookup-role-${AWS::AccountId}-${AWS::Region}",
+          "requiresBootstrapStackVersion": 8,
+          "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+        }
+      },
+      "dependencies": [
+        "NetPulse-staging.assets"
+      ],
+      "metadata": {
+        "/NetPulse-staging/OrganizationsTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "OrganizationsTable01047E98"
+            }
+          }
+        ],
+        "/NetPulse-staging/OrganizationsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "OrganizationsTable01047E98"
+          }
+        ],
+        "/NetPulse-staging/MembershipsTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "MembershipsTableC2B86291"
+            }
+          }
+        ],
+        "/NetPulse-staging/MembershipsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "MembershipsTableC2B86291"
+          }
+        ],
+        "/NetPulse-staging/EndpointsTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "EndpointsTableEB6D930A"
+            }
+          }
+        ],
+        "/NetPulse-staging/EndpointsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "EndpointsTableEB6D930A"
+          }
+        ],
+        "/NetPulse-staging/ProbeResultsTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "ProbeResultsTableC82040F5"
+            }
+          }
+        ],
+        "/NetPulse-staging/ProbeResultsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeResultsTableC82040F5"
+          }
+        ],
+        "/NetPulse-staging/IncidentsTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "IncidentsTable307EBBA6"
+            }
+          }
+        ],
+        "/NetPulse-staging/IncidentsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IncidentsTable307EBBA6"
+          }
+        ],
+        "/NetPulse-staging/WsConnectionsTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "WsConnectionsTable9E1AC3EB"
+            }
+          }
+        ],
+        "/NetPulse-staging/WsConnectionsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsConnectionsTable9E1AC3EB"
+          }
+        ],
+        "/NetPulse-staging/AlertChannelsTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "AlertChannelsTable22371497"
+            }
+          }
+        ],
+        "/NetPulse-staging/AlertChannelsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AlertChannelsTable22371497"
+          }
+        ],
+        "/NetPulse-staging/AlertDedupeTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "AlertDedupeTable6AE2BF97"
+            }
+          }
+        ],
+        "/NetPulse-staging/AlertDedupeTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AlertDedupeTable6AE2BF97"
+          }
+        ],
+        "/NetPulse-staging/ReportsBucket/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ReportsBucket4E7C5994"
+          }
+        ],
+        "/NetPulse-staging/ProbeDlq/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeDlq26557050"
+          }
+        ],
+        "/NetPulse-staging/ProbeJobsQueue/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeJobsQueue7E88AD9F"
+          }
+        ],
+        "/NetPulse-staging/IncidentEventsQueue/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IncidentEventsQueue23E85395"
+          }
+        ],
+        "/NetPulse-staging/WsEventsQueue/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsEventsQueue1C56C7DB"
+          }
+        ],
+        "/NetPulse-staging/EmailAlertsTopic/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "EmailAlertsTopicE790C265"
+          }
+        ],
+        "/NetPulse-staging/NetPulseUserPool/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseUserPoolEF51FD68"
+          }
+        ],
+        "/NetPulse-staging/NetPulseUserPoolClient/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseUserPoolClient9AD37A70"
+          }
+        ],
+        "/NetPulse-staging/ApiRestLambda/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiRestLambdaServiceRoleA5808D1C"
+          }
+        ],
+        "/NetPulse-staging/ApiRestLambda/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiRestLambdaServiceRoleDefaultPolicyA747CCB7"
+          }
+        ],
+        "/NetPulse-staging/ApiRestLambda/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiRestLambda1CBA74F8"
+          }
+        ],
+        "/NetPulse-staging/ApiRestLambda/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiRestLambdaLogRetention70F85F28"
+          }
+        ],
+        "/NetPulse-staging/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB"
+          }
+        ],
+        "/NetPulse-staging/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB"
+          }
+        ],
+        "/NetPulse-staging/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A"
+          }
+        ],
+        "/NetPulse-staging/ApiWebsocketLambda/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiWebsocketLambdaServiceRoleD6C7F324"
+          }
+        ],
+        "/NetPulse-staging/ApiWebsocketLambda/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiWebsocketLambdaServiceRoleDefaultPolicyC963134C"
+          }
+        ],
+        "/NetPulse-staging/ApiWebsocketLambda/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiWebsocketLambdaD9F56E0F"
+          }
+        ],
+        "/NetPulse-staging/ApiWebsocketLambda/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiWebsocketLambdaLogRetention708203B2"
+          }
+        ],
+        "/NetPulse-staging/SchedulerLambda/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SchedulerLambdaServiceRoleD4D6A486"
+          }
+        ],
+        "/NetPulse-staging/SchedulerLambda/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SchedulerLambdaServiceRoleDefaultPolicyD483C1E1"
+          }
+        ],
+        "/NetPulse-staging/SchedulerLambda/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SchedulerLambdaBF444921"
+          }
+        ],
+        "/NetPulse-staging/SchedulerLambda/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SchedulerLambdaLogRetention55FA778C"
+          }
+        ],
+        "/NetPulse-staging/ProbeWorkerLambda/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeWorkerLambdaServiceRole908EE38F"
+          }
+        ],
+        "/NetPulse-staging/ProbeWorkerLambda/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeWorkerLambdaServiceRoleDefaultPolicyA88F298F"
+          }
+        ],
+        "/NetPulse-staging/ProbeWorkerLambda/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeWorkerLambda51863596"
+          }
+        ],
+        "/NetPulse-staging/ProbeWorkerLambda/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeWorkerLambdaLogRetention2C48502A"
+          }
+        ],
+        "/NetPulse-staging/ProbeWorkerLambda/SqsEventSource:NetPulsestagingProbeJobsQueue08E42CC2/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeWorkerLambdaSqsEventSourceNetPulsestagingProbeJobsQueue08E42CC2B60BD868"
+          }
+        ],
+        "/NetPulse-staging/IncidentNotifierLambda/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IncidentNotifierLambdaServiceRole39F40C9F"
+          }
+        ],
+        "/NetPulse-staging/IncidentNotifierLambda/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IncidentNotifierLambdaServiceRoleDefaultPolicy6E00D537"
+          }
+        ],
+        "/NetPulse-staging/IncidentNotifierLambda/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IncidentNotifierLambda710DF8FA"
+          }
+        ],
+        "/NetPulse-staging/IncidentNotifierLambda/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IncidentNotifierLambdaLogRetentionD4672673"
+          }
+        ],
+        "/NetPulse-staging/IncidentNotifierLambda/SqsEventSource:NetPulsestagingIncidentEventsQueue77C2F473/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IncidentNotifierLambdaSqsEventSourceNetPulsestagingIncidentEventsQueue77C2F473D8678A84"
+          }
+        ],
+        "/NetPulse-staging/WsBroadcasterLambda/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsBroadcasterLambdaServiceRole971F40F7"
+          }
+        ],
+        "/NetPulse-staging/WsBroadcasterLambda/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsBroadcasterLambdaServiceRoleDefaultPolicyFC4B3149"
+          }
+        ],
+        "/NetPulse-staging/WsBroadcasterLambda/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsBroadcasterLambda938B655C"
+          }
+        ],
+        "/NetPulse-staging/WsBroadcasterLambda/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsBroadcasterLambdaLogRetentionBF632EA5"
+          }
+        ],
+        "/NetPulse-staging/WsBroadcasterLambda/SqsEventSource:NetPulsestagingWsEventsQueue84518E73/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsBroadcasterLambdaSqsEventSourceNetPulsestagingWsEventsQueue84518E73F5C1028E"
+          }
+        ],
+        "/NetPulse-staging/MonthlyExporterLambda/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "MonthlyExporterLambdaServiceRole8BA634AB"
+          }
+        ],
+        "/NetPulse-staging/MonthlyExporterLambda/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "MonthlyExporterLambdaServiceRoleDefaultPolicyACD30E46"
+          }
+        ],
+        "/NetPulse-staging/MonthlyExporterLambda/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "MonthlyExporterLambdaDA35F579"
+          }
+        ],
+        "/NetPulse-staging/MonthlyExporterLambda/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "MonthlyExporterLambdaLogRetention6BB76FFA"
+          }
+        ],
+        "/NetPulse-staging/ProbeScheduleRule/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeScheduleRule6AF74D8F"
+          }
+        ],
+        "/NetPulse-staging/ProbeScheduleRule/AllowEventRuleNetPulsestagingSchedulerLambdaF5791F5B": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeScheduleRuleAllowEventRuleNetPulsestagingSchedulerLambdaF5791F5BDB1B07B8"
+          }
+        ],
+        "/NetPulse-staging/MonthlyExportRule/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "MonthlyExportRule2084872D"
+          }
+        ],
+        "/NetPulse-staging/MonthlyExportRule/AllowEventRuleNetPulsestagingMonthlyExporterLambdaC3664B4C": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "MonthlyExportRuleAllowEventRuleNetPulsestagingMonthlyExporterLambdaC3664B4CD3957E55"
+          }
+        ],
+        "/NetPulse-staging/NetPulseHttpApi/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiBA5529FD"
+          }
+        ],
+        "/NetPulse-staging/NetPulseHttpApi/DefaultStage/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiDefaultStageA55A6350"
+          }
+        ],
+        "/NetPulse-staging/NetPulseHttpApi/GET--v1--{proxy+}/NetPulseRestIntegration/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiGETv1proxyNetPulseRestIntegration10762463"
+          }
+        ],
+        "/NetPulse-staging/NetPulseHttpApi/GET--v1--{proxy+}/NetPulseRestIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiGETv1proxyNetPulseRestIntegrationPermissionDA46840C"
+          }
+        ],
+        "/NetPulse-staging/NetPulseHttpApi/GET--v1--{proxy+}/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiGETv1proxy55A83E2F"
+          }
+        ],
+        "/NetPulse-staging/NetPulseHttpApi/NetPulseJwtAuthorizer/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiNetPulseJwtAuthorizer654F2F74"
+          }
+        ],
+        "/NetPulse-staging/NetPulseHttpApi/POST--v1--{proxy+}/NetPulseRestIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiPOSTv1proxyNetPulseRestIntegrationPermission919C6B6E"
+          }
+        ],
+        "/NetPulse-staging/NetPulseHttpApi/POST--v1--{proxy+}/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiPOSTv1proxyA9DA6E3C"
+          }
+        ],
+        "/NetPulse-staging/NetPulseHttpApi/PATCH--v1--{proxy+}/NetPulseRestIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiPATCHv1proxyNetPulseRestIntegrationPermission071B497B"
+          }
+        ],
+        "/NetPulse-staging/NetPulseHttpApi/PATCH--v1--{proxy+}/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiPATCHv1proxyFB503AB8"
+          }
+        ],
+        "/NetPulse-staging/NetPulseHttpApi/DELETE--v1--{proxy+}/NetPulseRestIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiDELETEv1proxyNetPulseRestIntegrationPermission2D52BD07"
+          }
+        ],
+        "/NetPulse-staging/NetPulseHttpApi/DELETE--v1--{proxy+}/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiDELETEv1proxyAC183927"
+          }
+        ],
+        "/NetPulse-staging/NetPulseWebSocketApi/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApiFDB6BD5F"
+          }
+        ],
+        "/NetPulse-staging/NetPulseWebSocketApi/$connect-Route/ConnectIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApiconnectRouteConnectIntegrationPermission3FB107B8"
+          }
+        ],
+        "/NetPulse-staging/NetPulseWebSocketApi/$connect-Route/ConnectIntegration/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApiconnectRouteConnectIntegration42DF2DA6"
+          }
+        ],
+        "/NetPulse-staging/NetPulseWebSocketApi/$connect-Route/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApiconnectRoute5E575C5C"
+          }
+        ],
+        "/NetPulse-staging/NetPulseWebSocketApi/$disconnect-Route/DisconnectIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApidisconnectRouteDisconnectIntegrationPermissionB305A346"
+          }
+        ],
+        "/NetPulse-staging/NetPulseWebSocketApi/$disconnect-Route/DisconnectIntegration/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApidisconnectRouteDisconnectIntegrationE3A3DEF3"
+          }
+        ],
+        "/NetPulse-staging/NetPulseWebSocketApi/$disconnect-Route/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApidisconnectRouteB702905E"
+          }
+        ],
+        "/NetPulse-staging/NetPulseWebSocketApi/$default-Route/DefaultIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApidefaultRouteDefaultIntegrationPermissionFCC01F30"
+          }
+        ],
+        "/NetPulse-staging/NetPulseWebSocketApi/$default-Route/DefaultIntegration/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApidefaultRouteDefaultIntegration0F31BA34"
+          }
+        ],
+        "/NetPulse-staging/NetPulseWebSocketApi/$default-Route/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApidefaultRoute1C0F5D52"
+          }
+        ],
+        "/NetPulse-staging/NetPulseWebSocketApi/subscribe-Route/SubscribeIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApisubscribeRouteSubscribeIntegrationPermission118C139E"
+          }
+        ],
+        "/NetPulse-staging/NetPulseWebSocketApi/subscribe-Route/SubscribeIntegration/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApisubscribeRouteSubscribeIntegration5EC0FFE3"
+          }
+        ],
+        "/NetPulse-staging/NetPulseWebSocketApi/subscribe-Route/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApisubscribeRouteA7EDD218"
+          }
+        ],
+        "/NetPulse-staging/NetPulseWebSocketApi/unsubscribe-Route/UnsubscribeIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApiunsubscribeRouteUnsubscribeIntegrationPermission219CAFD3"
+          }
+        ],
+        "/NetPulse-staging/NetPulseWebSocketApi/unsubscribe-Route/UnsubscribeIntegration/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApiunsubscribeRouteUnsubscribeIntegration51677816"
+          }
+        ],
+        "/NetPulse-staging/NetPulseWebSocketApi/unsubscribe-Route/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApiunsubscribeRouteDD368E8D"
+          }
+        ],
+        "/NetPulse-staging/NetPulseWebSocketStage/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketStageD7804083"
+          }
+        ],
+        "/NetPulse-staging/ProbeQueueAgeAlarm/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeQueueAgeAlarm587ECE35"
+          }
+        ],
+        "/NetPulse-staging/WorkerErrorsAlarm/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WorkerErrorsAlarm1932B217"
+          }
+        ],
+        "/NetPulse-staging/ApiErrorsAlarm/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiErrorsAlarm77A8953B"
+          }
+        ],
+        "/NetPulse-staging/WsBroadcasterErrorsAlarm/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsBroadcasterErrorsAlarmED172E25"
+          }
+        ],
+        "/NetPulse-staging/ExportNetPulseHttpApiUrl-staging": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportNetPulseHttpApiUrlstaging"
+          }
+        ],
+        "/NetPulse-staging/ExportNetPulseWebSocketUrl-staging": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportNetPulseWebSocketUrlstaging"
+          }
+        ],
+        "/NetPulse-staging/ExportNetPulseUserPoolId-staging": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportNetPulseUserPoolIdstaging"
+          }
+        ],
+        "/NetPulse-staging/ExportNetPulseUserPoolClientId-staging": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportNetPulseUserPoolClientIdstaging"
+          }
+        ],
+        "/NetPulse-staging/ExportNetPulseEmailTopicArn-staging": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportNetPulseEmailTopicArnstaging"
+          }
+        ],
+        "/NetPulse-staging/CDKMetadata/Default": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CDKMetadata"
+          }
+        ],
+        "/NetPulse-staging/CDKMetadata/Condition": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CDKMetadataAvailable"
+          }
+        ],
+        "/NetPulse-staging/BootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BootstrapVersion"
+          }
+        ],
+        "/NetPulse-staging/CheckBootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CheckBootstrapVersion"
+          }
+        ]
+      },
+      "displayName": "NetPulse-staging"
+    },
+    "NetPulse-prod.assets": {
+      "type": "cdk:asset-manifest",
+      "properties": {
+        "file": "NetPulse-prod.assets.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+      }
+    },
+    "NetPulse-prod": {
+      "type": "aws:cloudformation:stack",
+      "environment": "aws://unknown-account/unknown-region",
+      "properties": {
+        "templateFile": "NetPulse-prod.template.json",
+        "terminationProtection": false,
+        "validateOnSynth": false,
+        "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-${AWS::Region}",
+        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-${AWS::Region}",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/5a64e81dc7583e9130657e1156c3b263995c2fb092ee47121ab7a71bf7bc7671.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
+        "additionalDependencies": [
+          "NetPulse-prod.assets"
+        ],
+        "lookupRole": {
+          "arn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-lookup-role-${AWS::AccountId}-${AWS::Region}",
+          "requiresBootstrapStackVersion": 8,
+          "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+        }
+      },
+      "dependencies": [
+        "NetPulse-prod.assets"
+      ],
+      "metadata": {
+        "/NetPulse-prod/OrganizationsTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "OrganizationsTable01047E98"
+            }
+          }
+        ],
+        "/NetPulse-prod/OrganizationsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "OrganizationsTable01047E98"
+          }
+        ],
+        "/NetPulse-prod/MembershipsTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "MembershipsTableC2B86291"
+            }
+          }
+        ],
+        "/NetPulse-prod/MembershipsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "MembershipsTableC2B86291"
+          }
+        ],
+        "/NetPulse-prod/EndpointsTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "EndpointsTableEB6D930A"
+            }
+          }
+        ],
+        "/NetPulse-prod/EndpointsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "EndpointsTableEB6D930A"
+          }
+        ],
+        "/NetPulse-prod/ProbeResultsTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "ProbeResultsTableC82040F5"
+            }
+          }
+        ],
+        "/NetPulse-prod/ProbeResultsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeResultsTableC82040F5"
+          }
+        ],
+        "/NetPulse-prod/IncidentsTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "IncidentsTable307EBBA6"
+            }
+          }
+        ],
+        "/NetPulse-prod/IncidentsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IncidentsTable307EBBA6"
+          }
+        ],
+        "/NetPulse-prod/WsConnectionsTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "WsConnectionsTable9E1AC3EB"
+            }
+          }
+        ],
+        "/NetPulse-prod/WsConnectionsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsConnectionsTable9E1AC3EB"
+          }
+        ],
+        "/NetPulse-prod/AlertChannelsTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "AlertChannelsTable22371497"
+            }
+          }
+        ],
+        "/NetPulse-prod/AlertChannelsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AlertChannelsTable22371497"
+          }
+        ],
+        "/NetPulse-prod/AlertDedupeTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "AlertDedupeTable6AE2BF97"
+            }
+          }
+        ],
+        "/NetPulse-prod/AlertDedupeTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AlertDedupeTable6AE2BF97"
+          }
+        ],
+        "/NetPulse-prod/ReportsBucket/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ReportsBucket4E7C5994"
+          }
+        ],
+        "/NetPulse-prod/ProbeDlq/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeDlq26557050"
+          }
+        ],
+        "/NetPulse-prod/ProbeJobsQueue/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeJobsQueue7E88AD9F"
+          }
+        ],
+        "/NetPulse-prod/IncidentEventsQueue/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IncidentEventsQueue23E85395"
+          }
+        ],
+        "/NetPulse-prod/WsEventsQueue/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsEventsQueue1C56C7DB"
+          }
+        ],
+        "/NetPulse-prod/EmailAlertsTopic/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "EmailAlertsTopicE790C265"
+          }
+        ],
+        "/NetPulse-prod/NetPulseUserPool/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseUserPoolEF51FD68"
+          }
+        ],
+        "/NetPulse-prod/NetPulseUserPoolClient/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseUserPoolClient9AD37A70"
+          }
+        ],
+        "/NetPulse-prod/ApiRestLambda/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiRestLambdaServiceRoleA5808D1C"
+          }
+        ],
+        "/NetPulse-prod/ApiRestLambda/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiRestLambdaServiceRoleDefaultPolicyA747CCB7"
+          }
+        ],
+        "/NetPulse-prod/ApiRestLambda/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiRestLambda1CBA74F8"
+          }
+        ],
+        "/NetPulse-prod/ApiRestLambda/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiRestLambdaLogRetention70F85F28"
+          }
+        ],
+        "/NetPulse-prod/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB"
+          }
+        ],
+        "/NetPulse-prod/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB"
+          }
+        ],
+        "/NetPulse-prod/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A"
+          }
+        ],
+        "/NetPulse-prod/ApiWebsocketLambda/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiWebsocketLambdaServiceRoleD6C7F324"
+          }
+        ],
+        "/NetPulse-prod/ApiWebsocketLambda/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiWebsocketLambdaServiceRoleDefaultPolicyC963134C"
+          }
+        ],
+        "/NetPulse-prod/ApiWebsocketLambda/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiWebsocketLambdaD9F56E0F"
+          }
+        ],
+        "/NetPulse-prod/ApiWebsocketLambda/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiWebsocketLambdaLogRetention708203B2"
+          }
+        ],
+        "/NetPulse-prod/SchedulerLambda/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SchedulerLambdaServiceRoleD4D6A486"
+          }
+        ],
+        "/NetPulse-prod/SchedulerLambda/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SchedulerLambdaServiceRoleDefaultPolicyD483C1E1"
+          }
+        ],
+        "/NetPulse-prod/SchedulerLambda/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SchedulerLambdaBF444921"
+          }
+        ],
+        "/NetPulse-prod/SchedulerLambda/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "SchedulerLambdaLogRetention55FA778C"
+          }
+        ],
+        "/NetPulse-prod/ProbeWorkerLambda/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeWorkerLambdaServiceRole908EE38F"
+          }
+        ],
+        "/NetPulse-prod/ProbeWorkerLambda/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeWorkerLambdaServiceRoleDefaultPolicyA88F298F"
+          }
+        ],
+        "/NetPulse-prod/ProbeWorkerLambda/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeWorkerLambda51863596"
+          }
+        ],
+        "/NetPulse-prod/ProbeWorkerLambda/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeWorkerLambdaLogRetention2C48502A"
+          }
+        ],
+        "/NetPulse-prod/ProbeWorkerLambda/SqsEventSource:NetPulseprodProbeJobsQueue2A1021F4/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeWorkerLambdaSqsEventSourceNetPulseprodProbeJobsQueue2A1021F4F2097690"
+          }
+        ],
+        "/NetPulse-prod/IncidentNotifierLambda/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IncidentNotifierLambdaServiceRole39F40C9F"
+          }
+        ],
+        "/NetPulse-prod/IncidentNotifierLambda/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IncidentNotifierLambdaServiceRoleDefaultPolicy6E00D537"
+          }
+        ],
+        "/NetPulse-prod/IncidentNotifierLambda/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IncidentNotifierLambda710DF8FA"
+          }
+        ],
+        "/NetPulse-prod/IncidentNotifierLambda/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IncidentNotifierLambdaLogRetentionD4672673"
+          }
+        ],
+        "/NetPulse-prod/IncidentNotifierLambda/SqsEventSource:NetPulseprodIncidentEventsQueueBBB54927/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "IncidentNotifierLambdaSqsEventSourceNetPulseprodIncidentEventsQueueBBB54927607FE37B"
+          }
+        ],
+        "/NetPulse-prod/WsBroadcasterLambda/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsBroadcasterLambdaServiceRole971F40F7"
+          }
+        ],
+        "/NetPulse-prod/WsBroadcasterLambda/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsBroadcasterLambdaServiceRoleDefaultPolicyFC4B3149"
+          }
+        ],
+        "/NetPulse-prod/WsBroadcasterLambda/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsBroadcasterLambda938B655C"
+          }
+        ],
+        "/NetPulse-prod/WsBroadcasterLambda/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsBroadcasterLambdaLogRetentionBF632EA5"
+          }
+        ],
+        "/NetPulse-prod/WsBroadcasterLambda/SqsEventSource:NetPulseprodWsEventsQueue8789E370/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsBroadcasterLambdaSqsEventSourceNetPulseprodWsEventsQueue8789E37098224045"
+          }
+        ],
+        "/NetPulse-prod/MonthlyExporterLambda/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "MonthlyExporterLambdaServiceRole8BA634AB"
+          }
+        ],
+        "/NetPulse-prod/MonthlyExporterLambda/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "MonthlyExporterLambdaServiceRoleDefaultPolicyACD30E46"
+          }
+        ],
+        "/NetPulse-prod/MonthlyExporterLambda/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "MonthlyExporterLambdaDA35F579"
+          }
+        ],
+        "/NetPulse-prod/MonthlyExporterLambda/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "MonthlyExporterLambdaLogRetention6BB76FFA"
+          }
+        ],
+        "/NetPulse-prod/ProbeScheduleRule/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeScheduleRule6AF74D8F"
+          }
+        ],
+        "/NetPulse-prod/ProbeScheduleRule/AllowEventRuleNetPulseprodSchedulerLambda6D60334A": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeScheduleRuleAllowEventRuleNetPulseprodSchedulerLambda6D60334A749621E1"
+          }
+        ],
+        "/NetPulse-prod/MonthlyExportRule/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "MonthlyExportRule2084872D"
+          }
+        ],
+        "/NetPulse-prod/MonthlyExportRule/AllowEventRuleNetPulseprodMonthlyExporterLambda1615DC00": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "MonthlyExportRuleAllowEventRuleNetPulseprodMonthlyExporterLambda1615DC00E0F357C3"
+          }
+        ],
+        "/NetPulse-prod/NetPulseHttpApi/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiBA5529FD"
+          }
+        ],
+        "/NetPulse-prod/NetPulseHttpApi/DefaultStage/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiDefaultStageA55A6350"
+          }
+        ],
+        "/NetPulse-prod/NetPulseHttpApi/GET--v1--{proxy+}/NetPulseRestIntegration/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiGETv1proxyNetPulseRestIntegration10762463"
+          }
+        ],
+        "/NetPulse-prod/NetPulseHttpApi/GET--v1--{proxy+}/NetPulseRestIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiGETv1proxyNetPulseRestIntegrationPermissionDA46840C"
+          }
+        ],
+        "/NetPulse-prod/NetPulseHttpApi/GET--v1--{proxy+}/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiGETv1proxy55A83E2F"
+          }
+        ],
+        "/NetPulse-prod/NetPulseHttpApi/NetPulseJwtAuthorizer/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiNetPulseJwtAuthorizer654F2F74"
+          }
+        ],
+        "/NetPulse-prod/NetPulseHttpApi/POST--v1--{proxy+}/NetPulseRestIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiPOSTv1proxyNetPulseRestIntegrationPermission919C6B6E"
+          }
+        ],
+        "/NetPulse-prod/NetPulseHttpApi/POST--v1--{proxy+}/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiPOSTv1proxyA9DA6E3C"
+          }
+        ],
+        "/NetPulse-prod/NetPulseHttpApi/PATCH--v1--{proxy+}/NetPulseRestIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiPATCHv1proxyNetPulseRestIntegrationPermission071B497B"
+          }
+        ],
+        "/NetPulse-prod/NetPulseHttpApi/PATCH--v1--{proxy+}/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiPATCHv1proxyFB503AB8"
+          }
+        ],
+        "/NetPulse-prod/NetPulseHttpApi/DELETE--v1--{proxy+}/NetPulseRestIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiDELETEv1proxyNetPulseRestIntegrationPermission2D52BD07"
+          }
+        ],
+        "/NetPulse-prod/NetPulseHttpApi/DELETE--v1--{proxy+}/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseHttpApiDELETEv1proxyAC183927"
+          }
+        ],
+        "/NetPulse-prod/NetPulseWebSocketApi/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApiFDB6BD5F"
+          }
+        ],
+        "/NetPulse-prod/NetPulseWebSocketApi/$connect-Route/ConnectIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApiconnectRouteConnectIntegrationPermission3FB107B8"
+          }
+        ],
+        "/NetPulse-prod/NetPulseWebSocketApi/$connect-Route/ConnectIntegration/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApiconnectRouteConnectIntegration42DF2DA6"
+          }
+        ],
+        "/NetPulse-prod/NetPulseWebSocketApi/$connect-Route/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApiconnectRoute5E575C5C"
+          }
+        ],
+        "/NetPulse-prod/NetPulseWebSocketApi/$disconnect-Route/DisconnectIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApidisconnectRouteDisconnectIntegrationPermissionB305A346"
+          }
+        ],
+        "/NetPulse-prod/NetPulseWebSocketApi/$disconnect-Route/DisconnectIntegration/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApidisconnectRouteDisconnectIntegrationE3A3DEF3"
+          }
+        ],
+        "/NetPulse-prod/NetPulseWebSocketApi/$disconnect-Route/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApidisconnectRouteB702905E"
+          }
+        ],
+        "/NetPulse-prod/NetPulseWebSocketApi/$default-Route/DefaultIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApidefaultRouteDefaultIntegrationPermissionFCC01F30"
+          }
+        ],
+        "/NetPulse-prod/NetPulseWebSocketApi/$default-Route/DefaultIntegration/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApidefaultRouteDefaultIntegration0F31BA34"
+          }
+        ],
+        "/NetPulse-prod/NetPulseWebSocketApi/$default-Route/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApidefaultRoute1C0F5D52"
+          }
+        ],
+        "/NetPulse-prod/NetPulseWebSocketApi/subscribe-Route/SubscribeIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApisubscribeRouteSubscribeIntegrationPermission118C139E"
+          }
+        ],
+        "/NetPulse-prod/NetPulseWebSocketApi/subscribe-Route/SubscribeIntegration/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApisubscribeRouteSubscribeIntegration5EC0FFE3"
+          }
+        ],
+        "/NetPulse-prod/NetPulseWebSocketApi/subscribe-Route/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApisubscribeRouteA7EDD218"
+          }
+        ],
+        "/NetPulse-prod/NetPulseWebSocketApi/unsubscribe-Route/UnsubscribeIntegration-Permission": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApiunsubscribeRouteUnsubscribeIntegrationPermission219CAFD3"
+          }
+        ],
+        "/NetPulse-prod/NetPulseWebSocketApi/unsubscribe-Route/UnsubscribeIntegration/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApiunsubscribeRouteUnsubscribeIntegration51677816"
+          }
+        ],
+        "/NetPulse-prod/NetPulseWebSocketApi/unsubscribe-Route/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketApiunsubscribeRouteDD368E8D"
+          }
+        ],
+        "/NetPulse-prod/NetPulseWebSocketStage/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NetPulseWebSocketStageD7804083"
+          }
+        ],
+        "/NetPulse-prod/ProbeQueueAgeAlarm/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ProbeQueueAgeAlarm587ECE35"
+          }
+        ],
+        "/NetPulse-prod/WorkerErrorsAlarm/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WorkerErrorsAlarm1932B217"
+          }
+        ],
+        "/NetPulse-prod/ApiErrorsAlarm/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiErrorsAlarm77A8953B"
+          }
+        ],
+        "/NetPulse-prod/WsBroadcasterErrorsAlarm/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WsBroadcasterErrorsAlarmED172E25"
+          }
+        ],
+        "/NetPulse-prod/ExportNetPulseHttpApiUrl-prod": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportNetPulseHttpApiUrlprod"
+          }
+        ],
+        "/NetPulse-prod/ExportNetPulseWebSocketUrl-prod": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportNetPulseWebSocketUrlprod"
+          }
+        ],
+        "/NetPulse-prod/ExportNetPulseUserPoolId-prod": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportNetPulseUserPoolIdprod"
+          }
+        ],
+        "/NetPulse-prod/ExportNetPulseUserPoolClientId-prod": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportNetPulseUserPoolClientIdprod"
+          }
+        ],
+        "/NetPulse-prod/ExportNetPulseEmailTopicArn-prod": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportNetPulseEmailTopicArnprod"
+          }
+        ],
+        "/NetPulse-prod/CDKMetadata/Default": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CDKMetadata"
+          }
+        ],
+        "/NetPulse-prod/CDKMetadata/Condition": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CDKMetadataAvailable"
+          }
+        ],
+        "/NetPulse-prod/BootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BootstrapVersion"
+          }
+        ],
+        "/NetPulse-prod/CheckBootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CheckBootstrapVersion"
+          }
+        ]
+      },
+      "displayName": "NetPulse-prod"
+    },
+    "Tree": {
+      "type": "cdk:tree",
+      "properties": {
+        "file": "tree.json"
+      }
+    },
+    "aws-cdk-lib/feature-flag-report": {
+      "type": "cdk:feature-flag-report",
+      "properties": {
+        "module": "aws-cdk-lib",
+        "flags": {
+          "@aws-cdk/aws-signer:signingProfileNamePassedToCfn": {
+            "recommendedValue": true,
+            "explanation": "Pass signingProfileName to CfnSigningProfile"
+          },
+          "@aws-cdk/core:newStyleStackSynthesis": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Switch to new stack synthesis method which enables CI/CD",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/core:stackRelativeExports": {
+            "recommendedValue": true,
+            "explanation": "Name exports based on the construct paths relative to the stack, rather than the global construct path",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/aws-ecs-patterns:secGroupsDisablesImplicitOpenListener": {
+            "recommendedValue": true,
+            "explanation": "Disable implicit openListener when custom security groups are provided"
+          },
+          "@aws-cdk/aws-rds:lowercaseDbIdentifier": {
+            "recommendedValue": true,
+            "explanation": "Force lowercasing of RDS Cluster names in CDK",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/aws-apigateway:usagePlanKeyOrderInsensitiveId": {
+            "recommendedValue": true,
+            "explanation": "Allow adding/removing multiple UsagePlanKeys independently",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/aws-lambda:recognizeVersionProps": {
+            "recommendedValue": true,
+            "explanation": "Enable this feature flag to opt in to the updated logical id calculation for Lambda Version created using the  `fn.currentVersion`.",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/aws-lambda:recognizeLayerVersion": {
+            "recommendedValue": true,
+            "explanation": "Enable this feature flag to opt in to the updated logical id calculation for Lambda Version created using the `fn.currentVersion`."
+          },
+          "@aws-cdk/aws-cloudfront:defaultSecurityPolicyTLSv1.2_2021": {
+            "recommendedValue": true,
+            "explanation": "Enable this feature flag to have cloudfront distributions use the security policy TLSv1.2_2021 by default.",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/core:checkSecretUsage": {
+            "recommendedValue": true,
+            "explanation": "Enable this flag to make it impossible to accidentally use SecretValues in unsafe locations"
+          },
+          "@aws-cdk/core:target-partitions": {
+            "recommendedValue": [
+              "aws",
+              "aws-cn"
+            ],
+            "explanation": "What regions to include in lookup tables of environment agnostic stacks"
+          },
+          "@aws-cdk-containers/ecs-service-extensions:enableDefaultLogDriver": {
+            "recommendedValue": true,
+            "explanation": "ECS extensions will automatically add an `awslogs` driver if no logging is specified"
+          },
+          "@aws-cdk/aws-ec2:uniqueImdsv2TemplateName": {
+            "recommendedValue": true,
+            "explanation": "Enable this feature flag to have Launch Templates generated by the `InstanceRequireImdsv2Aspect` use unique names."
+          },
+          "@aws-cdk/aws-ecs:arnFormatIncludesClusterName": {
+            "recommendedValue": true,
+            "explanation": "ARN format used by ECS. In the new ARN format, the cluster name is part of the resource ID."
+          },
+          "@aws-cdk/aws-iam:minimizePolicies": {
+            "recommendedValue": true,
+            "explanation": "Minimize IAM policies by combining Statements"
+          },
+          "@aws-cdk/core:validateSnapshotRemovalPolicy": {
+            "recommendedValue": true,
+            "explanation": "Error on snapshot removal policies on resources that do not support it."
+          },
+          "@aws-cdk/aws-codepipeline:crossAccountKeyAliasStackSafeResourceName": {
+            "recommendedValue": true,
+            "explanation": "Generate key aliases that include the stack name"
+          },
+          "@aws-cdk/aws-s3:createDefaultLoggingPolicy": {
+            "recommendedValue": true,
+            "explanation": "Enable this feature flag to create an S3 bucket policy by default in cases where an AWS service would automatically create the Policy if one does not exist."
+          },
+          "@aws-cdk/aws-sns-subscriptions:restrictSqsDescryption": {
+            "recommendedValue": true,
+            "explanation": "Restrict KMS key policy for encrypted Queues a bit more"
+          },
+          "@aws-cdk/aws-apigateway:disableCloudWatchRole": {
+            "recommendedValue": true,
+            "explanation": "Make default CloudWatch Role behavior safe for multiple API Gateways in one environment"
+          },
+          "@aws-cdk/core:enablePartitionLiterals": {
+            "recommendedValue": true,
+            "explanation": "Make ARNs concrete if AWS partition is known"
+          },
+          "@aws-cdk/aws-events:eventsTargetQueueSameAccount": {
+            "recommendedValue": true,
+            "explanation": "Event Rules may only push to encrypted SQS queues in the same account"
+          },
+          "@aws-cdk/aws-ecs:disableExplicitDeploymentControllerForCircuitBreaker": {
+            "recommendedValue": true,
+            "explanation": "Avoid setting the \"ECS\" deployment controller when adding a circuit breaker"
+          },
+          "@aws-cdk/aws-iam:importedRoleStackSafeDefaultPolicyName": {
+            "recommendedValue": true,
+            "explanation": "Enable this feature to create default policy names for imported roles that depend on the stack the role is in."
+          },
+          "@aws-cdk/aws-s3:serverAccessLogsUseBucketPolicy": {
+            "recommendedValue": true,
+            "explanation": "Use S3 Bucket Policy instead of ACLs for Server Access Logging"
+          },
+          "@aws-cdk/aws-route53-patters:useCertificate": {
+            "recommendedValue": true,
+            "explanation": "Use the official `Certificate` resource instead of `DnsValidatedCertificate`"
+          },
+          "@aws-cdk/customresources:installLatestAwsSdkDefault": {
+            "recommendedValue": false,
+            "explanation": "Whether to install the latest SDK by default in AwsCustomResource"
+          },
+          "@aws-cdk/aws-rds:databaseProxyUniqueResourceName": {
+            "recommendedValue": true,
+            "explanation": "Use unique resource name for Database Proxy"
+          },
+          "@aws-cdk/aws-codedeploy:removeAlarmsFromDeploymentGroup": {
+            "recommendedValue": true,
+            "explanation": "Remove CloudWatch alarms from deployment group"
+          },
+          "@aws-cdk/aws-apigateway:authorizerChangeDeploymentLogicalId": {
+            "recommendedValue": true,
+            "explanation": "Include authorizer configuration in the calculation of the API deployment logical ID."
+          },
+          "@aws-cdk/aws-ec2:launchTemplateDefaultUserData": {
+            "recommendedValue": true,
+            "explanation": "Define user data for a launch template by default when a machine image is provided."
+          },
+          "@aws-cdk/aws-secretsmanager:useAttachedSecretResourcePolicyForSecretTargetAttachments": {
+            "recommendedValue": true,
+            "explanation": "SecretTargetAttachments uses the ResourcePolicy of the attached Secret."
+          },
+          "@aws-cdk/aws-redshift:columnId": {
+            "recommendedValue": true,
+            "explanation": "Whether to use an ID to track Redshift column changes"
+          },
+          "@aws-cdk/aws-stepfunctions-tasks:enableEmrServicePolicyV2": {
+            "recommendedValue": true,
+            "explanation": "Enable AmazonEMRServicePolicy_v2 managed policies"
+          },
+          "@aws-cdk/aws-ec2:restrictDefaultSecurityGroup": {
+            "recommendedValue": true,
+            "explanation": "Restrict access to the VPC default security group"
+          },
+          "@aws-cdk/aws-apigateway:requestValidatorUniqueId": {
+            "recommendedValue": true,
+            "explanation": "Generate a unique id for each RequestValidator added to a method"
+          },
+          "@aws-cdk/aws-kms:aliasNameRef": {
+            "recommendedValue": true,
+            "explanation": "KMS Alias name and keyArn will have implicit reference to KMS Key"
+          },
+          "@aws-cdk/aws-kms:applyImportedAliasPermissionsToPrincipal": {
+            "recommendedValue": true,
+            "explanation": "Enable grant methods on Aliases imported by name to use kms:ResourceAliases condition"
+          },
+          "@aws-cdk/aws-autoscaling:generateLaunchTemplateInsteadOfLaunchConfig": {
+            "recommendedValue": true,
+            "explanation": "Generate a launch template when creating an AutoScalingGroup"
+          },
+          "@aws-cdk/core:includePrefixInUniqueNameGeneration": {
+            "recommendedValue": true,
+            "explanation": "Include the stack prefix in the stack name generation process"
+          },
+          "@aws-cdk/aws-efs:denyAnonymousAccess": {
+            "recommendedValue": true,
+            "explanation": "EFS denies anonymous clients accesses"
+          },
+          "@aws-cdk/aws-opensearchservice:enableOpensearchMultiAzWithStandby": {
+            "recommendedValue": true,
+            "explanation": "Enables support for Multi-AZ with Standby deployment for opensearch domains"
+          },
+          "@aws-cdk/aws-lambda-nodejs:useLatestRuntimeVersion": {
+            "recommendedValue": true,
+            "explanation": "Enables aws-lambda-nodejs.Function to use the latest available NodeJs runtime as the default"
+          },
+          "@aws-cdk/aws-efs:mountTargetOrderInsensitiveLogicalId": {
+            "recommendedValue": true,
+            "explanation": "When enabled, mount targets will have a stable logicalId that is linked to the associated subnet."
+          },
+          "@aws-cdk/aws-rds:auroraClusterChangeScopeOfInstanceParameterGroupWithEachParameters": {
+            "recommendedValue": true,
+            "explanation": "When enabled, a scope of InstanceParameterGroup for AuroraClusterInstance with each parameters will change."
+          },
+          "@aws-cdk/aws-appsync:useArnForSourceApiAssociationIdentifier": {
+            "recommendedValue": true,
+            "explanation": "When enabled, will always use the arn for identifiers for CfnSourceApiAssociation in the GraphqlApi construct rather than id."
+          },
+          "@aws-cdk/aws-rds:preventRenderingDeprecatedCredentials": {
+            "recommendedValue": true,
+            "explanation": "When enabled, creating an RDS database cluster from a snapshot will only render credentials for snapshot credentials."
+          },
+          "@aws-cdk/aws-codepipeline-actions:useNewDefaultBranchForCodeCommitSource": {
+            "recommendedValue": true,
+            "explanation": "When enabled, the CodeCommit source action is using the default branch name 'main'."
+          },
+          "@aws-cdk/aws-cloudwatch-actions:changeLambdaPermissionLogicalIdForLambdaAction": {
+            "recommendedValue": true,
+            "explanation": "When enabled, the logical ID of a Lambda permission for a Lambda action includes an alarm ID."
+          },
+          "@aws-cdk/aws-codepipeline:crossAccountKeysDefaultValueToFalse": {
+            "recommendedValue": true,
+            "explanation": "Enables Pipeline to set the default value for crossAccountKeys to false."
+          },
+          "@aws-cdk/aws-codepipeline:defaultPipelineTypeToV2": {
+            "recommendedValue": true,
+            "explanation": "Enables Pipeline to set the default pipeline type to V2."
+          },
+          "@aws-cdk/aws-kms:reduceCrossAccountRegionPolicyScope": {
+            "recommendedValue": true,
+            "explanation": "When enabled, IAM Policy created from KMS key grant will reduce the resource scope to this key only."
+          },
+          "@aws-cdk/pipelines:reduceAssetRoleTrustScope": {
+            "recommendedValue": true,
+            "explanation": "Remove the root account principal from PipelineAssetsFileRole trust policy",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/aws-eks:nodegroupNameAttribute": {
+            "recommendedValue": true,
+            "explanation": "When enabled, nodegroupName attribute of the provisioned EKS NodeGroup will not have the cluster name prefix."
+          },
+          "@aws-cdk/aws-eks:useNativeOidcProvider": {
+            "recommendedValue": true,
+            "explanation": "When enabled, EKS V2 clusters will use the native OIDC provider resource AWS::IAM::OIDCProvider instead of creating the OIDCProvider with a custom resource (iam.OpenIDConnectProvider)."
+          },
+          "@aws-cdk/aws-ec2:ebsDefaultGp3Volume": {
+            "recommendedValue": true,
+            "explanation": "When enabled, the default volume type of the EBS volume will be GP3"
+          },
+          "@aws-cdk/aws-ecs:removeDefaultDeploymentAlarm": {
+            "recommendedValue": true,
+            "explanation": "When enabled, remove default deployment alarm settings"
+          },
+          "@aws-cdk/custom-resources:logApiResponseDataPropertyTrueDefault": {
+            "recommendedValue": false,
+            "explanation": "When enabled, the custom resource used for `AwsCustomResource` will configure the `logApiResponseData` property as true by default"
+          },
+          "@aws-cdk/aws-s3:keepNotificationInImportedBucket": {
+            "recommendedValue": false,
+            "explanation": "When enabled, Adding notifications to a bucket in the current stack will not remove notification from imported stack."
+          },
+          "@aws-cdk/aws-stepfunctions-tasks:useNewS3UriParametersForBedrockInvokeModelTask": {
+            "recommendedValue": true,
+            "explanation": "When enabled, use new props for S3 URI field in task definition of state machine for bedrock invoke model.",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/core:explicitStackTags": {
+            "recommendedValue": true,
+            "explanation": "When enabled, stack tags need to be assigned explicitly on a Stack."
+          },
+          "@aws-cdk/aws-ecs:reduceEc2FargateCloudWatchPermissions": {
+            "recommendedValue": true,
+            "explanation": "When enabled, we will only grant the necessary permissions when users specify cloudwatch log group through logConfiguration"
+          },
+          "@aws-cdk/aws-dynamodb:resourcePolicyPerReplica": {
+            "recommendedValue": true,
+            "explanation": "When enabled will allow you to specify a resource policy per replica, and not copy the source table policy to all replicas"
+          },
+          "@aws-cdk/aws-ec2:ec2SumTImeoutEnabled": {
+            "recommendedValue": true,
+            "explanation": "When enabled, initOptions.timeout and resourceSignalTimeout values will be summed together."
+          },
+          "@aws-cdk/aws-appsync:appSyncGraphQLAPIScopeLambdaPermission": {
+            "recommendedValue": true,
+            "explanation": "When enabled, a Lambda authorizer Permission created when using GraphqlApi will be properly scoped with a SourceArn."
+          },
+          "@aws-cdk/aws-rds:setCorrectValueForDatabaseInstanceReadReplicaInstanceResourceId": {
+            "recommendedValue": true,
+            "explanation": "When enabled, the value of property `instanceResourceId` in construct `DatabaseInstanceReadReplica` will be set to the correct value which is `DbiResourceId` instead of currently `DbInstanceArn`"
+          },
+          "@aws-cdk/core:cfnIncludeRejectComplexResourceUpdateCreatePolicyIntrinsics": {
+            "recommendedValue": true,
+            "explanation": "When enabled, CFN templates added with `cfn-include` will error if the template contains Resource Update or Create policies with CFN Intrinsics that include non-primitive values."
+          },
+          "@aws-cdk/aws-lambda-nodejs:sdkV3ExcludeSmithyPackages": {
+            "recommendedValue": true,
+            "explanation": "When enabled, both `@aws-sdk` and `@smithy` packages will be excluded from the Lambda Node.js 18.x runtime to prevent version mismatches in bundled applications."
+          },
+          "@aws-cdk/aws-stepfunctions-tasks:fixRunEcsTaskPolicy": {
+            "recommendedValue": true,
+            "explanation": "When enabled, the resource of IAM Run Ecs policy generated by SFN EcsRunTask will reference the definition, instead of constructing ARN."
+          },
+          "@aws-cdk/aws-ec2:bastionHostUseAmazonLinux2023ByDefault": {
+            "recommendedValue": true,
+            "explanation": "When enabled, the BastionHost construct will use the latest Amazon Linux 2023 AMI, instead of Amazon Linux 2."
+          },
+          "@aws-cdk/core:aspectStabilization": {
+            "recommendedValue": true,
+            "explanation": "When enabled, a stabilization loop will be run when invoking Aspects during synthesis.",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/aws-route53-targets:userPoolDomainNameMethodWithoutCustomResource": {
+            "recommendedValue": true,
+            "explanation": "When enabled, use a new method for DNS Name of user pool domain target without creating a custom resource."
+          },
+          "@aws-cdk/aws-elasticloadbalancingV2:albDualstackWithoutPublicIpv4SecurityGroupRulesDefault": {
+            "recommendedValue": true,
+            "explanation": "When enabled, the default security group ingress rules will allow IPv6 ingress from anywhere"
+          },
+          "@aws-cdk/aws-iam:oidcRejectUnauthorizedConnections": {
+            "recommendedValue": true,
+            "explanation": "When enabled, the default behaviour of OIDC provider will reject unauthorized connections"
+          },
+          "@aws-cdk/core:enableAdditionalMetadataCollection": {
+            "recommendedValue": true,
+            "explanation": "When enabled, CDK will expand the scope of usage data collected to better inform CDK development and improve communication for security concerns and emerging issues."
+          },
+          "@aws-cdk/aws-lambda:createNewPoliciesWithAddToRolePolicy": {
+            "recommendedValue": false,
+            "explanation": "[Deprecated] When enabled, Lambda will create new inline policies with AddToRolePolicy instead of adding to the Default Policy Statement"
+          },
+          "@aws-cdk/aws-s3:setUniqueReplicationRoleName": {
+            "recommendedValue": true,
+            "explanation": "When enabled, CDK will automatically generate a unique role name that is used for s3 object replication."
+          },
+          "@aws-cdk/pipelines:reduceStageRoleTrustScope": {
+            "recommendedValue": true,
+            "explanation": "Remove the root account principal from Stage addActions trust policy",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/aws-events:requireEventBusPolicySid": {
+            "recommendedValue": true,
+            "explanation": "When enabled, grantPutEventsTo() will use resource policies with Statement IDs for service principals."
+          },
+          "@aws-cdk/core:aspectPrioritiesMutating": {
+            "recommendedValue": true,
+            "explanation": "When set to true, Aspects added by the construct library on your behalf will be given a priority of MUTATING."
+          },
+          "@aws-cdk/aws-dynamodb:retainTableReplica": {
+            "recommendedValue": true,
+            "explanation": "When enabled, table replica will be default to the removal policy of source table unless specified otherwise."
+          },
+          "@aws-cdk/cognito:logUserPoolClientSecretValue": {
+            "recommendedValue": false,
+            "explanation": "When disabled, the value of the user pool client secret will not be logged in the custom resource lambda function logs."
+          },
+          "@aws-cdk/pipelines:reduceCrossAccountActionRoleTrustScope": {
+            "recommendedValue": true,
+            "explanation": "When enabled, scopes down the trust policy for the cross-account action role",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/aws-stepfunctions:useDistributedMapResultWriterV2": {
+            "recommendedValue": true,
+            "explanation": "When enabled, the resultWriterV2 property of DistributedMap will be used insted of resultWriter"
+          },
+          "@aws-cdk/s3-notifications:addS3TrustKeyPolicyForSnsSubscriptions": {
+            "recommendedValue": true,
+            "explanation": "Add an S3 trust policy to a KMS key resource policy for SNS subscriptions."
+          },
+          "@aws-cdk/aws-ec2:requirePrivateSubnetsForEgressOnlyInternetGateway": {
+            "recommendedValue": true,
+            "explanation": "When enabled, the EgressOnlyGateway resource is only created if private subnets are defined in the dual-stack VPC."
+          },
+          "@aws-cdk/aws-ec2-alpha:useResourceIdForVpcV2Migration": {
+            "recommendedValue": false,
+            "explanation": "When enabled, use resource IDs for VPC V2 migration"
+          },
+          "@aws-cdk/aws-s3:publicAccessBlockedByDefault": {
+            "recommendedValue": true,
+            "explanation": "When enabled, setting any combination of options for BlockPublicAccess will automatically set true for any options not defined."
+          },
+          "@aws-cdk/aws-lambda:useCdkManagedLogGroup": {
+            "recommendedValue": true,
+            "explanation": "When enabled, CDK creates and manages loggroup for the lambda function"
+          },
+          "@aws-cdk/aws-elasticloadbalancingv2:networkLoadBalancerWithSecurityGroupByDefault": {
+            "recommendedValue": true,
+            "explanation": "When enabled, Network Load Balancer will be created with a security group by default."
+          },
+          "@aws-cdk/aws-stepfunctions-tasks:httpInvokeDynamicJsonPathEndpoint": {
+            "recommendedValue": true,
+            "explanation": "When enabled, allows using a dynamic apiEndpoint with JSONPath format in HttpInvoke tasks.",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/aws-ecs-patterns:uniqueTargetGroupId": {
+            "recommendedValue": true,
+            "explanation": "When enabled, ECS patterns will generate unique target group IDs to prevent conflicts during load balancer replacement"
+          },
+          "@aws-cdk/aws-route53-patterns:useDistribution": {
+            "recommendedValue": true,
+            "explanation": "Use the `Distribution` resource instead of `CloudFrontWebDistribution`"
+          },
+          "@aws-cdk/core:automaticL1Traits": {
+            "recommendedValue": true,
+            "explanation": "Automatically use the default L1 traits for L1 constructs`",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          }
+        }
+      }
+    }
+  },
+  "minimumCliVersion": "2.1105.0"
+}

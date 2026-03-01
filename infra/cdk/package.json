@@ -1,0 +1,21 @@
+{
+  "name": "@netpulse/cdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --pretty false",
+    "synth": "npm run build && cdk synth",
+    "deploy:dev": "npm run build && cdk deploy NetPulse-dev",
+    "deploy:staging": "npm run build && cdk deploy NetPulse-staging",
+    "deploy:prod": "npm run build && cdk deploy NetPulse-prod"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.196.0",
+    "constructs": "^10.4.2"
+  },
+  "devDependencies": {
+    "aws-cdk": "^2.1017.0"
+  }
+}

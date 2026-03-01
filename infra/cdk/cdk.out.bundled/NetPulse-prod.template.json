@@ -1,0 +1,4051 @@
+{
+ "Resources": {
+  "OrganizationsTable01047E98": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "orgId",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "orgId",
+      "KeyType": "HASH"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "TableName": "np_organizations_prod"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/OrganizationsTable/Resource"
+   }
+  },
+  "MembershipsTableC2B86291": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "orgId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "userId",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "GlobalSecondaryIndexes": [
+     {
+      "IndexName": "user-org-index",
+      "KeySchema": [
+       {
+        "AttributeName": "userId",
+        "KeyType": "HASH"
+       },
+       {
+        "AttributeName": "orgId",
+        "KeyType": "RANGE"
+       }
+      ],
+      "Projection": {
+       "ProjectionType": "ALL"
+      }
+     }
+    ],
+    "KeySchema": [
+     {
+      "AttributeName": "orgId",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "userId",
+      "KeyType": "RANGE"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "TableName": "np_memberships_prod"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/MembershipsTable/Resource"
+   }
+  },
+  "EndpointsTableEB6D930A": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "orgId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "endpointId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "statusUpdatedAt",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "GlobalSecondaryIndexes": [
+     {
+      "IndexName": "org-status-index",
+      "KeySchema": [
+       {
+        "AttributeName": "orgId",
+        "KeyType": "HASH"
+       },
+       {
+        "AttributeName": "statusUpdatedAt",
+        "KeyType": "RANGE"
+       }
+      ],
+      "Projection": {
+       "ProjectionType": "ALL"
+      }
+     }
+    ],
+    "KeySchema": [
+     {
+      "AttributeName": "orgId",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "endpointId",
+      "KeyType": "RANGE"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "TableName": "np_endpoints_prod"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/EndpointsTable/Resource"
+   }
+  },
+  "ProbeResultsTableC82040F5": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "probePk",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "timestampIso",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "probePk",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "timestampIso",
+      "KeyType": "RANGE"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "TableName": "np_probe_results_prod",
+    "TimeToLiveSpecification": {
+     "AttributeName": "expiresAt",
+     "Enabled": true
+    }
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/ProbeResultsTable/Resource"
+   }
+  },
+  "IncidentsTable307EBBA6": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "incidentPk",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "openedAtIso",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "orgId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "stateOpenedAt",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "GlobalSecondaryIndexes": [
+     {
+      "IndexName": "org-state-index",
+      "KeySchema": [
+       {
+        "AttributeName": "orgId",
+        "KeyType": "HASH"
+       },
+       {
+        "AttributeName": "stateOpenedAt",
+        "KeyType": "RANGE"
+       }
+      ],
+      "Projection": {
+       "ProjectionType": "ALL"
+      }
+     }
+    ],
+    "KeySchema": [
+     {
+      "AttributeName": "incidentPk",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "openedAtIso",
+      "KeyType": "RANGE"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "TableName": "np_incidents_prod"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/IncidentsTable/Resource"
+   }
+  },
+  "WsConnectionsTable9E1AC3EB": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "orgId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "connectionId",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "orgId",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "connectionId",
+      "KeyType": "RANGE"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "TableName": "np_ws_connections_prod",
+    "TimeToLiveSpecification": {
+     "AttributeName": "expiresAt",
+     "Enabled": true
+    }
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/WsConnectionsTable/Resource"
+   }
+  },
+  "AlertChannelsTable22371497": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "orgId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "channelId",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "orgId",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "channelId",
+      "KeyType": "RANGE"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "TableName": "np_alert_channels_prod"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/AlertChannelsTable/Resource"
+   }
+  },
+  "AlertDedupeTable6AE2BF97": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "dedupeKey",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "dedupeKey",
+      "KeyType": "HASH"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "TableName": "np_alert_dedupe_prod",
+    "TimeToLiveSpecification": {
+     "AttributeName": "expiresAt",
+     "Enabled": true
+    }
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/AlertDedupeTable/Resource"
+   }
+  },
+  "ReportsBucket4E7C5994": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "BucketEncryption": {
+     "ServerSideEncryptionConfiguration": [
+      {
+       "ServerSideEncryptionByDefault": {
+        "SSEAlgorithm": "AES256"
+       }
+      }
+     ]
+    },
+    "BucketName": {
+     "Fn::Join": [
+      "",
+      [
+       "np-reports-prod-",
+       {
+        "Ref": "AWS::AccountId"
+       }
+      ]
+     ]
+    },
+    "LifecycleConfiguration": {
+     "Rules": [
+      {
+       "Status": "Enabled",
+       "Transitions": [
+        {
+         "StorageClass": "GLACIER",
+         "TransitionInDays": 180
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/ReportsBucket/Resource"
+   }
+  },
+  "ProbeDlq26557050": {
+   "Type": "AWS::SQS::Queue",
+   "Properties": {
+    "MessageRetentionPeriod": 1209600,
+    "QueueName": "np-probe-dlq-prod"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/ProbeDlq/Resource"
+   }
+  },
+  "ProbeJobsQueue7E88AD9F": {
+   "Type": "AWS::SQS::Queue",
+   "Properties": {
+    "QueueName": "np-probe-jobs-prod",
+    "RedrivePolicy": {
+     "deadLetterTargetArn": {
+      "Fn::GetAtt": [
+       "ProbeDlq26557050",
+       "Arn"
+      ]
+     },
+     "maxReceiveCount": 3
+    },
+    "VisibilityTimeout": 120
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/ProbeJobsQueue/Resource"
+   }
+  },
+  "IncidentEventsQueue23E85395": {
+   "Type": "AWS::SQS::Queue",
+   "Properties": {
+    "QueueName": "np-incident-events-prod",
+    "VisibilityTimeout": 120
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/IncidentEventsQueue/Resource"
+   }
+  },
+  "WsEventsQueue1C56C7DB": {
+   "Type": "AWS::SQS::Queue",
+   "Properties": {
+    "QueueName": "np-ws-events-prod",
+    "VisibilityTimeout": 120
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/WsEventsQueue/Resource"
+   }
+  },
+  "EmailAlertsTopicE790C265": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "TopicName": "np-alerts-email-prod"
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/EmailAlertsTopic/Resource"
+   }
+  },
+  "NetPulseUserPoolEF51FD68": {
+   "Type": "AWS::Cognito::UserPool",
+   "Properties": {
+    "AccountRecoverySetting": {
+     "RecoveryMechanisms": [
+      {
+       "Name": "verified_phone_number",
+       "Priority": 1
+      },
+      {
+       "Name": "verified_email",
+       "Priority": 2
+      }
+     ]
+    },
+    "AdminCreateUserConfig": {
+     "AllowAdminCreateUserOnly": true
+    },
+    "AutoVerifiedAttributes": [
+     "email"
+    ],
+    "EmailVerificationMessage": "The verification code to your new account is {####}",
+    "EmailVerificationSubject": "Verify your new account",
+    "Schema": [
+     {
+      "Mutable": true,
+      "Name": "email",
+      "Required": true
+     }
+    ],
+    "SmsVerificationMessage": "The verification code to your new account is {####}",
+    "UserPoolName": "np-users-prod",
+    "UsernameAttributes": [
+     "email"
+    ],
+    "VerificationMessageTemplate": {
+     "DefaultEmailOption": "CONFIRM_WITH_CODE",
+     "EmailMessage": "The verification code to your new account is {####}",
+     "EmailSubject": "Verify your new account",
+     "SmsMessage": "The verification code to your new account is {####}"
+    }
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseUserPool/Resource"
+   }
+  },
+  "NetPulseUserPoolClient9AD37A70": {
+   "Type": "AWS::Cognito::UserPoolClient",
+   "Properties": {
+    "AllowedOAuthFlows": [
+     "implicit",
+     "code"
+    ],
+    "AllowedOAuthFlowsUserPoolClient": true,
+    "AllowedOAuthScopes": [
+     "profile",
+     "phone",
+     "email",
+     "openid",
+     "aws.cognito.signin.user.admin"
+    ],
+    "CallbackURLs": [
+     "https://example.com"
+    ],
+    "ExplicitAuthFlows": [
+     "ALLOW_USER_PASSWORD_AUTH",
+     "ALLOW_USER_SRP_AUTH",
+     "ALLOW_REFRESH_TOKEN_AUTH"
+    ],
+    "SupportedIdentityProviders": [
+     "COGNITO"
+    ],
+    "UserPoolId": {
+     "Ref": "NetPulseUserPoolEF51FD68"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseUserPoolClient/Resource"
+   }
+  },
+  "ApiRestLambdaServiceRoleA5808D1C": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/ApiRestLambda/ServiceRole/Resource"
+   }
+  },
+  "ApiRestLambdaServiceRoleDefaultPolicyA747CCB7": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "OrganizationsTable01047E98",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "OrganizationsTable01047E98",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "MembershipsTableC2B86291",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "MembershipsTableC2B86291",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "MembershipsTableC2B86291",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "MembershipsTableC2B86291",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "EndpointsTableEB6D930A",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "EndpointsTableEB6D930A",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "EndpointsTableEB6D930A",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "EndpointsTableEB6D930A",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "ProbeResultsTableC82040F5",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "ProbeResultsTableC82040F5",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "IncidentsTable307EBBA6",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "IncidentsTable307EBBA6",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "IncidentsTable307EBBA6",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "IncidentsTable307EBBA6",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "AlertChannelsTable22371497",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "AlertChannelsTable22371497",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "secretsmanager:CreateSecret",
+        "secretsmanager:TagResource"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:aws:secretsmanager:",
+          {
+           "Ref": "AWS::Region"
+          },
+          ":",
+          {
+           "Ref": "AWS::AccountId"
+          },
+          ":secret:netpulse/*"
+         ]
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ApiRestLambdaServiceRoleDefaultPolicyA747CCB7",
+    "Roles": [
+     {
+      "Ref": "ApiRestLambdaServiceRoleA5808D1C"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/ApiRestLambda/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "ApiRestLambda1CBA74F8": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "e7fa6d0f01e786804e3303d5d3181de6765e9754b9f7bed6a532f8d9b37c4d44.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "ORGANIZATIONS_TABLE": {
+       "Ref": "OrganizationsTable01047E98"
+      },
+      "MEMBERSHIPS_TABLE": {
+       "Ref": "MembershipsTableC2B86291"
+      },
+      "ENDPOINTS_TABLE": {
+       "Ref": "EndpointsTableEB6D930A"
+      },
+      "PROBE_RESULTS_TABLE": {
+       "Ref": "ProbeResultsTableC82040F5"
+      },
+      "INCIDENTS_TABLE": {
+       "Ref": "IncidentsTable307EBBA6"
+      },
+      "WS_CONNECTIONS_TABLE": {
+       "Ref": "WsConnectionsTable9E1AC3EB"
+      },
+      "ALERT_CHANNELS_TABLE": {
+       "Ref": "AlertChannelsTable22371497"
+      },
+      "ENDPOINT_LIMIT_DEFAULT": "2000"
+     }
+    },
+    "FunctionName": "np-api-rest-prod",
+    "Handler": "index.handler",
+    "MemorySize": 512,
+    "Role": {
+     "Fn::GetAtt": [
+      "ApiRestLambdaServiceRoleA5808D1C",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs20.x",
+    "Timeout": 20
+   },
+   "DependsOn": [
+    "ApiRestLambdaServiceRoleDefaultPolicyA747CCB7",
+    "ApiRestLambdaServiceRoleA5808D1C"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/ApiRestLambda/Resource",
+    "aws:asset:path": "asset.e7fa6d0f01e786804e3303d5d3181de6765e9754b9f7bed6a532f8d9b37c4d44",
+    "aws:asset:is-bundled": true,
+    "aws:asset:property": "Code"
+   }
+  },
+  "ApiRestLambdaLogRetention70F85F28": {
+   "Type": "Custom::LogRetention",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+      "Arn"
+     ]
+    },
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "ApiRestLambda1CBA74F8"
+       }
+      ]
+     ]
+    },
+    "RetentionInDays": 90
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/ApiRestLambda/LogRetention/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "logs:PutRetentionPolicy",
+        "logs:DeleteRetentionPolicy"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+    "Roles": [
+     {
+      "Ref": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Handler": "index.handler",
+    "Runtime": "nodejs22.x",
+    "Timeout": 900,
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d.zip"
+    },
+    "Role": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/Resource",
+    "aws:asset:path": "asset.2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "ApiWebsocketLambdaServiceRoleD6C7F324": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/ApiWebsocketLambda/ServiceRole/Resource"
+   }
+  },
+  "ApiWebsocketLambdaServiceRoleDefaultPolicyC963134C": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "WsConnectionsTable9E1AC3EB",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "WsConnectionsTable9E1AC3EB",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "MembershipsTableC2B86291",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "MembershipsTableC2B86291",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "MembershipsTableC2B86291",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "MembershipsTableC2B86291",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ApiWebsocketLambdaServiceRoleDefaultPolicyC963134C",
+    "Roles": [
+     {
+      "Ref": "ApiWebsocketLambdaServiceRoleD6C7F324"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/ApiWebsocketLambda/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "ApiWebsocketLambdaD9F56E0F": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "10a342a82449eb871e4cd55aab18772a3f7a03e95bec1c8cecb272cafb6bfab5.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "MEMBERSHIPS_TABLE": {
+       "Ref": "MembershipsTableC2B86291"
+      },
+      "WS_CONNECTIONS_TABLE": {
+       "Ref": "WsConnectionsTable9E1AC3EB"
+      },
+      "ALLOW_UNAUTHENTICATED_WS": "false",
+      "COGNITO_USER_POOL_ID": {
+       "Ref": "NetPulseUserPoolEF51FD68"
+      },
+      "COGNITO_USER_POOL_CLIENT_ID": {
+       "Ref": "NetPulseUserPoolClient9AD37A70"
+      }
+     }
+    },
+    "FunctionName": "np-api-ws-prod",
+    "Handler": "index.handler",
+    "MemorySize": 512,
+    "Role": {
+     "Fn::GetAtt": [
+      "ApiWebsocketLambdaServiceRoleD6C7F324",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs20.x",
+    "Timeout": 20
+   },
+   "DependsOn": [
+    "ApiWebsocketLambdaServiceRoleDefaultPolicyC963134C",
+    "ApiWebsocketLambdaServiceRoleD6C7F324"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/ApiWebsocketLambda/Resource",
+    "aws:asset:path": "asset.10a342a82449eb871e4cd55aab18772a3f7a03e95bec1c8cecb272cafb6bfab5",
+    "aws:asset:is-bundled": true,
+    "aws:asset:property": "Code"
+   }
+  },
+  "ApiWebsocketLambdaLogRetention708203B2": {
+   "Type": "Custom::LogRetention",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+      "Arn"
+     ]
+    },
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "ApiWebsocketLambdaD9F56E0F"
+       }
+      ]
+     ]
+    },
+    "RetentionInDays": 90
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/ApiWebsocketLambda/LogRetention/Resource"
+   }
+  },
+  "SchedulerLambdaServiceRoleD4D6A486": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/SchedulerLambda/ServiceRole/Resource"
+   }
+  },
+  "SchedulerLambdaServiceRoleDefaultPolicyD483C1E1": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "OrganizationsTable01047E98",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "OrganizationsTable01047E98",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "EndpointsTableEB6D930A",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "EndpointsTableEB6D930A",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "EndpointsTableEB6D930A",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "EndpointsTableEB6D930A",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "sqs:SendMessage",
+        "sqs:GetQueueAttributes",
+        "sqs:GetQueueUrl"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "ProbeJobsQueue7E88AD9F",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "SchedulerLambdaServiceRoleDefaultPolicyD483C1E1",
+    "Roles": [
+     {
+      "Ref": "SchedulerLambdaServiceRoleD4D6A486"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/SchedulerLambda/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "SchedulerLambdaBF444921": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "8590a7c718f82710b45a16e023740d207a487ff114aab66e6e36e2e01618ec1f.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "ORGANIZATIONS_TABLE": {
+       "Ref": "OrganizationsTable01047E98"
+      },
+      "ENDPOINTS_TABLE": {
+       "Ref": "EndpointsTableEB6D930A"
+      },
+      "PROBE_JOBS_QUEUE_URL": {
+       "Ref": "ProbeJobsQueue7E88AD9F"
+      }
+     }
+    },
+    "FunctionName": "np-scheduler-prod",
+    "Handler": "index.handler",
+    "MemorySize": 512,
+    "Role": {
+     "Fn::GetAtt": [
+      "SchedulerLambdaServiceRoleD4D6A486",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs20.x",
+    "Timeout": 60
+   },
+   "DependsOn": [
+    "SchedulerLambdaServiceRoleDefaultPolicyD483C1E1",
+    "SchedulerLambdaServiceRoleD4D6A486"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/SchedulerLambda/Resource",
+    "aws:asset:path": "asset.8590a7c718f82710b45a16e023740d207a487ff114aab66e6e36e2e01618ec1f",
+    "aws:asset:is-bundled": true,
+    "aws:asset:property": "Code"
+   }
+  },
+  "SchedulerLambdaLogRetention55FA778C": {
+   "Type": "Custom::LogRetention",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+      "Arn"
+     ]
+    },
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "SchedulerLambdaBF444921"
+       }
+      ]
+     ]
+    },
+    "RetentionInDays": 90
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/SchedulerLambda/LogRetention/Resource"
+   }
+  },
+  "ProbeWorkerLambdaServiceRole908EE38F": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/ProbeWorkerLambda/ServiceRole/Resource"
+   }
+  },
+  "ProbeWorkerLambdaServiceRoleDefaultPolicyA88F298F": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "EndpointsTableEB6D930A",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "EndpointsTableEB6D930A",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "EndpointsTableEB6D930A",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "EndpointsTableEB6D930A",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "ProbeResultsTableC82040F5",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "ProbeResultsTableC82040F5",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "IncidentsTable307EBBA6",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "IncidentsTable307EBBA6",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "IncidentsTable307EBBA6",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "IncidentsTable307EBBA6",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "sqs:SendMessage",
+        "sqs:GetQueueAttributes",
+        "sqs:GetQueueUrl"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "IncidentEventsQueue23E85395",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "sqs:SendMessage",
+        "sqs:GetQueueAttributes",
+        "sqs:GetQueueUrl"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "WsEventsQueue1C56C7DB",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "sqs:ReceiveMessage",
+        "sqs:ChangeMessageVisibility",
+        "sqs:GetQueueUrl",
+        "sqs:DeleteMessage",
+        "sqs:GetQueueAttributes"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "ProbeJobsQueue7E88AD9F",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ProbeWorkerLambdaServiceRoleDefaultPolicyA88F298F",
+    "Roles": [
+     {
+      "Ref": "ProbeWorkerLambdaServiceRole908EE38F"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/ProbeWorkerLambda/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "ProbeWorkerLambda51863596": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "c566f9ccf42fe596552521c218fe298261ba98d16017572cbaecaeb1aa4c8ceb.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "ENDPOINTS_TABLE": {
+       "Ref": "EndpointsTableEB6D930A"
+      },
+      "PROBE_RESULTS_TABLE": {
+       "Ref": "ProbeResultsTableC82040F5"
+      },
+      "INCIDENTS_TABLE": {
+       "Ref": "IncidentsTable307EBBA6"
+      },
+      "INCIDENT_EVENTS_QUEUE_URL": {
+       "Ref": "IncidentEventsQueue23E85395"
+      },
+      "WS_EVENTS_QUEUE_URL": {
+       "Ref": "WsEventsQueue1C56C7DB"
+      }
+     }
+    },
+    "FunctionName": "np-probe-worker-prod",
+    "Handler": "index.handler",
+    "MemorySize": 1024,
+    "Role": {
+     "Fn::GetAtt": [
+      "ProbeWorkerLambdaServiceRole908EE38F",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs20.x",
+    "Timeout": 60
+   },
+   "DependsOn": [
+    "ProbeWorkerLambdaServiceRoleDefaultPolicyA88F298F",
+    "ProbeWorkerLambdaServiceRole908EE38F"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/ProbeWorkerLambda/Resource",
+    "aws:asset:path": "asset.c566f9ccf42fe596552521c218fe298261ba98d16017572cbaecaeb1aa4c8ceb",
+    "aws:asset:is-bundled": true,
+    "aws:asset:property": "Code"
+   }
+  },
+  "ProbeWorkerLambdaLogRetention2C48502A": {
+   "Type": "Custom::LogRetention",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+      "Arn"
+     ]
+    },
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "ProbeWorkerLambda51863596"
+       }
+      ]
+     ]
+    },
+    "RetentionInDays": 90
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/ProbeWorkerLambda/LogRetention/Resource"
+   }
+  },
+  "ProbeWorkerLambdaSqsEventSourceNetPulseprodProbeJobsQueue2A1021F4F2097690": {
+   "Type": "AWS::Lambda::EventSourceMapping",
+   "Properties": {
+    "BatchSize": 10,
+    "EventSourceArn": {
+     "Fn::GetAtt": [
+      "ProbeJobsQueue7E88AD9F",
+      "Arn"
+     ]
+    },
+    "FunctionName": {
+     "Ref": "ProbeWorkerLambda51863596"
+    },
+    "FunctionResponseTypes": [
+     "ReportBatchItemFailures"
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/ProbeWorkerLambda/SqsEventSource:NetPulseprodProbeJobsQueue2A1021F4/Resource"
+   }
+  },
+  "IncidentNotifierLambdaServiceRole39F40C9F": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/IncidentNotifierLambda/ServiceRole/Resource"
+   }
+  },
+  "IncidentNotifierLambdaServiceRoleDefaultPolicy6E00D537": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "AlertChannelsTable22371497",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "AlertChannelsTable22371497",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "AlertDedupeTable6AE2BF97",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "AlertDedupeTable6AE2BF97",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": "sns:Publish",
+       "Effect": "Allow",
+       "Resource": {
+        "Ref": "EmailAlertsTopicE790C265"
+       }
+      },
+      {
+       "Action": "secretsmanager:GetSecretValue",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:aws:secretsmanager:",
+          {
+           "Ref": "AWS::Region"
+          },
+          ":",
+          {
+           "Ref": "AWS::AccountId"
+          },
+          ":secret:netpulse/*"
+         ]
+        ]
+       }
+      },
+      {
+       "Action": [
+        "sqs:ReceiveMessage",
+        "sqs:ChangeMessageVisibility",
+        "sqs:GetQueueUrl",
+        "sqs:DeleteMessage",
+        "sqs:GetQueueAttributes"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "IncidentEventsQueue23E85395",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "IncidentNotifierLambdaServiceRoleDefaultPolicy6E00D537",
+    "Roles": [
+     {
+      "Ref": "IncidentNotifierLambdaServiceRole39F40C9F"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/IncidentNotifierLambda/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "IncidentNotifierLambda710DF8FA": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "baebbdbc5502c3fa89ab2a04fc9268927c306fd1e66c68f7a37e4b546cac22f8.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "ALERT_CHANNELS_TABLE": {
+       "Ref": "AlertChannelsTable22371497"
+      },
+      "ALERT_DEDUPE_TABLE": {
+       "Ref": "AlertDedupeTable6AE2BF97"
+      },
+      "EMAIL_TOPIC_ARN": {
+       "Ref": "EmailAlertsTopicE790C265"
+      }
+     }
+    },
+    "FunctionName": "np-incident-notifier-prod",
+    "Handler": "index.handler",
+    "MemorySize": 512,
+    "Role": {
+     "Fn::GetAtt": [
+      "IncidentNotifierLambdaServiceRole39F40C9F",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs20.x",
+    "Timeout": 30
+   },
+   "DependsOn": [
+    "IncidentNotifierLambdaServiceRoleDefaultPolicy6E00D537",
+    "IncidentNotifierLambdaServiceRole39F40C9F"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/IncidentNotifierLambda/Resource",
+    "aws:asset:path": "asset.baebbdbc5502c3fa89ab2a04fc9268927c306fd1e66c68f7a37e4b546cac22f8",
+    "aws:asset:is-bundled": true,
+    "aws:asset:property": "Code"
+   }
+  },
+  "IncidentNotifierLambdaLogRetentionD4672673": {
+   "Type": "Custom::LogRetention",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+      "Arn"
+     ]
+    },
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "IncidentNotifierLambda710DF8FA"
+       }
+      ]
+     ]
+    },
+    "RetentionInDays": 90
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/IncidentNotifierLambda/LogRetention/Resource"
+   }
+  },
+  "IncidentNotifierLambdaSqsEventSourceNetPulseprodIncidentEventsQueueBBB54927607FE37B": {
+   "Type": "AWS::Lambda::EventSourceMapping",
+   "Properties": {
+    "BatchSize": 10,
+    "EventSourceArn": {
+     "Fn::GetAtt": [
+      "IncidentEventsQueue23E85395",
+      "Arn"
+     ]
+    },
+    "FunctionName": {
+     "Ref": "IncidentNotifierLambda710DF8FA"
+    },
+    "FunctionResponseTypes": [
+     "ReportBatchItemFailures"
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/IncidentNotifierLambda/SqsEventSource:NetPulseprodIncidentEventsQueueBBB54927/Resource"
+   }
+  },
+  "WsBroadcasterLambdaServiceRole971F40F7": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/WsBroadcasterLambda/ServiceRole/Resource"
+   }
+  },
+  "WsBroadcasterLambdaServiceRoleDefaultPolicyFC4B3149": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "WsConnectionsTable9E1AC3EB",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "WsConnectionsTable9E1AC3EB",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "sqs:ReceiveMessage",
+        "sqs:ChangeMessageVisibility",
+        "sqs:GetQueueUrl",
+        "sqs:DeleteMessage",
+        "sqs:GetQueueAttributes"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "WsEventsQueue1C56C7DB",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": "execute-api:ManageConnections",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:",
+          {
+           "Ref": "AWS::Partition"
+          },
+          ":execute-api:",
+          {
+           "Ref": "AWS::Region"
+          },
+          ":",
+          {
+           "Ref": "AWS::AccountId"
+          },
+          ":",
+          {
+           "Ref": "NetPulseWebSocketApiFDB6BD5F"
+          },
+          "/*/*/@connections/*"
+         ]
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "WsBroadcasterLambdaServiceRoleDefaultPolicyFC4B3149",
+    "Roles": [
+     {
+      "Ref": "WsBroadcasterLambdaServiceRole971F40F7"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/WsBroadcasterLambda/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "WsBroadcasterLambda938B655C": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "4995f5e1689de6f3322d6ca814439875da338c30f00767e65d9661d20353b8ea.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "WS_CONNECTIONS_TABLE": {
+       "Ref": "WsConnectionsTable9E1AC3EB"
+      },
+      "WEBSOCKET_ENDPOINT": {
+       "Fn::Join": [
+        "",
+        [
+         "https://",
+         {
+          "Ref": "NetPulseWebSocketApiFDB6BD5F"
+         },
+         ".execute-api.",
+         {
+          "Ref": "AWS::Region"
+         },
+         ".",
+         {
+          "Ref": "AWS::URLSuffix"
+         },
+         "/prod"
+        ]
+       ]
+      }
+     }
+    },
+    "FunctionName": "np-ws-broadcaster-prod",
+    "Handler": "index.handler",
+    "MemorySize": 512,
+    "Role": {
+     "Fn::GetAtt": [
+      "WsBroadcasterLambdaServiceRole971F40F7",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs20.x",
+    "Timeout": 30
+   },
+   "DependsOn": [
+    "WsBroadcasterLambdaServiceRoleDefaultPolicyFC4B3149",
+    "WsBroadcasterLambdaServiceRole971F40F7"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/WsBroadcasterLambda/Resource",
+    "aws:asset:path": "asset.4995f5e1689de6f3322d6ca814439875da338c30f00767e65d9661d20353b8ea",
+    "aws:asset:is-bundled": true,
+    "aws:asset:property": "Code"
+   }
+  },
+  "WsBroadcasterLambdaLogRetentionBF632EA5": {
+   "Type": "Custom::LogRetention",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+      "Arn"
+     ]
+    },
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "WsBroadcasterLambda938B655C"
+       }
+      ]
+     ]
+    },
+    "RetentionInDays": 90
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/WsBroadcasterLambda/LogRetention/Resource"
+   }
+  },
+  "WsBroadcasterLambdaSqsEventSourceNetPulseprodWsEventsQueue8789E37098224045": {
+   "Type": "AWS::Lambda::EventSourceMapping",
+   "Properties": {
+    "BatchSize": 10,
+    "EventSourceArn": {
+     "Fn::GetAtt": [
+      "WsEventsQueue1C56C7DB",
+      "Arn"
+     ]
+    },
+    "FunctionName": {
+     "Ref": "WsBroadcasterLambda938B655C"
+    },
+    "FunctionResponseTypes": [
+     "ReportBatchItemFailures"
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/WsBroadcasterLambda/SqsEventSource:NetPulseprodWsEventsQueue8789E370/Resource"
+   }
+  },
+  "MonthlyExporterLambdaServiceRole8BA634AB": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/MonthlyExporterLambda/ServiceRole/Resource"
+   }
+  },
+  "MonthlyExporterLambdaServiceRoleDefaultPolicyACD30E46": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "OrganizationsTable01047E98",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "OrganizationsTable01047E98",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "ProbeResultsTableC82040F5",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "ProbeResultsTableC82040F5",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "s3:PutObject",
+        "s3:PutObjectLegalHold",
+        "s3:PutObjectRetention",
+        "s3:PutObjectTagging",
+        "s3:PutObjectVersionTagging",
+        "s3:Abort*"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          {
+           "Fn::GetAtt": [
+            "ReportsBucket4E7C5994",
+            "Arn"
+           ]
+          },
+          "/*"
+         ]
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "MonthlyExporterLambdaServiceRoleDefaultPolicyACD30E46",
+    "Roles": [
+     {
+      "Ref": "MonthlyExporterLambdaServiceRole8BA634AB"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/MonthlyExporterLambda/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "MonthlyExporterLambdaDA35F579": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "ddf9791ed6eb65c2b679b379357722705470ae8986ac6ac90da0d7bfe2a23903.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "ORGANIZATIONS_TABLE": {
+       "Ref": "OrganizationsTable01047E98"
+      },
+      "PROBE_RESULTS_TABLE": {
+       "Ref": "ProbeResultsTableC82040F5"
+      },
+      "MONTHLY_REPORTS_BUCKET": {
+       "Ref": "ReportsBucket4E7C5994"
+      }
+     }
+    },
+    "FunctionName": "np-monthly-exporter-prod",
+    "Handler": "index.handler",
+    "MemorySize": 1024,
+    "Role": {
+     "Fn::GetAtt": [
+      "MonthlyExporterLambdaServiceRole8BA634AB",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs20.x",
+    "Timeout": 300
+   },
+   "DependsOn": [
+    "MonthlyExporterLambdaServiceRoleDefaultPolicyACD30E46",
+    "MonthlyExporterLambdaServiceRole8BA634AB"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/MonthlyExporterLambda/Resource",
+    "aws:asset:path": "asset.ddf9791ed6eb65c2b679b379357722705470ae8986ac6ac90da0d7bfe2a23903",
+    "aws:asset:is-bundled": true,
+    "aws:asset:property": "Code"
+   }
+  },
+  "MonthlyExporterLambdaLogRetention6BB76FFA": {
+   "Type": "Custom::LogRetention",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+      "Arn"
+     ]
+    },
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "MonthlyExporterLambdaDA35F579"
+       }
+      ]
+     ]
+    },
+    "RetentionInDays": 90
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/MonthlyExporterLambda/LogRetention/Resource"
+   }
+  },
+  "ProbeScheduleRule6AF74D8F": {
+   "Type": "AWS::Events::Rule",
+   "Properties": {
+    "ScheduleExpression": "rate(5 minutes)",
+    "State": "ENABLED",
+    "Targets": [
+     {
+      "Arn": {
+       "Fn::GetAtt": [
+        "SchedulerLambdaBF444921",
+        "Arn"
+       ]
+      },
+      "Id": "Target0"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/ProbeScheduleRule/Resource"
+   }
+  },
+  "ProbeScheduleRuleAllowEventRuleNetPulseprodSchedulerLambda6D60334A749621E1": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "SchedulerLambdaBF444921",
+      "Arn"
+     ]
+    },
+    "Principal": "events.amazonaws.com",
+    "SourceArn": {
+     "Fn::GetAtt": [
+      "ProbeScheduleRule6AF74D8F",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/ProbeScheduleRule/AllowEventRuleNetPulseprodSchedulerLambda6D60334A"
+   }
+  },
+  "MonthlyExportRule2084872D": {
+   "Type": "AWS::Events::Rule",
+   "Properties": {
+    "ScheduleExpression": "cron(15 0 1 * ? *)",
+    "State": "ENABLED",
+    "Targets": [
+     {
+      "Arn": {
+       "Fn::GetAtt": [
+        "MonthlyExporterLambdaDA35F579",
+        "Arn"
+       ]
+      },
+      "Id": "Target0"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/MonthlyExportRule/Resource"
+   }
+  },
+  "MonthlyExportRuleAllowEventRuleNetPulseprodMonthlyExporterLambda1615DC00E0F357C3": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "MonthlyExporterLambdaDA35F579",
+      "Arn"
+     ]
+    },
+    "Principal": "events.amazonaws.com",
+    "SourceArn": {
+     "Fn::GetAtt": [
+      "MonthlyExportRule2084872D",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/MonthlyExportRule/AllowEventRuleNetPulseprodMonthlyExporterLambda1615DC00"
+   }
+  },
+  "NetPulseHttpApiBA5529FD": {
+   "Type": "AWS::ApiGatewayV2::Api",
+   "Properties": {
+    "CorsConfiguration": {
+     "AllowHeaders": [
+      "authorization",
+      "content-type"
+     ],
+     "AllowMethods": [
+      "GET",
+      "POST",
+      "PATCH",
+      "DELETE",
+      "OPTIONS"
+     ],
+     "AllowOrigins": [
+      "*"
+     ]
+    },
+    "Name": "np-http-prod",
+    "ProtocolType": "HTTP"
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseHttpApi/Resource"
+   }
+  },
+  "NetPulseHttpApiDefaultStageA55A6350": {
+   "Type": "AWS::ApiGatewayV2::Stage",
+   "Properties": {
+    "ApiId": {
+     "Ref": "NetPulseHttpApiBA5529FD"
+    },
+    "AutoDeploy": true,
+    "DefaultRouteSettings": {
+     "ThrottlingBurstLimit": 200,
+     "ThrottlingRateLimit": 100
+    },
+    "StageName": "$default"
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseHttpApi/DefaultStage/Resource"
+   }
+  },
+  "NetPulseHttpApiGETv1proxyNetPulseRestIntegration10762463": {
+   "Type": "AWS::ApiGatewayV2::Integration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "NetPulseHttpApiBA5529FD"
+    },
+    "IntegrationType": "AWS_PROXY",
+    "IntegrationUri": {
+     "Fn::GetAtt": [
+      "ApiRestLambda1CBA74F8",
+      "Arn"
+     ]
+    },
+    "PayloadFormatVersion": "2.0"
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseHttpApi/GET--v1--{proxy+}/NetPulseRestIntegration/Resource"
+   }
+  },
+  "NetPulseHttpApiGETv1proxyNetPulseRestIntegrationPermissionDA46840C": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ApiRestLambda1CBA74F8",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "NetPulseHttpApiBA5529FD"
+       },
+       "/*/*/v1/{proxy+}"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseHttpApi/GET--v1--{proxy+}/NetPulseRestIntegration-Permission"
+   }
+  },
+  "NetPulseHttpApiGETv1proxy55A83E2F": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "NetPulseHttpApiBA5529FD"
+    },
+    "AuthorizationType": "JWT",
+    "AuthorizerId": {
+     "Ref": "NetPulseHttpApiNetPulseJwtAuthorizer654F2F74"
+    },
+    "RouteKey": "GET /v1/{proxy+}",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "NetPulseHttpApiGETv1proxyNetPulseRestIntegration10762463"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseHttpApi/GET--v1--{proxy+}/Resource"
+   }
+  },
+  "NetPulseHttpApiNetPulseJwtAuthorizer654F2F74": {
+   "Type": "AWS::ApiGatewayV2::Authorizer",
+   "Properties": {
+    "ApiId": {
+     "Ref": "NetPulseHttpApiBA5529FD"
+    },
+    "AuthorizerType": "JWT",
+    "IdentitySource": [
+     "$request.header.Authorization"
+    ],
+    "JwtConfiguration": {
+     "Audience": [
+      {
+       "Ref": "NetPulseUserPoolClient9AD37A70"
+      }
+     ],
+     "Issuer": {
+      "Fn::Join": [
+       "",
+       [
+        "https://cognito-idp.",
+        {
+         "Ref": "AWS::Region"
+        },
+        ".amazonaws.com/",
+        {
+         "Ref": "NetPulseUserPoolEF51FD68"
+        }
+       ]
+      ]
+     }
+    },
+    "Name": "NetPulseJwtAuthorizer"
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseHttpApi/NetPulseJwtAuthorizer/Resource"
+   }
+  },
+  "NetPulseHttpApiPOSTv1proxyNetPulseRestIntegrationPermission919C6B6E": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ApiRestLambda1CBA74F8",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "NetPulseHttpApiBA5529FD"
+       },
+       "/*/*/v1/{proxy+}"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseHttpApi/POST--v1--{proxy+}/NetPulseRestIntegration-Permission"
+   }
+  },
+  "NetPulseHttpApiPOSTv1proxyA9DA6E3C": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "NetPulseHttpApiBA5529FD"
+    },
+    "AuthorizationType": "JWT",
+    "AuthorizerId": {
+     "Ref": "NetPulseHttpApiNetPulseJwtAuthorizer654F2F74"
+    },
+    "RouteKey": "POST /v1/{proxy+}",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "NetPulseHttpApiGETv1proxyNetPulseRestIntegration10762463"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseHttpApi/POST--v1--{proxy+}/Resource"
+   }
+  },
+  "NetPulseHttpApiPATCHv1proxyNetPulseRestIntegrationPermission071B497B": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ApiRestLambda1CBA74F8",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "NetPulseHttpApiBA5529FD"
+       },
+       "/*/*/v1/{proxy+}"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseHttpApi/PATCH--v1--{proxy+}/NetPulseRestIntegration-Permission"
+   }
+  },
+  "NetPulseHttpApiPATCHv1proxyFB503AB8": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "NetPulseHttpApiBA5529FD"
+    },
+    "AuthorizationType": "JWT",
+    "AuthorizerId": {
+     "Ref": "NetPulseHttpApiNetPulseJwtAuthorizer654F2F74"
+    },
+    "RouteKey": "PATCH /v1/{proxy+}",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "NetPulseHttpApiGETv1proxyNetPulseRestIntegration10762463"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseHttpApi/PATCH--v1--{proxy+}/Resource"
+   }
+  },
+  "NetPulseHttpApiDELETEv1proxyNetPulseRestIntegrationPermission2D52BD07": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ApiRestLambda1CBA74F8",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "NetPulseHttpApiBA5529FD"
+       },
+       "/*/*/v1/{proxy+}"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseHttpApi/DELETE--v1--{proxy+}/NetPulseRestIntegration-Permission"
+   }
+  },
+  "NetPulseHttpApiDELETEv1proxyAC183927": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "NetPulseHttpApiBA5529FD"
+    },
+    "AuthorizationType": "JWT",
+    "AuthorizerId": {
+     "Ref": "NetPulseHttpApiNetPulseJwtAuthorizer654F2F74"
+    },
+    "RouteKey": "DELETE /v1/{proxy+}",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "NetPulseHttpApiGETv1proxyNetPulseRestIntegration10762463"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseHttpApi/DELETE--v1--{proxy+}/Resource"
+   }
+  },
+  "NetPulseWebSocketApiFDB6BD5F": {
+   "Type": "AWS::ApiGatewayV2::Api",
+   "Properties": {
+    "Name": "np-ws-prod",
+    "ProtocolType": "WEBSOCKET",
+    "RouteSelectionExpression": "$request.body.action"
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseWebSocketApi/Resource"
+   }
+  },
+  "NetPulseWebSocketApiconnectRouteConnectIntegrationPermission3FB107B8": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ApiWebsocketLambdaD9F56E0F",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "NetPulseWebSocketApiFDB6BD5F"
+       },
+       "/*$connect"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseWebSocketApi/$connect-Route/ConnectIntegration-Permission"
+   }
+  },
+  "NetPulseWebSocketApiconnectRouteConnectIntegration42DF2DA6": {
+   "Type": "AWS::ApiGatewayV2::Integration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "NetPulseWebSocketApiFDB6BD5F"
+    },
+    "IntegrationType": "AWS_PROXY",
+    "IntegrationUri": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":apigateway:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":lambda:path/2015-03-31/functions/",
+       {
+        "Fn::GetAtt": [
+         "ApiWebsocketLambdaD9F56E0F",
+         "Arn"
+        ]
+       },
+       "/invocations"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseWebSocketApi/$connect-Route/ConnectIntegration/Resource"
+   }
+  },
+  "NetPulseWebSocketApiconnectRoute5E575C5C": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "NetPulseWebSocketApiFDB6BD5F"
+    },
+    "AuthorizationType": "NONE",
+    "RouteKey": "$connect",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "NetPulseWebSocketApiconnectRouteConnectIntegration42DF2DA6"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseWebSocketApi/$connect-Route/Resource"
+   }
+  },
+  "NetPulseWebSocketApidisconnectRouteDisconnectIntegrationPermissionB305A346": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ApiWebsocketLambdaD9F56E0F",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "NetPulseWebSocketApiFDB6BD5F"
+       },
+       "/*$disconnect"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseWebSocketApi/$disconnect-Route/DisconnectIntegration-Permission"
+   }
+  },
+  "NetPulseWebSocketApidisconnectRouteDisconnectIntegrationE3A3DEF3": {
+   "Type": "AWS::ApiGatewayV2::Integration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "NetPulseWebSocketApiFDB6BD5F"
+    },
+    "IntegrationType": "AWS_PROXY",
+    "IntegrationUri": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":apigateway:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":lambda:path/2015-03-31/functions/",
+       {
+        "Fn::GetAtt": [
+         "ApiWebsocketLambdaD9F56E0F",
+         "Arn"
+        ]
+       },
+       "/invocations"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseWebSocketApi/$disconnect-Route/DisconnectIntegration/Resource"
+   }
+  },
+  "NetPulseWebSocketApidisconnectRouteB702905E": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "NetPulseWebSocketApiFDB6BD5F"
+    },
+    "AuthorizationType": "NONE",
+    "RouteKey": "$disconnect",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "NetPulseWebSocketApidisconnectRouteDisconnectIntegrationE3A3DEF3"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseWebSocketApi/$disconnect-Route/Resource"
+   }
+  },
+  "NetPulseWebSocketApidefaultRouteDefaultIntegrationPermissionFCC01F30": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ApiWebsocketLambdaD9F56E0F",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "NetPulseWebSocketApiFDB6BD5F"
+       },
+       "/*$default"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseWebSocketApi/$default-Route/DefaultIntegration-Permission"
+   }
+  },
+  "NetPulseWebSocketApidefaultRouteDefaultIntegration0F31BA34": {
+   "Type": "AWS::ApiGatewayV2::Integration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "NetPulseWebSocketApiFDB6BD5F"
+    },
+    "IntegrationType": "AWS_PROXY",
+    "IntegrationUri": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":apigateway:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":lambda:path/2015-03-31/functions/",
+       {
+        "Fn::GetAtt": [
+         "ApiWebsocketLambdaD9F56E0F",
+         "Arn"
+        ]
+       },
+       "/invocations"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseWebSocketApi/$default-Route/DefaultIntegration/Resource"
+   }
+  },
+  "NetPulseWebSocketApidefaultRoute1C0F5D52": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "NetPulseWebSocketApiFDB6BD5F"
+    },
+    "AuthorizationType": "NONE",
+    "RouteKey": "$default",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "NetPulseWebSocketApidefaultRouteDefaultIntegration0F31BA34"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseWebSocketApi/$default-Route/Resource"
+   }
+  },
+  "NetPulseWebSocketApisubscribeRouteSubscribeIntegrationPermission118C139E": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ApiWebsocketLambdaD9F56E0F",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "NetPulseWebSocketApiFDB6BD5F"
+       },
+       "/*subscribe"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseWebSocketApi/subscribe-Route/SubscribeIntegration-Permission"
+   }
+  },
+  "NetPulseWebSocketApisubscribeRouteSubscribeIntegration5EC0FFE3": {
+   "Type": "AWS::ApiGatewayV2::Integration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "NetPulseWebSocketApiFDB6BD5F"
+    },
+    "IntegrationType": "AWS_PROXY",
+    "IntegrationUri": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":apigateway:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":lambda:path/2015-03-31/functions/",
+       {
+        "Fn::GetAtt": [
+         "ApiWebsocketLambdaD9F56E0F",
+         "Arn"
+        ]
+       },
+       "/invocations"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseWebSocketApi/subscribe-Route/SubscribeIntegration/Resource"
+   }
+  },
+  "NetPulseWebSocketApisubscribeRouteA7EDD218": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "NetPulseWebSocketApiFDB6BD5F"
+    },
+    "AuthorizationType": "NONE",
+    "RouteKey": "subscribe",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "NetPulseWebSocketApisubscribeRouteSubscribeIntegration5EC0FFE3"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseWebSocketApi/subscribe-Route/Resource"
+   }
+  },
+  "NetPulseWebSocketApiunsubscribeRouteUnsubscribeIntegrationPermission219CAFD3": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ApiWebsocketLambdaD9F56E0F",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "NetPulseWebSocketApiFDB6BD5F"
+       },
+       "/*unsubscribe"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseWebSocketApi/unsubscribe-Route/UnsubscribeIntegration-Permission"
+   }
+  },
+  "NetPulseWebSocketApiunsubscribeRouteUnsubscribeIntegration51677816": {
+   "Type": "AWS::ApiGatewayV2::Integration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "NetPulseWebSocketApiFDB6BD5F"
+    },
+    "IntegrationType": "AWS_PROXY",
+    "IntegrationUri": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":apigateway:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":lambda:path/2015-03-31/functions/",
+       {
+        "Fn::GetAtt": [
+         "ApiWebsocketLambdaD9F56E0F",
+         "Arn"
+        ]
+       },
+       "/invocations"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseWebSocketApi/unsubscribe-Route/UnsubscribeIntegration/Resource"
+   }
+  },
+  "NetPulseWebSocketApiunsubscribeRouteDD368E8D": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "NetPulseWebSocketApiFDB6BD5F"
+    },
+    "AuthorizationType": "NONE",
+    "RouteKey": "unsubscribe",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "NetPulseWebSocketApiunsubscribeRouteUnsubscribeIntegration51677816"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseWebSocketApi/unsubscribe-Route/Resource"
+   }
+  },
+  "NetPulseWebSocketStageD7804083": {
+   "Type": "AWS::ApiGatewayV2::Stage",
+   "Properties": {
+    "ApiId": {
+     "Ref": "NetPulseWebSocketApiFDB6BD5F"
+    },
+    "AutoDeploy": true,
+    "StageName": "prod"
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/NetPulseWebSocketStage/Resource"
+   }
+  },
+  "ProbeQueueAgeAlarm587ECE35": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "ComparisonOperator": "GreaterThanThreshold",
+    "Dimensions": [
+     {
+      "Name": "QueueName",
+      "Value": {
+       "Fn::GetAtt": [
+        "ProbeJobsQueue7E88AD9F",
+        "QueueName"
+       ]
+      }
+     }
+    ],
+    "EvaluationPeriods": 1,
+    "MetricName": "ApproximateAgeOfOldestMessage",
+    "Namespace": "AWS/SQS",
+    "Period": 300,
+    "Statistic": "Maximum",
+    "Threshold": 120,
+    "TreatMissingData": "notBreaching"
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/ProbeQueueAgeAlarm/Resource"
+   }
+  },
+  "WorkerErrorsAlarm1932B217": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+    "Dimensions": [
+     {
+      "Name": "FunctionName",
+      "Value": {
+       "Ref": "ProbeWorkerLambda51863596"
+      }
+     }
+    ],
+    "EvaluationPeriods": 1,
+    "MetricName": "Errors",
+    "Namespace": "AWS/Lambda",
+    "Period": 300,
+    "Statistic": "Sum",
+    "Threshold": 1,
+    "TreatMissingData": "notBreaching"
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/WorkerErrorsAlarm/Resource"
+   }
+  },
+  "ApiErrorsAlarm77A8953B": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+    "Dimensions": [
+     {
+      "Name": "FunctionName",
+      "Value": {
+       "Ref": "ApiRestLambda1CBA74F8"
+      }
+     }
+    ],
+    "EvaluationPeriods": 1,
+    "MetricName": "Errors",
+    "Namespace": "AWS/Lambda",
+    "Period": 300,
+    "Statistic": "Sum",
+    "Threshold": 1,
+    "TreatMissingData": "notBreaching"
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/ApiErrorsAlarm/Resource"
+   }
+  },
+  "WsBroadcasterErrorsAlarmED172E25": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+    "Dimensions": [
+     {
+      "Name": "FunctionName",
+      "Value": {
+       "Ref": "WsBroadcasterLambda938B655C"
+      }
+     }
+    ],
+    "EvaluationPeriods": 1,
+    "MetricName": "Errors",
+    "Namespace": "AWS/Lambda",
+    "Period": 300,
+    "Statistic": "Sum",
+    "Threshold": 1,
+    "TreatMissingData": "notBreaching"
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/WsBroadcasterErrorsAlarm/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/21RXW/bMAz8LX1X2CArsOfU2LAB7ZY6LfYYyDLjKpElz6QSpIL++0A5c4thT3fHjyNFrWB1t4TljT7TwrTHhbMNpC1rc1T6TLvUXrzuQ9tAetaNQ1XtfSFZ0SdI99EckSV4ZRPca5KC3wTpKWIsXYVkRZ4gPYfBmmIlJCsTOm85QHohHDchOMnN/C+pnEXPH1NTJCun+6bVOx9aPBD8KPA1esM2eGV1D6kO0+4FN8FZcxE5MXnLThMhE6wFroaQqr2ffb6c0PM2xNHgox4G6ztx+H90g2NviWzwWbnQETyErkZGX5xQeghSHa9LRbmnHmynGc/6clpB+sY8rAcraQGRW9ZdqZ+IhOoQeWLfPWM36uJf7f0/8r1uHfk1jPYNx2L9rn5hsw3yeTJuFlPjLD/azsGyTlbGhdieNZtXSGunx74MEJKzqpHKjVS5r3RcLzUnqr3/GXmInJX8Ixzo9rS6g8+wvDmQtYsxerY9Qj3hHytH5gi4AgAA"
+   },
+   "Metadata": {
+    "aws:cdk:path": "NetPulse-prod/CDKMetadata/Default"
+   },
+   "Condition": "CDKMetadataAvailable"
+  }
+ },
+ "Outputs": {
+  "ExportNetPulseHttpApiUrlprod": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://",
+      {
+       "Ref": "NetPulseHttpApiBA5529FD"
+      },
+      ".execute-api.",
+      {
+       "Ref": "AWS::Region"
+      },
+      ".",
+      {
+       "Ref": "AWS::URLSuffix"
+      },
+      "/"
+     ]
+    ]
+   },
+   "Export": {
+    "Name": "NetPulseHttpApiUrl-prod"
+   }
+  },
+  "ExportNetPulseWebSocketUrlprod": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "wss://",
+      {
+       "Ref": "NetPulseWebSocketApiFDB6BD5F"
+      },
+      ".execute-api.",
+      {
+       "Ref": "AWS::Region"
+      },
+      ".",
+      {
+       "Ref": "AWS::URLSuffix"
+      },
+      "/prod"
+     ]
+    ]
+   },
+   "Export": {
+    "Name": "NetPulseWebSocketUrl-prod"
+   }
+  },
+  "ExportNetPulseUserPoolIdprod": {
+   "Value": {
+    "Ref": "NetPulseUserPoolEF51FD68"
+   },
+   "Export": {
+    "Name": "NetPulseUserPoolId-prod"
+   }
+  },
+  "ExportNetPulseUserPoolClientIdprod": {
+   "Value": {
+    "Ref": "NetPulseUserPoolClient9AD37A70"
+   },
+   "Export": {
+    "Name": "NetPulseUserPoolClientId-prod"
+   }
+  },
+  "ExportNetPulseEmailTopicArnprod": {
+   "Value": {
+    "Ref": "EmailAlertsTopicE790C265"
+   },
+   "Export": {
+    "Name": "NetPulseEmailTopicArn-prod"
+   }
+  }
+ },
+ "Conditions": {
+  "CDKMetadataAvailable": {
+   "Fn::Or": [
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "af-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-3"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-south-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-3"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-4"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ca-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ca-west-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "cn-north-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "cn-northwest-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-central-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-north-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-south-2"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-3"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "il-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "me-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "me-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "sa-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-east-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-west-1"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Equals": [
+      {
+       "Ref": "AWS::Region"
+      },
+      "us-west-2"
+     ]
+    }
+   ]
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

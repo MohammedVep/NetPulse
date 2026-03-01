@@ -1,0 +1,11 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/shared" },
+    { "path": "services/authz" },
+    { "path": "services/api" },
+    { "path": "services/prober" },
+    { "path": "apps/web" },
+    { "path": "infra/cdk" }
+  ]
+}

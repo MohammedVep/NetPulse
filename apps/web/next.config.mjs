@@ -7,7 +7,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const nextConfig = {
   reactStrictMode: true,
   output: "standalone",
-  outputFileTracingRoot: path.join(__dirname, "../..")
+  outputFileTracingRoot: path.join(__dirname, "../.."),
+  transpilePackages: ["@netpulse/shared"],
+  experimental: {
+    externalDir: true
+  }
 };
 
 export default nextConfig;

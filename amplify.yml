@@ -1,0 +1,20 @@
+version: 1
+applications:
+  - appRoot: apps/web
+    frontend:
+      buildPath: /
+      phases:
+        preBuild:
+          commands:
+            - npm ci
+        build:
+          commands:
+            - npm run build --workspace @netpulse/web
+      artifacts:
+        baseDirectory: apps/web/.next
+        files:
+          - "**/*"
+      cache:
+        paths:
+          - node_modules/**/*
+          - apps/web/.next/cache/**/*

@@ -1,4 +1,4 @@
-import { createApiClient } from "@netpulse/shared";
+import { createApiClient } from "../../../packages/shared/src/api-client";
 import { config } from "./config";
 
 async function loadToken(): Promise<string | null> {

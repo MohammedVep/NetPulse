@@ -6,7 +6,7 @@ import type {
   EndpointMetrics,
   EndpointSlaReport,
   ProbeResult
-} from "@netpulse/shared";
+} from "../../../packages/shared/src/types";
 import { apiClient } from "@/lib/netpulse-client";
 
 interface EndpointDetailProps {

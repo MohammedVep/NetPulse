@@ -8,7 +8,7 @@ import type {
   Incident,
   MetricsWindow,
   MonitoringRegion
-} from "@netpulse/shared";
+} from "../../../packages/shared/src/types";
 import { apiClient } from "@/lib/netpulse-client";
 import { config } from "@/lib/config";
 

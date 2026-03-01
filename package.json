@@ -17,7 +17,8 @@
     "cdk:synth": "npm run build && npm run synth --workspace @netpulse/cdk",
     "deploy:dev": "npm run build && npm run deploy:dev --workspace @netpulse/cdk",
     "deploy:staging": "npm run build && npm run deploy:staging --workspace @netpulse/cdk",
-    "deploy:prod": "npm run build && npm run deploy:prod --workspace @netpulse/cdk"
+    "deploy:prod": "npm run build && npm run deploy:prod --workspace @netpulse/cdk",
+    "test:integration:dev": "tsx scripts/integration-dev-stack.ts --env dev --profile netpulse-dev --admin-profile netpulse-root --region us-east-1"
   },
   "engines": {
     "node": ">=20.11.0"

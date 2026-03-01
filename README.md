@@ -31,6 +31,7 @@ Portfolio pitch: I built a distributed uptime monitoring system similar to Datad
 - Alert deduplication window of 10 minutes via DynamoDB TTL table.
 - WebSocket auth supports Cognito JWT verification (required by default outside `dev`).
 - Monthly compressed CSV + manifest export to S3 for each org.
+- Public demo read path at `/v1/public/*` for unauthenticated read-only portfolio access.
 
 ## API surface (`/v1`)
 
@@ -54,6 +55,10 @@ Portfolio pitch: I built a distributed uptime monitoring system similar to Datad
 - `POST /alert-channels/webhook`
 - `GET /dashboard/summary`
 
+Public read-only API:
+
+- `GET /v1/public/{proxy+}` (mapped to read-only handlers for demo org)
+
 WebSocket routes:
 
 - `subscribe`
@@ -74,6 +79,8 @@ WebSocket routes:
 6. Run the web app:
    - `npm run dev:web`
 
+Web login uses Cognito `USER_PASSWORD_AUTH` (username/email + password), no manual JWT paste required.
+
 ## Deployment
 
 Infrastructure stacks are defined for:
@@ -92,6 +99,9 @@ Deploy with:
 
 - Smoke test all environments (auth + core API paths):
   - `./scripts/smoke-test-apis.sh --admin-profile netpulse-root`
+- Full deployed dev integration (API + WS + notifier + incident lifecycle):
+  - `npm run test:integration:dev`
+  - override profiles with: `tsx scripts/integration-dev-stack.ts --env dev --profile netpulse-dev --admin-profile netpulse-root --region us-east-1`
 - Configure Amplify branch environment variables from stack outputs:
   - `./scripts/configure-amplify-branch-env.sh --env dev --app-id <AMPLIFY_APP_ID> --branch dev --profile netpulse-dev`
   - `./scripts/configure-amplify-branch-env.sh --env staging --app-id <AMPLIFY_APP_ID> --branch staging --profile netpulse-staging`

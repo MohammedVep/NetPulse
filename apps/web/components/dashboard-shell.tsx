@@ -7,7 +7,8 @@ import type {
   Endpoint,
   Incident,
   MetricsWindow,
-  MonitoringRegion
+  MonitoringRegion,
+  OrgAiInsights
 } from "../../../packages/shared/src/types";
 import { apiClient, hasAuthToken } from "@/lib/netpulse-client";
 import { config } from "@/lib/config";
@@ -35,29 +36,34 @@ const READ_ONLY_MESSAGE = "Public demo is read-only. Add a JWT token on the home
 export function DashboardShell({ orgId }: DashboardShellProps) {
   const [selectedWindow, setSelectedWindow] = useState<MetricsWindow>("24h");
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [aiInsights, setAiInsights] = useState<OrgAiInsights | null>(null);
   const [endpoints, setEndpoints] = useState<Endpoint[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [newEndpointName, setNewEndpointName] = useState("");
-  const [newEndpointUrl, setNewEndpointUrl] = useState("");
+  const [newEndpointName, setNewEndpointName] = useState(config.defaultEndpointName);
+  const [newEndpointUrl, setNewEndpointUrl] = useState(config.defaultEndpointUrl);
   const [newEndpointSlaTarget, setNewEndpointSlaTarget] = useState("99.9");
   const [newEndpointRegions, setNewEndpointRegions] = useState<MonitoringRegion[]>(["us-east-1"]);
-  const [alertEmail, setAlertEmail] = useState("");
-  const [slackWebhook, setSlackWebhook] = useState("");
-  const [genericWebhook, setGenericWebhook] = useState("");
+  const [alertEmail, setAlertEmail] = useState(config.testAlertEmail);
+  const [slackWebhook, setSlackWebhook] = useState(config.testSlackWebhookUrl);
+  const [genericWebhook, setGenericWebhook] = useState(config.testWebhookUrl);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const hasTestingPresets =
+    Boolean(config.testAlertEmail) || Boolean(config.testSlackWebhookUrl) || Boolean(config.testWebhookUrl);
 
   const refresh = useCallback(async () => {
     try {
       setIsAuthenticated(hasAuthToken());
       setError(null);
-      const [summaryResponse, endpointResponse, incidentResponse] = await Promise.all([
+      const [summaryResponse, aiInsightsResponse, endpointResponse, incidentResponse] = await Promise.all([
         apiClient.getDashboardSummary(orgId, selectedWindow),
+        apiClient.getAiInsights(orgId, selectedWindow),
         apiClient.listEndpoints(orgId, undefined, 100),
         apiClient.listIncidents(orgId, "open")
       ]);
 
       setSummary(summaryResponse);
+      setAiInsights(aiInsightsResponse);
       setEndpoints(endpointResponse.items);
       setIncidents(incidentResponse.items);
     } catch (err) {
@@ -200,7 +206,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
       const message = err instanceof Error ? err.message : "Failed to create endpoint";
       setError(message);
     }
-  }, [isAuthenticated, newEndpointName, newEndpointRegions, newEndpointSlaTarget, newEndpointUrl, orgId, refresh]);
+  }, [newEndpointName, newEndpointRegions, newEndpointSlaTarget, newEndpointUrl, orgId, refresh]);
 
   const togglePause = useCallback(
     async (endpoint: Endpoint) => {
@@ -220,7 +226,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
         setError(message);
       }
     },
-    [isAuthenticated, refresh]
+    [refresh]
   );
 
   const deleteEndpoint = useCallback(
@@ -241,7 +247,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
         setError(message);
       }
     },
-    [isAuthenticated, refresh]
+    [refresh]
   );
 
   const toggleRegionSelection = useCallback((region: MonitoringRegion) => {
@@ -254,6 +260,14 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
       }
       return [...current, region];
     });
+  }, []);
+
+  const loadTestingPresets = useCallback(() => {
+    setNewEndpointName(config.defaultEndpointName);
+    setNewEndpointUrl(config.defaultEndpointUrl);
+    setAlertEmail(config.testAlertEmail);
+    setSlackWebhook(config.testSlackWebhookUrl);
+    setGenericWebhook(config.testWebhookUrl);
   }, []);
 
   const registerEmailAlert = useCallback(async () => {
@@ -274,7 +288,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
       const message = err instanceof Error ? err.message : "Failed to register email alert";
       setError(message);
     }
-  }, [alertEmail, isAuthenticated, orgId]);
+  }, [alertEmail, orgId]);
 
   const registerSlackAlert = useCallback(async () => {
     const authenticated = hasAuthToken();
@@ -294,7 +308,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
       const message = err instanceof Error ? err.message : "Failed to register Slack alert";
       setError(message);
     }
-  }, [isAuthenticated, orgId, slackWebhook]);
+  }, [orgId, slackWebhook]);
 
   const registerWebhookAlert = useCallback(async () => {
     const authenticated = hasAuthToken();
@@ -308,13 +322,23 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
 
     try {
       setError(null);
-      await apiClient.registerWebhookChannel(orgId, genericWebhook.trim());
+      await apiClient.registerWebhookChannel(orgId, {
+        name: "Generic Webhook",
+        url: genericWebhook.trim(),
+        events: [
+          "INCIDENT_OPEN",
+          "INCIDENT_RESOLVED",
+          "SLO_BURN_RATE",
+          "LATENCY_BREACH",
+          "FAILURE_RATE_BREACH"
+        ]
+      });
       setGenericWebhook("");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to register webhook alert";
       setError(message);
     }
-  }, [genericWebhook, isAuthenticated, orgId]);
+  }, [genericWebhook, orgId]);
 
   return (
     <main>
@@ -352,6 +376,23 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
           <div style={{ fontSize: 34, fontWeight: 700 }}>{summary?.uptimePct ?? 0}%</div>
         </article>
         <article className="panel">
+          <div className="small">Failure Rate ({selectedWindow})</div>
+          <div style={{ fontSize: 34, fontWeight: 700 }}>{summary?.failureRatePct ?? 0}%</div>
+        </article>
+        <article className="panel">
+          <div className="small">Burn Rate</div>
+          <div
+            style={{
+              fontSize: 34,
+              fontWeight: 700,
+              color: summary?.burnRateAlert ? "var(--down)" : "inherit"
+            }}
+          >
+            {summary?.burnRate ?? 0}x
+          </div>
+          <div className="small">{summary?.burnRateAlert ? "Budget burn alert" : "Within SLO budget"}</div>
+        </article>
+        <article className="panel">
           <div className="small">Endpoints</div>
           <div style={{ fontSize: 34, fontWeight: 700 }}>{totals.total}</div>
         </article>
@@ -375,7 +416,91 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
       </section>
 
       <section className="panel" style={{ marginBottom: 14 }}>
+        <h2 style={{ marginTop: 0 }}>Burn Rate Trend</h2>
+        <div className="sparkline" aria-label="Burn rate sparkline">
+          {(summary?.burnRateSparkline ?? []).map((point: { t: string; burnRate: number }) => (
+            <span key={point.t} style={{ height: `${Math.max(8, Math.min(100, point.burnRate * 15))}px` }} />
+          ))}
+        </div>
+      </section>
+
+      <section className="panel" style={{ marginBottom: 14 }}>
+        <h2 style={{ marginTop: 0 }}>AI Insights</h2>
+        <div className="grid cards" style={{ marginBottom: 10 }}>
+          <article className="panel">
+            <div className="small">Risk Level</div>
+            <div
+              style={{
+                fontSize: 30,
+                fontWeight: 700,
+                color:
+                  aiInsights?.riskLevel === "CRITICAL" || aiInsights?.riskLevel === "HIGH"
+                    ? "var(--down)"
+                    : "inherit"
+              }}
+            >
+              {aiInsights?.riskLevel ?? "-"}
+            </div>
+          </article>
+          <article className="panel">
+            <div className="small">AI Failure Rate</div>
+            <div style={{ fontSize: 30, fontWeight: 700 }}>{aiInsights?.totals.failureRatePct ?? 0}%</div>
+          </article>
+          <article className="panel">
+            <div className="small">AI Avg Burn Rate</div>
+            <div style={{ fontSize: 30, fontWeight: 700 }}>{aiInsights?.totals.avgBurnRate ?? 0}x</div>
+          </article>
+          <article className="panel">
+            <div className="small">Anomalies</div>
+            <div style={{ fontSize: 30, fontWeight: 700 }}>{aiInsights?.anomalies.length ?? 0}</div>
+          </article>
+        </div>
+
+        <p className="small" style={{ marginTop: 0 }}>
+          {aiInsights?.summary ?? "No AI summary available yet."}
+        </p>
+        <p className="small" style={{ marginTop: 0 }}>
+          Model: <code>{aiInsights?.model ?? "n/a"}</code> | Generated:{" "}
+          {aiInsights?.generatedAt ? new Date(aiInsights.generatedAt).toLocaleString() : "-"}
+        </p>
+
+        <h3 style={{ marginBottom: 6 }}>Top At-Risk Endpoints</h3>
+        {aiInsights?.topAtRiskEndpoints.length ? (
+          <div className="grid">
+            {aiInsights.topAtRiskEndpoints.map((risk) => (
+              <article key={risk.endpointId} className="panel">
+                <div style={{ fontWeight: 700 }}>{risk.endpointName}</div>
+                <div className="small">{risk.endpointId}</div>
+                <div style={{ marginTop: 6 }}>Risk Score: {risk.riskScore}</div>
+                <div className="small">{risk.reasons.join(" | ") || "No specific drivers"}</div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="small">No elevated endpoint risk detected.</p>
+        )}
+
+        <h3 style={{ marginBottom: 6 }}>Recommendations</h3>
+        {aiInsights?.recommendations.length ? (
+          <ul style={{ marginTop: 0 }}>
+            {aiInsights.recommendations.map((recommendation) => (
+              <li key={recommendation} className="small">
+                {recommendation}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="small">No recommendations yet.</p>
+        )}
+      </section>
+
+      <section className="panel" style={{ marginBottom: 14 }}>
         <h2 style={{ marginTop: 0 }}>Endpoints</h2>
+        {config.showTestingHints ? (
+          <p className="small" style={{ marginTop: 0 }}>
+            Recruiter mode is enabled. Endpoint defaults are preloaded from environment configuration.
+          </p>
+        ) : null}
         <div className="input-row" style={{ marginBottom: 12 }}>
           <input
             type="text"
@@ -403,6 +528,11 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
           <button type="button" disabled={!isAuthenticated} onClick={() => void createEndpoint()}>
             Add Endpoint
           </button>
+          {(config.showTestingHints || hasTestingPresets) && isAuthenticated ? (
+            <button type="button" onClick={loadTestingPresets}>
+              Load Test Presets
+            </button>
+          ) : null}
         </div>
         <div className="input-row" style={{ marginBottom: 12 }}>
           <span className="small">Check regions:</span>
@@ -483,6 +613,11 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
 
       <section className="panel" style={{ marginTop: 14 }}>
         <h2 style={{ marginTop: 0 }}>Alert Channels</h2>
+        {hasTestingPresets ? (
+          <p className="small" style={{ marginTop: 0 }}>
+            Prefilled test values are loaded from frontend env vars for recruiter demo drills.
+          </p>
+        ) : null}
         <div className="grid">
           <div className="input-row">
             <input

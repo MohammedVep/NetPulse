@@ -17,7 +17,7 @@ type AuthMode = "signin" | "register";
 export default function HomePage() {
   const router = useRouter();
   const [orgId, setOrgId] = useState(config.demoOrgId);
-  const [orgName, setOrgName] = useState("My NetPulse Workspace");
+  const [orgName, setOrgName] = useState(config.defaultWorkspaceName);
 
   const [authMode, setAuthMode] = useState<AuthMode>("signin");
   const [email, setEmail] = useState("");
@@ -32,6 +32,8 @@ export default function HomePage() {
   const [isCreatingOrg, setIsCreatingOrg] = useState(false);
   const [createOrgError, setCreateOrgError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(() => hasAuthToken());
+  const hasTestingPresets =
+    Boolean(config.testAlertEmail) || Boolean(config.testSlackWebhookUrl) || Boolean(config.testWebhookUrl);
 
   const resetMessages = () => {
     setAuthError(null);
@@ -174,6 +176,23 @@ export default function HomePage() {
           NetPulse provides multi-region checks, SLA tracking, failure simulation, live incident streams,
           and alert fanout across email, Slack, and generic webhooks.
         </p>
+        {config.showTestingHints || hasTestingPresets ? (
+          <div className="panel" style={{ marginTop: 14 }}>
+            <h2 style={{ marginTop: 0 }}>Recruiter Testing Presets</h2>
+            <p className="small" style={{ marginTop: 0 }}>
+              Sign in, create a workspace, then open the dashboard to use prefilled alert-channel test values.
+            </p>
+            <p className="small" style={{ marginTop: 0 }}>
+              Preset email: <code>{config.testAlertEmail || "not configured"}</code>
+            </p>
+            <p className="small" style={{ marginTop: 0 }}>
+              Preset Slack webhook: <code>{config.testSlackWebhookUrl || "not configured"}</code>
+            </p>
+            <p className="small" style={{ marginTop: 0 }}>
+              Preset generic webhook: <code>{config.testWebhookUrl || "not configured"}</code>
+            </p>
+          </div>
+        ) : null}
 
         <div className="input-row" style={{ marginTop: 16 }}>
           <input

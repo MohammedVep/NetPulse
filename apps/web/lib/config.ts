@@ -3,5 +3,12 @@ export const config = {
   wsUrl: process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:3001/ws",
   cognitoUserPoolId: process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID ?? "",
   cognitoUserPoolClientId: process.env.NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID ?? "",
-  demoOrgId: process.env.NEXT_PUBLIC_DEMO_ORG_ID ?? "org_demo_public"
+  demoOrgId: process.env.NEXT_PUBLIC_DEMO_ORG_ID ?? "org_demo_public",
+  defaultWorkspaceName: process.env.NEXT_PUBLIC_DEFAULT_WORKSPACE_NAME ?? "My NetPulse Workspace",
+  defaultEndpointName: process.env.NEXT_PUBLIC_DEFAULT_ENDPOINT_NAME ?? "Recruiter Drill Endpoint",
+  defaultEndpointUrl: process.env.NEXT_PUBLIC_DEFAULT_ENDPOINT_URL ?? "https://example.com/health",
+  testAlertEmail: process.env.NEXT_PUBLIC_TEST_ALERT_EMAIL ?? "",
+  testSlackWebhookUrl: process.env.NEXT_PUBLIC_TEST_SLACK_WEBHOOK_URL ?? "",
+  testWebhookUrl: process.env.NEXT_PUBLIC_TEST_WEBHOOK_URL ?? "",
+  showTestingHints: (process.env.NEXT_PUBLIC_SHOW_TESTING_HINTS ?? "").toLowerCase() === "true"
 };

@@ -18,4 +18,14 @@ describe('web config', () => {
     expect(typeof config.demoOrgId).toBe('string');
     expect(config.demoOrgId.length).toBeGreaterThan(0);
   });
+
+  it('exposes recruiter testing preset fields', () => {
+    expect(typeof config.defaultWorkspaceName).toBe('string');
+    expect(typeof config.defaultEndpointName).toBe('string');
+    expect(typeof config.defaultEndpointUrl).toBe('string');
+    expect(typeof config.testAlertEmail).toBe('string');
+    expect(typeof config.testSlackWebhookUrl).toBe('string');
+    expect(typeof config.testWebhookUrl).toBe('string');
+    expect(typeof config.showTestingHints).toBe('boolean');
+  });
 });

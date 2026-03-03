@@ -15,9 +15,12 @@ usage() {
   cat <<USAGE
 Usage:
   $(basename "$0") --env <dev|staging|prod> --app-id <AMPLIFY_APP_ID> --branch <BRANCH_NAME> [--profile <aws-profile>] [--region <aws-region>] [--demo-org-id <org_id>] [--dry-run]
+               [--default-workspace-name <name>] [--default-endpoint-name <name>] [--default-endpoint-url <url>]
+               [--test-alert-email <email>] [--test-slack-webhook-url <url>] [--test-webhook-url <url>] [--show-testing-hints <true|false>]
 
 Example:
-  $(basename "$0") --env dev --app-id d123example --branch dev --profile netpulse-base --demo-org-id org_demo_public
+  $(basename "$0") --env dev --app-id d123example --branch dev --profile netpulse-base --demo-org-id org_demo_public \\
+    --test-alert-email recruiter@example.com --test-webhook-url https://webhook.site/replace-me --show-testing-hints true
 USAGE
 }
 
@@ -27,6 +30,13 @@ BRANCH_NAME=""
 PROFILE=""
 REGION="${AWS_REGION:-us-east-1}"
 DEMO_ORG_ID="org_demo_public"
+DEFAULT_WORKSPACE_NAME="Recruiter Sandbox Workspace"
+DEFAULT_ENDPOINT_NAME="Recruiter Drill Endpoint"
+DEFAULT_ENDPOINT_URL="https://example.com/health"
+TEST_ALERT_EMAIL=""
+TEST_SLACK_WEBHOOK_URL=""
+TEST_WEBHOOK_URL=""
+SHOW_TESTING_HINTS="false"
 DRY_RUN="false"
 
 while [ $# -gt 0 ]; do
@@ -53,6 +63,34 @@ while [ $# -gt 0 ]; do
       ;;
     --demo-org-id)
       DEMO_ORG_ID="$2"
+      shift 2
+      ;;
+    --default-workspace-name)
+      DEFAULT_WORKSPACE_NAME="$2"
+      shift 2
+      ;;
+    --default-endpoint-name)
+      DEFAULT_ENDPOINT_NAME="$2"
+      shift 2
+      ;;
+    --default-endpoint-url)
+      DEFAULT_ENDPOINT_URL="$2"
+      shift 2
+      ;;
+    --test-alert-email)
+      TEST_ALERT_EMAIL="$2"
+      shift 2
+      ;;
+    --test-slack-webhook-url)
+      TEST_SLACK_WEBHOOK_URL="$2"
+      shift 2
+      ;;
+    --test-webhook-url)
+      TEST_WEBHOOK_URL="$2"
+      shift 2
+      ;;
+    --show-testing-hints)
+      SHOW_TESTING_HINTS="$2"
       shift 2
       ;;
     --dry-run)
@@ -109,12 +147,26 @@ ENV_JSON="$(jq -n \
   --arg pool "$COGNITO_USER_POOL_ID" \
   --arg client "$COGNITO_USER_POOL_CLIENT_ID" \
   --arg demo "$DEMO_ORG_ID" \
+  --arg workspace "$DEFAULT_WORKSPACE_NAME" \
+  --arg endpointName "$DEFAULT_ENDPOINT_NAME" \
+  --arg endpointUrl "$DEFAULT_ENDPOINT_URL" \
+  --arg testEmail "$TEST_ALERT_EMAIL" \
+  --arg testSlack "$TEST_SLACK_WEBHOOK_URL" \
+  --arg testWebhook "$TEST_WEBHOOK_URL" \
+  --arg showHints "$SHOW_TESTING_HINTS" \
   '{
     NEXT_PUBLIC_API_BASE_URL: $api,
     NEXT_PUBLIC_WS_URL: $ws,
     NEXT_PUBLIC_COGNITO_USER_POOL_ID: $pool,
     NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID: $client,
-    NEXT_PUBLIC_DEMO_ORG_ID: $demo
+    NEXT_PUBLIC_DEMO_ORG_ID: $demo,
+    NEXT_PUBLIC_DEFAULT_WORKSPACE_NAME: $workspace,
+    NEXT_PUBLIC_DEFAULT_ENDPOINT_NAME: $endpointName,
+    NEXT_PUBLIC_DEFAULT_ENDPOINT_URL: $endpointUrl,
+    NEXT_PUBLIC_TEST_ALERT_EMAIL: $testEmail,
+    NEXT_PUBLIC_TEST_SLACK_WEBHOOK_URL: $testSlack,
+    NEXT_PUBLIC_TEST_WEBHOOK_URL: $testWebhook,
+    NEXT_PUBLIC_SHOW_TESTING_HINTS: $showHints
   }')"
 
 echo "Resolved environment values for $ENV_NAME:"

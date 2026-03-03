@@ -11,7 +11,9 @@ const READ_ONLY_METHODS = new Set<keyof NetPulseClient>([
   "getMetrics",
   "getSlaReport",
   "listIncidents",
-  "getDashboardSummary"
+  "getIncidentTimeline",
+  "getDashboardSummary",
+  "getAiInsights"
 ]);
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {

@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
   Endpoint,
+  IncidentTimeline,
   EndpointMetrics,
+  OrgAiEndpointAnomaly,
+  OrgAiInsights,
   EndpointSlaReport,
   ProbeResult
 } from "../../../packages/shared/src/types";
@@ -13,19 +16,88 @@ interface EndpointDetailProps {
   endpointId: string;
 }
 
-type MutableSimulationMode = "FORCE_FAIL" | "FLAKY" | "LATENCY_SPIKE";
+type RiskWindow = "24h" | "7d" | "30d";
+
+interface EndpointRiskTrend {
+  window: RiskWindow;
+  score: number;
+}
+
 const READ_ONLY_MESSAGE = "Public demo is read-only. Add a JWT token on the home page to enable write actions.";
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function getEndpointRiskScore(insights: OrgAiInsights | null, endpointId: string): number {
+  if (!insights) {
+    return 0;
+  }
+
+  return insights.topAtRiskEndpoints.find((risk) => risk.endpointId === endpointId)?.riskScore ?? 0;
+}
+
+function getEndpointAnomalies(insights: OrgAiInsights | null, endpointId: string): OrgAiEndpointAnomaly[] {
+  if (!insights) {
+    return [];
+  }
+
+  return insights.anomalies.filter((anomaly) => anomaly.endpointId === endpointId);
+}
+
+function getProjectedRiskDelta(baseScore: number, metrics: EndpointMetrics | null, anomalyCount: number): number {
+  if (!metrics) {
+    return 0;
+  }
+
+  let delta = 0;
+
+  if (metrics.burnRate >= 4) {
+    delta += 20;
+  } else if (metrics.burnRate >= 2) {
+    delta += 10;
+  }
+
+  if (metrics.failureRateThresholdBreached) {
+    delta += 8;
+  }
+
+  if (metrics.latencyThresholdBreached) {
+    delta += 6;
+  }
+
+  if (anomalyCount >= 3) {
+    delta += 8;
+  } else if (anomalyCount >= 1) {
+    delta += 4;
+  }
+
+  if (metrics.failureRatePct < 1 && metrics.burnRate < 1) {
+    delta -= 10;
+  }
+
+  const bounded = clamp(delta, -30, 30);
+  const remainingHeadroom = 100 - baseScore;
+  if (bounded > 0) {
+    return Math.round(Math.min(bounded, remainingHeadroom));
+  }
+
+  return Math.round(Math.max(bounded, -baseScore));
+}
 
 export function EndpointDetail({ endpointId }: EndpointDetailProps) {
   const [endpoint, setEndpoint] = useState<Endpoint | null>(null);
   const [metrics, setMetrics] = useState<EndpointMetrics | null>(null);
   const [slaReport, setSlaReport] = useState<EndpointSlaReport | null>(null);
+  const [aiInsights24h, setAiInsights24h] = useState<OrgAiInsights | null>(null);
+  const [riskTrend, setRiskTrend] = useState<EndpointRiskTrend[]>([]);
+  const [incidentTimeline, setIncidentTimeline] = useState<IncidentTimeline | null>(null);
   const [checks, setChecks] = useState<ProbeResult[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [simulationMode, setSimulationMode] = useState<MutableSimulationMode>("FORCE_FAIL");
-  const [simulationFailureRate, setSimulationFailureRate] = useState("50");
-  const [simulationLatencyMs, setSimulationLatencyMs] = useState("5000");
-  const [simulationUntil, setSimulationUntil] = useState("");
+  const [simulationMode, setSimulationMode] = useState<"FORCE_FAIL" | "FORCE_DEGRADED">("FORCE_FAIL");
+  const [simulationFailureStatusCode, setSimulationFailureStatusCode] = useState("503");
+  const [simulationLatencyMs, setSimulationLatencyMs] = useState("2500");
+  const [simulationDurationMinutes, setSimulationDurationMinutes] = useState("15");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const load = useCallback(async () => {
@@ -41,10 +113,33 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
         apiClient.getChecks(endpointId, from.toISOString(), now.toISOString()),
         apiClient.getSlaReport(endpointId, "24h")
       ]);
+
+      const [ai24Response, ai7Response, ai30Response, incidentResponse] = await Promise.all([
+        apiClient.getAiInsights(endpointResponse.orgId, "24h"),
+        apiClient.getAiInsights(endpointResponse.orgId, "7d"),
+        apiClient.getAiInsights(endpointResponse.orgId, "30d"),
+        apiClient.listIncidents(endpointResponse.orgId)
+      ]);
+      const latestIncident = incidentResponse.items
+        .filter((incident) => incident.endpointId === endpointId)
+        .sort((a, b) => Date.parse(b.openedAt) - Date.parse(a.openedAt))[0];
+
       setEndpoint(endpointResponse);
       setMetrics(metricsResponse);
       setChecks(checksResponse.items);
       setSlaReport(slaResponse);
+      setAiInsights24h(ai24Response);
+      setRiskTrend([
+        { window: "24h", score: getEndpointRiskScore(ai24Response, endpointId) },
+        { window: "7d", score: getEndpointRiskScore(ai7Response, endpointId) },
+        { window: "30d", score: getEndpointRiskScore(ai30Response, endpointId) }
+      ]);
+      if (latestIncident) {
+        const timeline = await apiClient.getIncidentTimeline(latestIncident.incidentId, 80);
+        setIncidentTimeline(timeline);
+      } else {
+        setIncidentTimeline(null);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load endpoint details";
       setError(message);
@@ -57,6 +152,22 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
   }, [load]);
 
   const recentFailures = useMemo(() => checks.filter((check) => !check.ok).slice(0, 10), [checks]);
+  const endpointAiRiskScore = useMemo(
+    () => getEndpointRiskScore(aiInsights24h, endpointId),
+    [aiInsights24h, endpointId]
+  );
+  const endpointAiReasons = useMemo(
+    () => (aiInsights24h?.topAtRiskEndpoints.find((risk) => risk.endpointId === endpointId)?.reasons ?? []),
+    [aiInsights24h, endpointId]
+  );
+  const endpointAiAnomalies = useMemo(
+    () => getEndpointAnomalies(aiInsights24h, endpointId),
+    [aiInsights24h, endpointId]
+  );
+  const projectedRiskDelta = useMemo(
+    () => getProjectedRiskDelta(endpointAiRiskScore, metrics, endpointAiAnomalies.length),
+    [endpointAiAnomalies.length, endpointAiRiskScore, metrics]
+  );
 
   const applySimulation = useCallback(async () => {
     const authenticated = hasAuthToken();
@@ -68,48 +179,50 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
 
     try {
       setError(null);
-      const payload: {
-        mode: "FORCE_FAIL" | "FLAKY" | "LATENCY_SPIKE";
-        failureRatePct?: number;
-        extraLatencyMs?: number;
-        until?: string;
-      } = { mode: simulationMode };
-
-      if (simulationMode === "FLAKY") {
-        const failureRatePct = Number(simulationFailureRate);
-        if (!Number.isFinite(failureRatePct) || failureRatePct < 1 || failureRatePct > 100) {
-          setError("Flaky failure rate must be between 1 and 100");
-          return;
-        }
-        payload.failureRatePct = Math.round(failureRatePct);
+      const durationMinutes = Number(simulationDurationMinutes);
+      if (!Number.isFinite(durationMinutes) || durationMinutes < 1 || durationMinutes > 24 * 60) {
+        setError("Duration must be between 1 and 1440 minutes");
+        return;
       }
 
-      if (simulationMode === "LATENCY_SPIKE") {
-        const extraLatencyMs = Number(simulationLatencyMs);
-        if (!Number.isFinite(extraLatencyMs) || extraLatencyMs < 1 || extraLatencyMs > 60_000) {
-          setError("Latency spike must be between 1 and 60000 ms");
+      if (simulationMode === "FORCE_FAIL") {
+        const failureStatusCode = Number(simulationFailureStatusCode);
+        if (!Number.isFinite(failureStatusCode) || failureStatusCode < 100 || failureStatusCode > 599) {
+          setError("Failure status code must be between 100 and 599");
           return;
         }
-        payload.extraLatencyMs = Math.round(extraLatencyMs);
-      }
-
-      if (simulationUntil.trim()) {
-        const until = new Date(simulationUntil);
-        if (Number.isNaN(until.getTime())) {
-          setError("Simulation end time is invalid");
+        await apiClient.setFailureSimulation(endpointId, {
+          mode: "FORCE_FAIL",
+          failureStatusCode: Math.round(failureStatusCode),
+          durationMinutes: Math.round(durationMinutes)
+        });
+      } else {
+        const forcedLatencyMs = Number(simulationLatencyMs);
+        if (!Number.isFinite(forcedLatencyMs) || forcedLatencyMs < 1 || forcedLatencyMs > 60_000) {
+          setError("Forced latency must be between 1 and 60000 ms");
           return;
         }
-        payload.until = until.toISOString();
+
+        await apiClient.setFailureSimulation(endpointId, {
+          mode: "FORCE_DEGRADED",
+          forcedLatencyMs: Math.round(forcedLatencyMs),
+          durationMinutes: Math.round(durationMinutes)
+        });
       }
 
-      const updatedEndpoint = await apiClient.setFailureSimulation(endpointId, payload);
-      setEndpoint(updatedEndpoint);
       await load();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to set simulation";
       setError(message);
     }
-  }, [endpointId, isAuthenticated, load, simulationFailureRate, simulationLatencyMs, simulationMode, simulationUntil]);
+  }, [
+    endpointId,
+    load,
+    simulationDurationMinutes,
+    simulationFailureStatusCode,
+    simulationLatencyMs,
+    simulationMode
+  ]);
 
   const clearSimulation = useCallback(async () => {
     const authenticated = hasAuthToken();
@@ -121,14 +234,13 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
 
     try {
       setError(null);
-      const updatedEndpoint = await apiClient.clearFailureSimulation(endpointId);
-      setEndpoint(updatedEndpoint);
+      await apiClient.clearFailureSimulation(endpointId);
       await load();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to clear simulation";
       setError(message);
     }
-  }, [endpointId, isAuthenticated, load]);
+  }, [endpointId, load]);
 
   if (error) {
     return (
@@ -176,10 +288,35 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
           <div className="small">{metrics?.slaMet ? "SLA met" : "SLA breached"}</div>
         </article>
         <article className="panel">
-          <div className="small">Error Budget Left</div>
-          <div style={{ fontSize: 28, fontWeight: 700 }}>{metrics?.errorBudgetRemainingPct ?? 0}%</div>
+          <div className="small">Burn Rate</div>
+          <div style={{ fontSize: 28, fontWeight: 700 }}>{metrics?.burnRate ?? 0}x</div>
+          <div className="small">{metrics?.burnRateAlert ? "Burn alert active" : "Within budget"}</div>
+        </article>
+        <article className="panel">
+          <div className="small">Achieved SLA</div>
+          <div style={{ fontSize: 28, fontWeight: 700 }}>
+            {slaReport?.achievedSlaPct === null || slaReport?.achievedSlaPct === undefined
+              ? "N/A"
+              : `${slaReport.achievedSlaPct}%`}
+          </div>
           <div className="small">
-            Remaining downtime: {slaReport?.remainingDowntimeMinutes ?? 0} min
+            Error budget left: {slaReport?.errorBudgetRemainingMinutes ?? 0} min
+          </div>
+        </article>
+        <article className="panel">
+          <div className="small">Failure Rate</div>
+          <div style={{ fontSize: 28, fontWeight: 700 }}>{metrics?.failureRatePct ?? 0}%</div>
+          <div className="small">
+            Threshold: {metrics?.failureRateThresholdPct ?? endpoint?.failureRateThresholdPct ?? 5}%
+          </div>
+        </article>
+        <article className="panel">
+          <div className="small">Latency Threshold</div>
+          <div style={{ fontSize: 28, fontWeight: 700 }}>
+            {metrics?.latencyThresholdMs ?? endpoint?.latencyThresholdMs ?? 2000} ms
+          </div>
+          <div className="small">
+            {metrics?.latencyThresholdBreached ? "Breached" : "Healthy"}
           </div>
         </article>
       </section>
@@ -199,47 +336,131 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
       </section>
 
       <section className="panel" style={{ marginBottom: 14 }}>
+        <h2 style={{ marginTop: 0 }}>AI Risk Widget</h2>
+        <div className="grid cards" style={{ marginBottom: 10 }}>
+          <article className="panel">
+            <div className="small">Current Risk (24h)</div>
+            <div
+              style={{
+                fontSize: 30,
+                fontWeight: 700,
+                color: endpointAiRiskScore >= 70 ? "var(--down)" : endpointAiRiskScore >= 40 ? "#f5b85d" : "inherit"
+              }}
+            >
+              {endpointAiRiskScore}
+            </div>
+          </article>
+          <article className="panel">
+            <div className="small">Predicted Risk Delta</div>
+            <div
+              style={{
+                fontSize: 30,
+                fontWeight: 700,
+                color: projectedRiskDelta > 0 ? "var(--down)" : projectedRiskDelta < 0 ? "#6fd3a6" : "inherit"
+              }}
+            >
+              {projectedRiskDelta > 0 ? "+" : ""}
+              {projectedRiskDelta}
+            </div>
+            <div className="small">Next cycle estimate if current burn/failure profile persists</div>
+          </article>
+          <article className="panel">
+            <div className="small">Projected Risk</div>
+            <div style={{ fontSize: 30, fontWeight: 700 }}>
+              {clamp(endpointAiRiskScore + projectedRiskDelta, 0, 100)}
+            </div>
+          </article>
+        </div>
+
+        <h3 style={{ marginBottom: 6 }}>Risk Trend</h3>
+        <div className="sparkline" aria-label="Endpoint AI risk trend">
+          {riskTrend.map((point) => (
+            <span key={point.window} style={{ height: `${Math.max(10, point.score)}px` }} title={`${point.window}: ${point.score}`} />
+          ))}
+        </div>
+        <div className="small" style={{ marginTop: 8 }}>
+          {riskTrend.map((point) => `${point.window}: ${point.score}`).join(" | ")}
+        </div>
+
+        <h3 style={{ marginBottom: 6 }}>Risk Drivers</h3>
+        {endpointAiReasons.length === 0 ? (
+          <p className="small">No major drivers detected for this endpoint in the selected window.</p>
+        ) : (
+          <ul style={{ marginTop: 0 }}>
+            {endpointAiReasons.map((reason) => (
+              <li key={reason} className="small">
+                {reason}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <h3 style={{ marginBottom: 6 }}>Endpoint Anomalies</h3>
+        {endpointAiAnomalies.length === 0 ? (
+          <p className="small">No endpoint anomalies detected.</p>
+        ) : (
+          <div className="grid">
+            {endpointAiAnomalies.slice(0, 4).map((anomaly) => (
+              <article key={`${anomaly.type}-${anomaly.message}`} className="panel">
+                <div style={{ fontWeight: 700 }}>
+                  {anomaly.type} ({anomaly.severity})
+                </div>
+                <div className="small">{anomaly.message}</div>
+                <div className="small">
+                  Failure: {anomaly.failureRatePct}% | Burn: {anomaly.burnRate}x | Avg Latency: {anomaly.avgLatencyMs} ms
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="panel" style={{ marginBottom: 14 }}>
         <h2 style={{ marginTop: 0 }}>Failure Simulation</h2>
         <p className="small">
           Active mode: {endpoint?.simulation?.mode ?? "NONE"}
-          {endpoint?.simulation?.until ? ` (until ${new Date(endpoint.simulation.until).toLocaleString()})` : ""}
+          {endpoint?.simulation?.expiresAtIso
+            ? ` (until ${new Date(endpoint.simulation.expiresAtIso).toLocaleString()})`
+            : ""}
         </p>
         <div className="input-row" style={{ marginBottom: 10 }}>
           <select
             value={simulationMode}
-            onChange={(event) => setSimulationMode(event.currentTarget.value as MutableSimulationMode)}
+            onChange={(event) => setSimulationMode(event.currentTarget.value as "FORCE_FAIL" | "FORCE_DEGRADED")}
             disabled={!isAuthenticated}
           >
             <option value="FORCE_FAIL">FORCE_FAIL</option>
-            <option value="FLAKY">FLAKY</option>
-            <option value="LATENCY_SPIKE">LATENCY_SPIKE</option>
+            <option value="FORCE_DEGRADED">FORCE_DEGRADED</option>
           </select>
-          {simulationMode === "FLAKY" ? (
+          {simulationMode === "FORCE_FAIL" ? (
             <input
               type="number"
-              min={1}
-              max={100}
-              value={simulationFailureRate}
-              onChange={(event) => setSimulationFailureRate(event.currentTarget.value)}
-              placeholder="Failure rate %"
+              min={100}
+              max={599}
+              value={simulationFailureStatusCode}
+              onChange={(event) => setSimulationFailureStatusCode(event.currentTarget.value)}
+              placeholder="Status code"
               disabled={!isAuthenticated}
             />
           ) : null}
-          {simulationMode === "LATENCY_SPIKE" ? (
+          {simulationMode === "FORCE_DEGRADED" ? (
             <input
               type="number"
               min={1}
               max={60000}
               value={simulationLatencyMs}
               onChange={(event) => setSimulationLatencyMs(event.currentTarget.value)}
-              placeholder="Extra latency ms"
+              placeholder="Forced latency ms"
               disabled={!isAuthenticated}
             />
           ) : null}
           <input
-            type="datetime-local"
-            value={simulationUntil}
-            onChange={(event) => setSimulationUntil(event.currentTarget.value)}
+            type="number"
+            min={1}
+            max={1440}
+            value={simulationDurationMinutes}
+            onChange={(event) => setSimulationDurationMinutes(event.currentTarget.value)}
+            placeholder="Duration minutes"
             disabled={!isAuthenticated}
           />
           <button type="button" disabled={!isAuthenticated} onClick={() => void applySimulation()}>
@@ -268,6 +489,29 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
             </article>
           ))}
         </div>
+      </section>
+
+      <section className="panel" style={{ marginTop: 14 }}>
+        <h2 style={{ marginTop: 0 }}>Incident Timeline</h2>
+        {!incidentTimeline ? <p className="small">No incident timeline available yet.</p> : null}
+        {incidentTimeline ? (
+          <div className="grid">
+            {incidentTimeline.events.map((item, index) => (
+              <article key={`${item.ts}-${item.type}-${index}`} className="panel">
+                <div style={{ fontWeight: 700 }}>{new Date(item.ts).toLocaleString()}</div>
+                <div className="small">Type: {item.type}</div>
+                <div className="small">{item.message}</div>
+                {item.region ? <div className="small">Region: {item.region}</div> : null}
+                {typeof item.statusCode === "number" ? (
+                  <div className="small">Status: {item.statusCode}</div>
+                ) : null}
+                {typeof item.latencyMs === "number" ? (
+                  <div className="small">Latency: {item.latencyMs} ms</div>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        ) : null}
       </section>
     </main>
   );

@@ -12,13 +12,56 @@ export type MonitoringRegion = "us-east-1" | "us-west-2" | "eu-west-1" | "ap-sou
 
 export type ChannelType = "EMAIL" | "SLACK" | "WEBHOOK";
 
-export type FailureSimulationMode = "NONE" | "FORCE_FAIL" | "FLAKY" | "LATENCY_SPIKE";
+export type AlertEvent =
+  | "INCIDENT_OPEN"
+  | "INCIDENT_RESOLVED"
+  | "SLO_BURN_RATE"
+  | "LATENCY_BREACH"
+  | "FAILURE_RATE_BREACH";
 
-export interface FailureSimulation {
-  mode: FailureSimulationMode;
-  until?: string;
-  failureRatePct?: number;
-  extraLatencyMs?: number;
+export type SimulationMode = "FORCE_FAIL" | "FORCE_DEGRADED" | "CLEAR";
+export type AiRiskLevel = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+export type AiAnomalyType = "NO_DATA" | "FAILURE_RATE" | "BURN_RATE" | "LATENCY";
+export type AiAnomalySeverity = "LOW" | "MEDIUM" | "HIGH";
+
+export type FailureClassification =
+  | "HTTP_2XX_3XX"
+  | "HTTP_4XX"
+  | "HTTP_5XX"
+  | "TIMEOUT"
+  | "NETWORK"
+  | "CIRCUIT_OPEN"
+  | "SIMULATED_FORCE_FAIL"
+  | "SIMULATED_FORCE_DEGRADED";
+
+export interface RegionCircuitState {
+  state: "CLOSED" | "OPEN" | "HALF_OPEN";
+  openedAtIso?: string;
+  halfOpenAtIso?: string;
+  nextAttemptAtIso?: string;
+  consecutiveFailures: number;
+}
+
+export interface SimulationState {
+  mode: Exclude<SimulationMode, "CLEAR">;
+  appliedAtIso: string;
+  expiresAtIso?: string | null;
+  failureStatusCode?: number;
+  forcedLatencyMs?: number;
+}
+
+export interface SimulationRequest {
+  mode: SimulationMode;
+  failureStatusCode?: number;
+  forcedLatencyMs?: number;
+  durationMinutes?: number;
+}
+
+export interface SimulationResponse {
+  endpointId: string;
+  mode: SimulationMode;
+  appliedAtIso: string;
+  expiresAtIso: string | null;
 }
 
 export interface Organization {
@@ -58,7 +101,10 @@ export interface Endpoint {
   checkRegions: MonitoringRegion[];
   regionFailures: Partial<Record<MonitoringRegion, number>>;
   slaTargetPct: number;
-  simulation?: FailureSimulation;
+  latencyThresholdMs?: number;
+  failureRateThresholdPct?: number;
+  regionCircuitState?: Partial<Record<MonitoringRegion, RegionCircuitState>>;
+  simulation?: SimulationState;
 }
 
 export interface ProbeResult {
@@ -70,7 +116,9 @@ export interface ProbeResult {
   latencyMs?: number;
   ok: boolean;
   errorType?: string;
+  classification?: FailureClassification;
   simulated?: boolean;
+  traceId?: string;
   expiresAt: number;
 }
 
@@ -89,8 +137,11 @@ export interface Incident {
 export interface AlertChannel {
   orgId: string;
   channelId: string;
+  name?: string;
   type: ChannelType;
   target: string;
+  events?: AlertEvent[];
+  secretHeaderName?: string;
   verified: boolean;
   muted: boolean;
   createdAt: string;
@@ -107,12 +158,19 @@ export interface EndpointMetrics {
   endpointId: string;
   window: MetricsWindow;
   uptimePct: number;
+  failureRatePct: number;
   checks: number;
   success: number;
   failure: number;
   latency: LatencyStats;
   slaTargetPct: number;
   slaMet: boolean;
+  burnRate: number;
+  burnRateAlert: boolean;
+  latencyThresholdMs?: number;
+  latencyThresholdBreached?: boolean;
+  failureRateThresholdPct?: number;
+  failureRateThresholdBreached?: boolean;
   errorBudgetRemainingPct: number;
   byRegion: Array<{
     region: MonitoringRegion;
@@ -125,13 +183,83 @@ export interface EndpointMetrics {
 export interface EndpointSlaReport {
   endpointId: string;
   window: MetricsWindow;
-  uptimePct: number;
+  periodStartIso: string;
+  periodEndIso: string;
+  targetSlaPct: number;
+  achievedSlaPct: number | null;
+  errorBudgetMinutes: number;
+  errorBudgetRemainingMinutes: number;
+  burnRate: number;
+  burnRateAlert: boolean;
+  totalChecks: number;
+  failedChecks: number;
+}
+
+export interface IncidentTimelineEvent {
+  ts: string;
+  type:
+    | "INCIDENT_OPENED"
+    | "INCIDENT_RESOLVED"
+    | "PROBE_FAILED"
+    | "PROBE_RECOVERED"
+    | "ALERT_SENT";
+  message: string;
+  region?: MonitoringRegion;
+  statusCode?: number;
+  latencyMs?: number;
+  errorType?: string;
+  channel?: ChannelType;
+  correlationId?: string;
+}
+
+export interface IncidentTimeline {
+  incidentId: string;
+  orgId: string;
+  endpointId: string;
+  region?: MonitoringRegion;
+  state: IncidentState;
+  openedAt: string;
+  resolvedAt?: string;
+  events: IncidentTimelineEvent[];
+}
+
+export interface OrgAiEndpointAnomaly {
+  endpointId: string;
+  endpointName: string;
+  type: AiAnomalyType;
+  severity: AiAnomalySeverity;
+  message: string;
   checks: number;
-  failures: number;
-  slaTargetPct: number;
-  slaMet: boolean;
-  errorBudgetRemainingPct: number;
-  remainingDowntimeMinutes: number;
+  failureRatePct: number;
+  burnRate: number;
+  avgLatencyMs: number;
+  p95LatencyMs: number;
+}
+
+export interface OrgAiEndpointRisk {
+  endpointId: string;
+  endpointName: string;
+  riskScore: number;
+  reasons: string[];
+}
+
+export interface OrgAiInsights {
+  orgId: string;
+  window: MetricsWindow;
+  model: string;
+  generatedAt: string;
+  riskLevel: AiRiskLevel;
+  summary: string;
+  totals: {
+    endpoints: number;
+    checks: number;
+    failedChecks: number;
+    failureRatePct: number;
+    avgBurnRate: number;
+  };
+  anomalies: OrgAiEndpointAnomaly[];
+  recommendations: string[];
+  topAtRiskEndpoints: OrgAiEndpointRisk[];
 }
 
 export interface DashboardSummary {
@@ -143,7 +271,11 @@ export interface DashboardSummary {
   downEndpoints: number;
   pausedEndpoints: number;
   uptimePct: number;
+  failureRatePct: number;
+  burnRate: number;
+  burnRateAlert: boolean;
   sparkline: Array<{ t: string; uptimePct: number }>;
+  burnRateSparkline: Array<{ t: string; burnRate: number }>;
 }
 
 export interface PaginationCursor {

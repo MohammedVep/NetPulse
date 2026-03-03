@@ -12,7 +12,77 @@ export const monitoringRegionSchema = z.enum([
   "ap-southeast-1"
 ]);
 export const channelTypeSchema = z.enum(["EMAIL", "SLACK", "WEBHOOK"]);
-export const failureSimulationModeSchema = z.enum(["NONE", "FORCE_FAIL", "FLAKY", "LATENCY_SPIKE"]);
+export const alertEventSchema = z.enum([
+  "INCIDENT_OPEN",
+  "INCIDENT_RESOLVED",
+  "SLO_BURN_RATE",
+  "LATENCY_BREACH",
+  "FAILURE_RATE_BREACH"
+]);
+export const failureSimulationModeSchema = z.enum(["FORCE_FAIL", "FORCE_DEGRADED"]);
+
+function isPrivateIpv4(hostname: string): boolean {
+  const match = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (!match) {
+    return false;
+  }
+
+  const octets = match.slice(1).map((value) => Number(value));
+  if (octets.some((value) => Number.isNaN(value) || value < 0 || value > 255)) {
+    return false;
+  }
+
+  const a = octets[0] ?? -1;
+  const b = octets[1] ?? -1;
+  return (
+    a === 10 ||
+    a === 127 ||
+    a === 0 ||
+    (a === 169 && b === 254) ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168)
+  );
+}
+
+function isPrivateIpv6(hostname: string): boolean {
+  const normalized = hostname.toLowerCase();
+  return normalized === "::1" || normalized.startsWith("fc") || normalized.startsWith("fd") || normalized.startsWith("fe80:");
+}
+
+const httpsPublicUrlSchema = z.string().url().superRefine((value, context) => {
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Invalid URL"
+    });
+    return;
+  }
+
+  if (parsed.protocol !== "https:") {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "URL must use HTTPS"
+    });
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+  if (hostname === "localhost" || hostname.endsWith(".localhost") || hostname.endsWith(".local")) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Localhost URLs are not allowed"
+    });
+  }
+
+  if (isPrivateIpv4(hostname) || isPrivateIpv6(hostname)) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Private IP addresses are not allowed"
+    });
+  }
+});
 
 export const createOrganizationSchema = z.object({
   name: z.string().min(3).max(80)
@@ -37,7 +107,9 @@ export const createEndpointSchema = z.object({
     .max(4)
     .default(["us-east-1"])
     .refine((regions) => new Set(regions).size === regions.length, "Regions must be unique"),
-  slaTargetPct: z.number().min(90).max(100).default(99.9)
+  slaTargetPct: z.number().min(90).max(100).default(99.9),
+  latencyThresholdMs: z.number().int().min(100).max(120000).default(2000),
+  failureRateThresholdPct: z.number().min(1).max(100).default(5)
 });
 
 export const updateEndpointSchema = z.object({
@@ -52,7 +124,9 @@ export const updateEndpointSchema = z.object({
     .max(4)
     .refine((regions) => new Set(regions).size === regions.length, "Regions must be unique")
     .optional(),
-  slaTargetPct: z.number().min(90).max(100).optional()
+  slaTargetPct: z.number().min(90).max(100).optional(),
+  latencyThresholdMs: z.number().int().min(100).max(120000).optional(),
+  failureRateThresholdPct: z.number().min(1).max(100).optional()
 });
 
 export const checksQuerySchema = z.object({
@@ -85,15 +159,39 @@ export const emailChannelSchema = z.object({
 
 export const slackChannelSchema = z.object({
   orgId: z.string().min(1),
-  webhookUrl: z.string().url()
+  webhookUrl: httpsPublicUrlSchema
 });
 
-export const webhookChannelSchema = z.object({
-  orgId: z.string().min(1),
-  webhookUrl: z.string().url()
-});
+export const webhookChannelSchema = z
+  .object({
+    orgId: z.string().min(1),
+    name: z.string().min(1).max(80),
+    url: httpsPublicUrlSchema,
+    events: z
+      .array(alertEventSchema)
+      .min(1)
+      .max(5)
+      .default(["INCIDENT_OPEN", "INCIDENT_RESOLVED"])
+      .refine((events) => new Set(events).size === events.length, "Events must be unique"),
+    secretHeaderName: z.string().min(1).max(128).optional(),
+    secretHeaderValue: z.string().min(1).max(512).optional()
+  })
+  .superRefine((value, context) => {
+    if (Boolean(value.secretHeaderName) !== Boolean(value.secretHeaderValue)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "secretHeaderName and secretHeaderValue must be provided together",
+        path: ["secretHeaderName"]
+      });
+    }
+  });
 
 export const dashboardSummaryQuerySchema = z.object({
+  orgId: z.string().min(1),
+  window: metricsWindowSchema
+});
+
+export const aiInsightsQuerySchema = z.object({
   orgId: z.string().min(1),
   window: metricsWindowSchema
 });
@@ -102,27 +200,42 @@ export const endpointSlaQuerySchema = z.object({
   window: metricsWindowSchema
 });
 
+export const incidentTimelineQuerySchema = z.object({
+  limit: z.coerce.number().int().min(5).max(500).optional()
+});
+
 export const failureSimulationSchema = z
   .object({
-    mode: z.enum(["FORCE_FAIL", "FLAKY", "LATENCY_SPIKE"]),
-    until: z.string().datetime().optional(),
-    failureRatePct: z.number().int().min(1).max(100).optional(),
-    extraLatencyMs: z.number().int().min(1).max(60000).optional()
+    mode: z.enum(["FORCE_FAIL", "FORCE_DEGRADED", "CLEAR"]),
+    failureStatusCode: z.number().int().min(100).max(599).optional(),
+    forcedLatencyMs: z.number().int().min(1).max(60000).optional(),
+    durationMinutes: z.number().int().min(1).max(24 * 60).optional()
   })
   .superRefine((value, context) => {
-    if (value.mode === "FLAKY" && typeof value.failureRatePct !== "number") {
+    if (value.mode === "CLEAR") {
+      if (value.failureStatusCode !== undefined || value.forcedLatencyMs !== undefined || value.durationMinutes !== undefined) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "CLEAR simulation does not accept extra fields",
+          path: ["mode"]
+        });
+      }
+      return;
+    }
+
+    if (value.mode === "FORCE_DEGRADED" && value.failureStatusCode !== undefined) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "failureRatePct is required for FLAKY simulation",
-        path: ["failureRatePct"]
+        message: "failureStatusCode is not supported for FORCE_DEGRADED",
+        path: ["failureStatusCode"]
       });
     }
 
-    if (value.mode === "LATENCY_SPIKE" && typeof value.extraLatencyMs !== "number") {
+    if (value.mode === "FORCE_FAIL" && value.forcedLatencyMs !== undefined) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "extraLatencyMs is required for LATENCY_SPIKE simulation",
-        path: ["extraLatencyMs"]
+        message: "forcedLatencyMs is not supported for FORCE_FAIL",
+        path: ["forcedLatencyMs"]
       });
     }
   });

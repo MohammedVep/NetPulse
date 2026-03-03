@@ -125,6 +125,8 @@ Deploy with:
     - `NEXT_PUBLIC_TEST_SLACK_WEBHOOK_URL`
     - `NEXT_PUBLIC_TEST_WEBHOOK_URL`
     - `NEXT_PUBLIC_SHOW_TESTING_HINTS=true`
+- Apply paid Webhook.site URLs end-to-end (Amplify env + local drill helper + optional release):
+  - `./scripts/apply-paid-webhooksite.sh --slack-url <paid-url> --webhook-url <paid-url> --env prod --profile netpulse-root`
 - Migrate away from root credentials to IAM user + role-assumed CDK deploy flow:
   - `./scripts/setup-iam-deployer.sh --bootstrap-profile netpulse-root --region us-east-1`
   - This script also patches the CDK deploy role to chain-assume file/image/lookup bootstrap roles, which is required for asset publishing with `netpulse-dev`.

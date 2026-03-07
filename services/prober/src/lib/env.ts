@@ -12,5 +12,7 @@ export const env = {
   monthlyReportsBucket: process.env.MONTHLY_REPORTS_BUCKET ?? "",
   websocketEndpoint: process.env.WEBSOCKET_ENDPOINT ?? "",
   emailTopicArn: process.env.EMAIL_TOPIC_ARN ?? "",
-  region: process.env.AWS_REGION ?? "us-east-1"
+  region: process.env.AWS_REGION ?? "us-east-1",
+  schedulerMaxJobsPerCycle: Number(process.env.SCHEDULER_MAX_JOBS_PER_CYCLE ?? "60000"),
+  schedulerMaxEndpointsPerOrg: Number(process.env.SCHEDULER_MAX_ENDPOINTS_PER_ORG ?? "2000")
 };

@@ -1,0 +1,235 @@
+{
+  "runId": "drill-2026-03-03T12-12-19-299Z",
+  "startedAt": "2026-03-03T12:11:03.730Z",
+  "endedAt": "2026-03-03T12:12:19.299Z",
+  "orgId": "org_40bef8ad-0200-45bc-aff6-6f901b1293f6",
+  "endpointId": "org_40bef8ad-0200-45bc-aff6-6f901b1293f6__ep_79441df6-493e-4975-82b0-23818f3acc27",
+  "incidentOpenTs": "2026-03-03T12:11:15.792Z",
+  "incidentResolvedTs": "2026-03-03T12:11:46.308Z",
+  "fanoutResults": {
+    "open": {
+      "channels": [
+        {
+          "channel": "EMAIL",
+          "correlationId": "b03ea40c-d78a-49f2-a30c-36b49ebcdf4d",
+          "statusCode": 200
+        },
+        {
+          "channel": "SLACK",
+          "correlationId": "b03ea40c-d78a-49f2-a30c-36b49ebcdf4d",
+          "statusCode": 200
+        },
+        {
+          "channel": "WEBHOOK",
+          "correlationId": "b03ea40c-d78a-49f2-a30c-36b49ebcdf4d",
+          "statusCode": 200
+        }
+      ],
+      "correlationIdAligned": true
+    },
+    "resolved": {
+      "channels": [
+        {
+          "channel": "EMAIL",
+          "correlationId": "e04faa16-c094-4ffc-af2a-daff8b3031fb",
+          "statusCode": 200
+        },
+        {
+          "channel": "SLACK",
+          "correlationId": "e04faa16-c094-4ffc-af2a-daff8b3031fb",
+          "statusCode": 200
+        },
+        {
+          "channel": "WEBHOOK",
+          "correlationId": "e04faa16-c094-4ffc-af2a-daff8b3031fb",
+          "statusCode": 200
+        }
+      ],
+      "correlationIdAligned": true
+    },
+    "derived": {
+      "failureRateBreach": [
+        {
+          "channel": "EMAIL",
+          "correlationId": "46565934-ad48-4b82-b432-7bf18d3f2773",
+          "statusCode": 200
+        },
+        {
+          "channel": "SLACK",
+          "correlationId": "46565934-ad48-4b82-b432-7bf18d3f2773",
+          "statusCode": 200
+        },
+        {
+          "channel": "WEBHOOK",
+          "correlationId": "46565934-ad48-4b82-b432-7bf18d3f2773",
+          "statusCode": 200
+        }
+      ],
+      "burnRate": [
+        {
+          "channel": "EMAIL",
+          "correlationId": "1b4cd464-4fe8-4c1f-85d1-2c3ce1fd973a",
+          "statusCode": 200
+        },
+        {
+          "channel": "SLACK",
+          "correlationId": "1b4cd464-4fe8-4c1f-85d1-2c3ce1fd973a",
+          "statusCode": 200
+        },
+        {
+          "channel": "WEBHOOK",
+          "correlationId": "1b4cd464-4fe8-4c1f-85d1-2c3ce1fd973a",
+          "statusCode": 200
+        }
+      ],
+      "latencyBreach": [
+        {
+          "channel": "EMAIL",
+          "correlationId": "a87e6a80-3254-433c-8c18-fc7ab61d6da9",
+          "statusCode": 200
+        },
+        {
+          "channel": "SLACK",
+          "correlationId": "a87e6a80-3254-433c-8c18-fc7ab61d6da9",
+          "statusCode": 200
+        },
+        {
+          "channel": "WEBHOOK",
+          "correlationId": "a87e6a80-3254-433c-8c18-fc7ab61d6da9",
+          "statusCode": 200
+        }
+      ]
+    }
+  },
+  "timeline": {
+    "incidentId": "inc_2d8588ad-f3a4-4e52-9ed4-c0633a4fe3d5",
+    "orgId": "org_40bef8ad-0200-45bc-aff6-6f901b1293f6",
+    "endpointId": "org_40bef8ad-0200-45bc-aff6-6f901b1293f6__ep_79441df6-493e-4975-82b0-23818f3acc27",
+    "region": "us-east-1",
+    "state": "RESOLVED",
+    "openedAt": "2026-03-03T12:11:15.792Z",
+    "resolvedAt": "2026-03-03T12:11:46.308Z",
+    "events": [
+      {
+        "ts": "2026-03-03T12:11:13.403Z",
+        "type": "PROBE_FAILED",
+        "message": "Probe failed from us-east-1 (SIMULATED_FORCE_FAIL)",
+        "region": "us-east-1",
+        "statusCode": 503,
+        "errorType": "SIMULATED_FORCE_FAIL"
+      },
+      {
+        "ts": "2026-03-03T12:11:15.792Z",
+        "type": "INCIDENT_OPENED",
+        "message": "Incident opened after consecutive failures",
+        "region": "us-east-1"
+      },
+      {
+        "ts": "2026-03-03T12:11:15.792Z",
+        "type": "ALERT_SENT",
+        "message": "Alert fanout triggered for incident open",
+        "region": "us-east-1"
+      },
+      {
+        "ts": "2026-03-03T12:11:15.792Z",
+        "type": "PROBE_FAILED",
+        "message": "Probe failed from us-east-1 (SIMULATED_FORCE_FAIL)",
+        "region": "us-east-1",
+        "statusCode": 503,
+        "errorType": "SIMULATED_FORCE_FAIL"
+      },
+      {
+        "ts": "2026-03-03T12:11:29.147Z",
+        "type": "PROBE_FAILED",
+        "message": "Probe failed from us-east-1 (SIMULATED_FORCE_FAIL)",
+        "region": "us-east-1",
+        "statusCode": 503,
+        "errorType": "SIMULATED_FORCE_FAIL"
+      },
+      {
+        "ts": "2026-03-03T12:11:46.308Z",
+        "type": "PROBE_RECOVERED",
+        "message": "Probe recovered from us-east-1 (200)",
+        "region": "us-east-1",
+        "statusCode": 200,
+        "latencyMs": 136
+      },
+      {
+        "ts": "2026-03-03T12:11:46.308Z",
+        "type": "INCIDENT_RESOLVED",
+        "message": "Incident resolved on first successful probe",
+        "region": "us-east-1"
+      },
+      {
+        "ts": "2026-03-03T12:11:46.308Z",
+        "type": "ALERT_SENT",
+        "message": "Alert fanout triggered for incident resolve",
+        "region": "us-east-1"
+      },
+      {
+        "ts": "2026-03-03T12:12:01.757Z",
+        "type": "PROBE_RECOVERED",
+        "message": "Probe recovered from us-east-1 (200)",
+        "region": "us-east-1",
+        "statusCode": 200,
+        "latencyMs": 5064,
+        "errorType": "SIMULATED_FORCE_DEGRADED"
+      },
+      {
+        "ts": "2026-03-03T12:12:04.068Z",
+        "type": "PROBE_RECOVERED",
+        "message": "Probe recovered from us-east-1 (200)",
+        "region": "us-east-1",
+        "statusCode": 200,
+        "latencyMs": 5041,
+        "errorType": "SIMULATED_FORCE_DEGRADED"
+      },
+      {
+        "ts": "2026-03-03T12:12:07.091Z",
+        "type": "PROBE_RECOVERED",
+        "message": "Probe recovered from us-east-1 (200)",
+        "region": "us-east-1",
+        "statusCode": 200,
+        "latencyMs": 5053,
+        "errorType": "SIMULATED_FORCE_DEGRADED"
+      },
+      {
+        "ts": "2026-03-03T12:12:16.321Z",
+        "type": "PROBE_RECOVERED",
+        "message": "Probe recovered from us-east-1 (200)",
+        "region": "us-east-1",
+        "statusCode": 200,
+        "latencyMs": 49
+      }
+    ]
+  },
+  "slaBefore": {
+    "endpointId": "org_40bef8ad-0200-45bc-aff6-6f901b1293f6__ep_79441df6-493e-4975-82b0-23818f3acc27",
+    "window": "24h",
+    "periodStartIso": "2026-03-02T12:11:12.161Z",
+    "periodEndIso": "2026-03-03T12:11:12.161Z",
+    "targetSlaPct": 99.99,
+    "achievedSlaPct": null,
+    "errorBudgetMinutes": 0.14,
+    "errorBudgetRemainingMinutes": 0.14,
+    "burnRate": 0,
+    "burnRateAlert": false,
+    "totalChecks": 0,
+    "failedChecks": 0
+  },
+  "slaAfter": {
+    "endpointId": "org_40bef8ad-0200-45bc-aff6-6f901b1293f6__ep_79441df6-493e-4975-82b0-23818f3acc27",
+    "window": "24h",
+    "periodStartIso": "2026-03-02T12:12:19.281Z",
+    "periodEndIso": "2026-03-03T12:12:19.281Z",
+    "targetSlaPct": 99.99,
+    "achievedSlaPct": 62.5,
+    "errorBudgetMinutes": 0.14,
+    "errorBudgetRemainingMinutes": 0,
+    "burnRate": 3750,
+    "burnRateAlert": true,
+    "totalChecks": 8,
+    "failedChecks": 3
+  },
+  "pass": true
+}

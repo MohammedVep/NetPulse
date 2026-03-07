@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { ScheduledEvent } from "aws-lambda";
 import { QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { SendMessageBatchCommand, SQSClient } from "@aws-sdk/client-sqs";
@@ -84,31 +85,79 @@ function resolveRegions(endpoint: Endpoint): MonitoringRegion[] {
 export async function handler(_event: ScheduledEvent) {
   const organizations = await listOrganizations();
   let queued = 0;
+  let truncatedOrgs = 0;
+  let truncatedEndpoints = 0;
 
   for (const org of organizations) {
     const endpoints = await listActiveEndpoints(org.orgId);
+    const boundedEndpoints = endpoints.slice(0, env.schedulerMaxEndpointsPerOrg);
+    if (boundedEndpoints.length < endpoints.length) {
+      truncatedOrgs += 1;
+      truncatedEndpoints += endpoints.length - boundedEndpoints.length;
+      console.warn(
+        JSON.stringify({
+          event: "scheduler_org_endpoint_limit_applied",
+          orgId: org.orgId,
+          configuredMax: env.schedulerMaxEndpointsPerOrg,
+          totalEndpoints: endpoints.length,
+          scheduledEndpoints: boundedEndpoints.length
+        })
+      );
+    }
+
     const jobs: ProbeJob[] = [];
 
-    for (const endpoint of endpoints) {
+    for (const endpoint of boundedEndpoints) {
       for (const region of resolveRegions(endpoint)) {
+        if (queued + jobs.length >= env.schedulerMaxJobsPerCycle) {
+          break;
+        }
         jobs.push({
           orgId: endpoint.orgId,
           endpointId: endpoint.endpointId,
           url: endpoint.url,
           timeoutMs: endpoint.timeoutMs,
           region,
+          traceId: randomUUID(),
           ...(endpoint.simulation ? { simulation: endpoint.simulation } : {})
         });
+      }
+
+      if (queued + jobs.length >= env.schedulerMaxJobsPerCycle) {
+        break;
       }
     }
 
     await enqueueProbeJobs(jobs);
     queued += jobs.length;
+
+    if (queued >= env.schedulerMaxJobsPerCycle) {
+      console.warn(
+        JSON.stringify({
+          event: "scheduler_cycle_cap_reached",
+          configuredMax: env.schedulerMaxJobsPerCycle,
+          queued
+        })
+      );
+      break;
+    }
   }
+
+  console.log(
+    JSON.stringify({
+      event: "scheduler_cycle_completed",
+      queued,
+      organizations: organizations.length,
+      truncatedOrgs,
+      truncatedEndpoints
+    })
+  );
 
   return {
     queued,
     organizations: organizations.length,
+    truncatedOrgs,
+    truncatedEndpoints,
     timestamp: new Date().toISOString()
   };
 }

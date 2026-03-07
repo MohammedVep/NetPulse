@@ -1,7 +1,7 @@
 import path from "node:path";
 import { Duration, RemovalPolicy, Stack, type StackProps } from "aws-cdk-lib";
 import { AttributeType, BillingMode, ProjectionType, Table } from "aws-cdk-lib/aws-dynamodb";
-import { Runtime } from "aws-cdk-lib/aws-lambda";
+import { Runtime, Tracing } from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import {
   HttpApi,
@@ -14,15 +14,16 @@ import {
 import { HttpLambdaIntegration, WebSocketLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import { HttpJwtAuthorizer } from "aws-cdk-lib/aws-apigatewayv2-authorizers";
 import * as cognito from "aws-cdk-lib/aws-cognito";
+import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import { Bucket, BucketEncryption, StorageClass } from "aws-cdk-lib/aws-s3";
 import { Queue } from "aws-cdk-lib/aws-sqs";
 import { Rule, Schedule } from "aws-cdk-lib/aws-events";
 import { LambdaFunction as LambdaTarget } from "aws-cdk-lib/aws-events-targets";
 import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import { Topic } from "aws-cdk-lib/aws-sns";
-import { RetentionDays } from "aws-cdk-lib/aws-logs";
+import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Alarm, ComparisonOperator, TreatMissingData } from "aws-cdk-lib/aws-cloudwatch";
-import { PolicyStatement } from "aws-cdk-lib/aws-iam";
+import { ManagedPolicy, PolicyStatement, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { Construct } from "constructs";
 
 interface NetPulseStackProps extends StackProps {
@@ -126,6 +127,15 @@ export class NetPulseStack extends Stack {
       pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true }
     });
 
+    const rateLimitsTable = new Table(this, "RateLimitsTable", {
+      tableName: `np_rate_limits_${suffix}`,
+      partitionKey: { name: "limitKey", type: AttributeType.STRING },
+      timeToLiveAttribute: "expiresAt",
+      billingMode: BillingMode.PAY_PER_REQUEST,
+      removalPolicy: RemovalPolicy.RETAIN,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true }
+    });
+
     const reportsBucket = new Bucket(this, "ReportsBucket", {
       bucketName: `np-reports-${suffix}-${this.account}`,
       encryption: BucketEncryption.S3_MANAGED,
@@ -162,15 +172,37 @@ export class NetPulseStack extends Stack {
       visibilityTimeout: Duration.seconds(120)
     });
 
+    const apiGatewayCloudWatchLogsRole = new Role(this, "ApiGatewayCloudWatchLogsRole", {
+      assumedBy: new ServicePrincipal("apigateway.amazonaws.com"),
+      managedPolicies: [
+        ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonAPIGatewayPushToCloudWatchLogs")
+      ]
+    });
+
+    const apiGatewayAccountSettings = new apigateway.CfnAccount(this, "ApiGatewayAccountSettings", {
+      cloudWatchRoleArn: apiGatewayCloudWatchLogsRole.roleArn
+    });
+
     const emailTopic = new Topic(this, "EmailAlertsTopic", {
       topicName: `np-alerts-email-${suffix}`
     });
 
     const userPool = new cognito.UserPool(this, "NetPulseUserPool", {
       userPoolName: `np-users-${suffix}`,
-      selfSignUpEnabled: false,
+      selfSignUpEnabled: true,
       signInAliases: {
         email: true
+      },
+      autoVerify: {
+        email: true
+      },
+      accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
+      passwordPolicy: {
+        minLength: 10,
+        requireDigits: true,
+        requireLowercase: true,
+        requireUppercase: true,
+        requireSymbols: true
       },
       standardAttributes: {
         email: {
@@ -185,10 +217,11 @@ export class NetPulseStack extends Stack {
       authFlows: {
         userPassword: true,
         userSrp: true
-      }
+      },
+      preventUserExistenceErrors: true
     });
 
-    const apiRuntime = Runtime.NODEJS_20_X;
+    const apiRuntime = Runtime.NODEJS_24_X;
     const repositoryRoot = path.resolve(process.cwd(), "../..");
     const depsLockFilePath = path.join(repositoryRoot, "package-lock.json");
 
@@ -202,11 +235,11 @@ export class NetPulseStack extends Stack {
       bundling: {
         minify: true,
         sourceMap: true,
-        target: "node20"
+        target: "node24"
       },
       timeout: Duration.seconds(20),
       memorySize: 512,
-      logRetention: RetentionDays.THREE_MONTHS,
+      tracing: Tracing.ACTIVE,
       environment: {
         ORGANIZATIONS_TABLE: organizationsTable.tableName,
         MEMBERSHIPS_TABLE: membershipsTable.tableName,
@@ -215,8 +248,12 @@ export class NetPulseStack extends Stack {
         INCIDENTS_TABLE: incidentsTable.tableName,
         WS_CONNECTIONS_TABLE: wsConnectionsTable.tableName,
         ALERT_CHANNELS_TABLE: alertChannelsTable.tableName,
+        RATE_LIMITS_TABLE: rateLimitsTable.tableName,
+        RATE_LIMIT_WINDOW_SECONDS: "60",
+        RATE_LIMIT_PUBLIC_RPM: "60",
+        RATE_LIMIT_AUTH_RPM: suffix === "prod" ? "600" : "300",
         ENDPOINT_LIMIT_DEFAULT: "2000",
-        PUBLIC_DEMO_ENABLED: "true",
+        PUBLIC_DEMO_ENABLED: suffix === "dev" ? "true" : "false",
         PUBLIC_DEMO_ORG_ID: "org_demo_public"
       }
     });
@@ -231,11 +268,11 @@ export class NetPulseStack extends Stack {
       bundling: {
         minify: true,
         sourceMap: true,
-        target: "node20"
+        target: "node24"
       },
       timeout: Duration.seconds(20),
       memorySize: 512,
-      logRetention: RetentionDays.THREE_MONTHS,
+      tracing: Tracing.ACTIVE,
       environment: {
         MEMBERSHIPS_TABLE: membershipsTable.tableName,
         WS_CONNECTIONS_TABLE: wsConnectionsTable.tableName,
@@ -255,15 +292,17 @@ export class NetPulseStack extends Stack {
       bundling: {
         minify: true,
         sourceMap: true,
-        target: "node20"
+        target: "node24"
       },
       timeout: Duration.seconds(60),
       memorySize: 512,
-      logRetention: RetentionDays.THREE_MONTHS,
+      tracing: Tracing.ACTIVE,
       environment: {
         ORGANIZATIONS_TABLE: organizationsTable.tableName,
         ENDPOINTS_TABLE: endpointsTable.tableName,
-        PROBE_JOBS_QUEUE_URL: probeJobsQueue.queueUrl
+        PROBE_JOBS_QUEUE_URL: probeJobsQueue.queueUrl,
+        SCHEDULER_MAX_JOBS_PER_CYCLE: "60000",
+        SCHEDULER_MAX_ENDPOINTS_PER_ORG: "2000"
       }
     });
 
@@ -277,11 +316,11 @@ export class NetPulseStack extends Stack {
       bundling: {
         minify: true,
         sourceMap: true,
-        target: "node20"
+        target: "node24"
       },
       timeout: Duration.seconds(60),
       memorySize: 1024,
-      logRetention: RetentionDays.THREE_MONTHS,
+      tracing: Tracing.ACTIVE,
       environment: {
         ENDPOINTS_TABLE: endpointsTable.tableName,
         PROBE_RESULTS_TABLE: probeResultsTable.tableName,
@@ -301,11 +340,11 @@ export class NetPulseStack extends Stack {
       bundling: {
         minify: true,
         sourceMap: true,
-        target: "node20"
+        target: "node24"
       },
       timeout: Duration.seconds(30),
       memorySize: 512,
-      logRetention: RetentionDays.THREE_MONTHS,
+      tracing: Tracing.ACTIVE,
       environment: {
         ALERT_CHANNELS_TABLE: alertChannelsTable.tableName,
         ALERT_DEDUPE_TABLE: alertDedupeTable.tableName,
@@ -323,11 +362,11 @@ export class NetPulseStack extends Stack {
       bundling: {
         minify: true,
         sourceMap: true,
-        target: "node20"
+        target: "node24"
       },
       timeout: Duration.seconds(30),
       memorySize: 512,
-      logRetention: RetentionDays.THREE_MONTHS,
+      tracing: Tracing.ACTIVE,
       environment: {
         WS_CONNECTIONS_TABLE: wsConnectionsTable.tableName
       }
@@ -343,11 +382,11 @@ export class NetPulseStack extends Stack {
       bundling: {
         minify: true,
         sourceMap: true,
-        target: "node20"
+        target: "node24"
       },
       timeout: Duration.seconds(300),
       memorySize: 1024,
-      logRetention: RetentionDays.THREE_MONTHS,
+      tracing: Tracing.ACTIVE,
       environment: {
         ORGANIZATIONS_TABLE: organizationsTable.tableName,
         PROBE_RESULTS_TABLE: probeResultsTable.tableName,
@@ -363,6 +402,7 @@ export class NetPulseStack extends Stack {
     wsConnectionsTable.grantReadWriteData(apiWebsocket);
     membershipsTable.grantReadData(apiWebsocket);
     alertChannelsTable.grantReadWriteData(apiRest);
+    rateLimitsTable.grantReadWriteData(apiRest);
     apiRest.addToRolePolicy(
       new PolicyStatement({
         actions: ["secretsmanager:CreateSecret", "secretsmanager:TagResource"],
@@ -431,12 +471,32 @@ export class NetPulseStack extends Stack {
       }
     });
 
+    const httpApiAccessLogGroup = new LogGroup(this, "HttpApiAccessLogs", {
+      logGroupName: `/aws/apigateway/np-http-${suffix}`,
+      retention: RetentionDays.THREE_MONTHS,
+      removalPolicy: RemovalPolicy.RETAIN
+    });
+
     const defaultHttpStage = httpApi.defaultStage?.node.defaultChild as CfnStage | undefined;
     if (defaultHttpStage) {
       defaultHttpStage.defaultRouteSettings = {
         throttlingBurstLimit: 200,
         throttlingRateLimit: 100
       };
+      defaultHttpStage.accessLogSettings = {
+        destinationArn: httpApiAccessLogGroup.logGroupArn,
+        format: JSON.stringify({
+          requestId: "$context.requestId",
+          ip: "$context.identity.sourceIp",
+          requestTime: "$context.requestTime",
+          routeKey: "$context.routeKey",
+          status: "$context.status",
+          protocol: "$context.protocol",
+          responseLength: "$context.responseLength",
+          integrationError: "$context.integrationErrorMessage"
+        })
+      };
+      defaultHttpStage.node.addDependency(apiGatewayAccountSettings);
     }
 
     const jwtAuthorizer = new HttpJwtAuthorizer(
@@ -489,6 +549,29 @@ export class NetPulseStack extends Stack {
       autoDeploy: true
     });
 
+    const wsApiAccessLogGroup = new LogGroup(this, "WsApiAccessLogs", {
+      logGroupName: `/aws/apigateway/np-ws-${suffix}`,
+      retention: RetentionDays.THREE_MONTHS,
+      removalPolicy: RemovalPolicy.RETAIN
+    });
+
+    const wsStageResource = wsStage.node.defaultChild as CfnStage | undefined;
+    if (wsStageResource) {
+      wsStageResource.accessLogSettings = {
+        destinationArn: wsApiAccessLogGroup.logGroupArn,
+        format: JSON.stringify({
+          requestId: "$context.requestId",
+          ip: "$context.identity.sourceIp",
+          requestTime: "$context.requestTime",
+          routeKey: "$context.routeKey",
+          status: "$context.status",
+          eventType: "$context.eventType",
+          integrationError: "$context.integrationErrorMessage"
+        })
+      };
+      wsStageResource.node.addDependency(apiGatewayAccountSettings);
+    }
+
     wsBroadcaster.addEnvironment("WEBSOCKET_ENDPOINT", wsStage.url.replace("wss://", "https://"));
     wsApi.grantManageConnections(wsBroadcaster);
 
@@ -510,6 +593,22 @@ export class NetPulseStack extends Stack {
 
     new Alarm(this, "ApiErrorsAlarm", {
       metric: apiRest.metricErrors(),
+      threshold: 1,
+      evaluationPeriods: 1,
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      treatMissingData: TreatMissingData.NOT_BREACHING
+    });
+
+    new Alarm(this, "ApiThrottlesAlarm", {
+      metric: apiRest.metricThrottles(),
+      threshold: 1,
+      evaluationPeriods: 1,
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      treatMissingData: TreatMissingData.NOT_BREACHING
+    });
+
+    new Alarm(this, "ProbeDlqDepthAlarm", {
+      metric: probeDlq.metricApproximateNumberOfMessagesVisible(),
       threshold: 1,
       evaluationPeriods: 1,
       comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,

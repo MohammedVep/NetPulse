@@ -35,6 +35,29 @@ Portfolio pitch: I built a distributed uptime monitoring system similar to Datad
 - API Gateway HTTP/WebSocket access logs with structured JSON fields in CloudWatch Logs.
 - Monthly compressed CSV + manifest export to S3 for each org.
 - Public demo read path at `/v1/public/*` for unauthenticated read-only portfolio access.
+- Endpoint metrics include `p50/p95/p99` latency percentiles.
+
+## Architecture signals
+
+System pipeline:
+
+```text
+Event Scheduler -> Queue -> Worker Pool -> Metrics Store -> Dashboard
+```
+
+How this is implemented:
+
+- Scale health checks:
+  - EventBridge invokes `scheduler` every 5 minutes.
+  - `scheduler` fans out endpoint-region jobs into SQS.
+  - `worker` Lambdas process jobs concurrently and can scale horizontally with queue depth.
+- Avoid duplicate alerts:
+  - `notifier` claims a dedupe slot in DynamoDB (`alertDedupeTable`) with a TTL window.
+  - duplicate notifications inside the dedupe window are dropped by conditional-write failure.
+- Partition data:
+  - probe results are written to DynamoDB with `probePk = orgId#endpointId` and sort key `timestampIso`.
+  - incidents are partitioned by endpoint (`incidentPk = orgId#endpointId`) and indexed by org/state for dashboard reads.
+  - endpoint records are partitioned by `orgId`, preserving tenant isolation and bounded org queries.
 
 ## API surface (`/v1`)
 

@@ -215,15 +215,23 @@ run_env_smoke() {
   json_request GET "$api_base/v1/endpoints/$endpoint_id/sla?window=24h" "$token"
   assert_status 200 "$env endpoint sla"
 
+  json_request POST "$api_base/v1/alert-channels/webhook" "$token" \
+    "{\"orgId\":\"$org_id\",\"name\":\"Smoke Webhook\",\"url\":\"https://example.com/netpulse-webhook\",\"events\":[\"INCIDENT_OPEN\",\"INCIDENT_RESOLVED\"]}"
+  assert_status 201 "$env webhook channel"
+
   json_request POST "$api_base/v1/endpoints/$endpoint_id/simulate" "$token" \
-    "{\"mode\":\"FLAKY\",\"failureRatePct\":35}"
+    "{\"mode\":\"FORCE_FAIL\",\"failureStatusCode\":503,\"durationMinutes\":5}"
   assert_status 200 "$env set simulation"
 
-  json_request DELETE "$api_base/v1/endpoints/$endpoint_id/simulate" "$token"
+  json_request POST "$api_base/v1/endpoints/$endpoint_id/simulate" "$token" \
+    "{\"mode\":\"CLEAR\"}"
   assert_status 200 "$env clear simulation"
 
   json_request GET "$api_base/v1/dashboard/summary?orgId=$org_id&window=24h" "$token"
   assert_status 200 "$env dashboard summary"
+
+  json_request GET "$api_base/v1/ai/insights?orgId=$org_id&window=24h" "$token"
+  assert_status 200 "$env ai insights"
 
   json_request GET "$api_base/v1/incidents?orgId=$org_id&status=open" "$token"
   assert_status 200 "$env incident list"

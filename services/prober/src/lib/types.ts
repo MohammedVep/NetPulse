@@ -1,6 +1,8 @@
 import type {
+  AlertEvent,
   EndpointStatus,
-  FailureSimulation,
+  FailureClassification,
+  SimulationState,
   IncidentState,
   MonitoringRegion
 } from "@netpulse/shared";
@@ -11,7 +13,8 @@ export interface ProbeJob {
   url: string;
   timeoutMs: number;
   region: MonitoringRegion;
-  simulation?: FailureSimulation;
+  traceId?: string;
+  simulation?: SimulationState;
 }
 
 export interface ProbeExecution {
@@ -19,9 +22,13 @@ export interface ProbeExecution {
   statusCode?: number;
   latencyMs?: number;
   errorType?: string;
+  classification?: FailureClassification;
   timestampIso: string;
   region: MonitoringRegion;
   simulated?: boolean;
+  simulationMode?: SimulationState["mode"];
+  traceId?: string;
+  attemptCount?: number;
 }
 
 export interface WsEvent {
@@ -48,6 +55,18 @@ export interface IncidentNotificationEvent {
   region?: MonitoringRegion;
   incidentId: string;
   state: IncidentState;
+  correlationId: string;
+  traceId?: string;
+  alertEvent?: AlertEvent;
+  message?: string;
+  metrics?: {
+    checks?: number;
+    failures?: number;
+    failureRatePct?: number;
+    avgLatencyMs?: number;
+    burnRate?: number;
+    threshold?: number;
+  };
   openedAt: string;
   resolvedAt?: string;
 }

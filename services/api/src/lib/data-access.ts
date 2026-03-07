@@ -8,6 +8,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { CreateSecretCommand, SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
 import {
+  aiInsightsQuerySchema,
   createEndpointSchema,
   createOrganizationSchema,
   dashboardSummaryQuerySchema,
@@ -25,10 +26,17 @@ import {
   type AlertChannel,
   type DashboardSummary,
   type Endpoint,
+  type FailureClassification,
+  type IncidentTimeline,
+  type IncidentTimelineEvent,
   type EndpointSlaReport,
   type EndpointMetrics,
-  type FailureSimulation,
+  type SimulationRequest,
+  type SimulationResponse,
+  type SimulationState,
+  type AlertEvent,
   type MonitoringRegion,
+  type OrgAiInsights,
   type EndpointProtocol,
   type EndpointStatus,
   type Incident,
@@ -37,6 +45,7 @@ import {
   type Organization,
   type ProbeResult
 } from "@netpulse/shared";
+import { buildOrgAiInsights, type EndpointAiSnapshot } from "./ai-insights.js";
 import { ddb } from "./db.js";
 import { decodeCursor, encodeCursor } from "./cursor.js";
 import { env } from "./env.js";
@@ -46,6 +55,9 @@ const INCIDENT_GSI = "org-state-index";
 const RETENTION_DAYS = 90;
 const DEFAULT_REGION: MonitoringRegion = "us-east-1";
 const DEFAULT_SLA_TARGET_PCT = 99.9;
+const DEFAULT_LATENCY_THRESHOLD_MS = 2000;
+const DEFAULT_FAILURE_RATE_THRESHOLD_PCT = 5;
+const BURN_RATE_ALERT_THRESHOLD = 2;
 const WINDOW_MINUTES: Record<MetricsWindow, number> = {
   "24h": 24 * 60,
   "7d": 7 * 24 * 60,
@@ -117,7 +129,7 @@ function maxFailures(regionFailures: Partial<Record<MonitoringRegion, number>>):
 function normalizeEndpoint(item: Endpoint): Endpoint {
   const checkRegions = uniqueRegions(item.checkRegions);
   const regionFailures = normalizeRegionFailures(item.regionFailures);
-  const simulation = item.simulation as FailureSimulation | undefined;
+  const simulation = item.simulation as SimulationState | undefined;
 
   return {
     ...item,
@@ -127,6 +139,16 @@ function normalizeEndpoint(item: Endpoint): Endpoint {
       typeof item.slaTargetPct === "number" && item.slaTargetPct >= 90 && item.slaTargetPct <= 100
         ? item.slaTargetPct
         : DEFAULT_SLA_TARGET_PCT,
+    latencyThresholdMs:
+      typeof item.latencyThresholdMs === "number" && item.latencyThresholdMs >= 100
+        ? item.latencyThresholdMs
+        : DEFAULT_LATENCY_THRESHOLD_MS,
+    failureRateThresholdPct:
+      typeof item.failureRateThresholdPct === "number" &&
+      item.failureRateThresholdPct >= 0 &&
+      item.failureRateThresholdPct <= 100
+        ? Number(item.failureRateThresholdPct.toFixed(2))
+        : DEFAULT_FAILURE_RATE_THRESHOLD_PCT,
     consecutiveFailures:
       typeof item.consecutiveFailures === "number" ? item.consecutiveFailures : maxFailures(regionFailures),
     ...(simulation ? { simulation } : {})
@@ -161,6 +183,49 @@ function getSlaStats(uptimePct: number, slaTargetPct: number): {
     slaMet: uptimePct >= slaTargetPct,
     errorBudgetRemainingPct: Number(remainingPct.toFixed(2))
   };
+}
+
+function calculateBurnRate(failureRatePct: number, slaTargetPct: number): number {
+  const errorBudgetFraction = Math.max(0, (100 - slaTargetPct) / 100);
+  const failureFraction = Math.max(0, failureRatePct / 100);
+
+  if (errorBudgetFraction === 0) {
+    return failureFraction > 0 ? 9999 : 0;
+  }
+
+  return Number((failureFraction / errorBudgetFraction).toFixed(2));
+}
+
+function classifyProbe(item: ProbeResult): FailureClassification {
+  if (item.errorType === "SIMULATED_FORCE_FAIL") {
+    return "SIMULATED_FORCE_FAIL";
+  }
+
+  if (item.errorType === "SIMULATED_FORCE_DEGRADED") {
+    return "SIMULATED_FORCE_DEGRADED";
+  }
+
+  if (item.errorType === "TIMEOUT") {
+    return "TIMEOUT";
+  }
+
+  if (item.errorType === "NETWORK") {
+    return "NETWORK";
+  }
+
+  if (item.errorType === "CIRCUIT_OPEN") {
+    return "CIRCUIT_OPEN";
+  }
+
+  const statusCode = item.statusCode ?? 0;
+  if (statusCode >= 500) {
+    return "HTTP_5XX";
+  }
+  if (statusCode >= 400) {
+    return "HTTP_4XX";
+  }
+
+  return "HTTP_2XX_3XX";
 }
 
 export async function createOrganization(input: unknown, identity: { userId: string; email: string }) {
@@ -310,7 +375,9 @@ export async function createEndpoint(input: unknown): Promise<Endpoint> {
     consecutiveFailures: 0,
     checkRegions,
     regionFailures: {},
-    slaTargetPct: payload.slaTargetPct
+    slaTargetPct: payload.slaTargetPct,
+    latencyThresholdMs: payload.latencyThresholdMs,
+    failureRateThresholdPct: payload.failureRateThresholdPct
   };
 
   await ddb.send(
@@ -400,6 +467,12 @@ export async function patchEndpoint(endpointId: string, input: unknown): Promise
   if (parsed.tags) setField("tags", parsed.tags);
   if (parsed.checkRegions) setField("checkRegions", uniqueRegions(parsed.checkRegions));
   if (typeof parsed.slaTargetPct === "number") setField("slaTargetPct", parsed.slaTargetPct);
+  if (typeof parsed.latencyThresholdMs === "number") {
+    setField("latencyThresholdMs", parsed.latencyThresholdMs);
+  }
+  if (typeof parsed.failureRateThresholdPct === "number") {
+    setField("failureRateThresholdPct", parsed.failureRateThresholdPct);
+  }
   if (typeof parsed.paused === "boolean") {
     setField("paused", parsed.paused);
     nextStatus = parsed.paused ? "PAUSED" : "DEGRADED";
@@ -483,19 +556,22 @@ export async function listChecks(
       };
 }
 
-function getWindowStart(window: MetricsWindow): string {
-  const now = new Date();
-  const value = new Date(now);
+function getWindowBounds(window: MetricsWindow): { fromIso: string; toIso: string } {
+  const end = new Date();
+  const start = new Date(end);
 
   if (window === "24h") {
-    value.setHours(now.getHours() - 24);
+    start.setHours(end.getHours() - 24);
   } else if (window === "7d") {
-    value.setDate(now.getDate() - 7);
+    start.setDate(end.getDate() - 7);
   } else {
-    value.setDate(now.getDate() - 30);
+    start.setDate(end.getDate() - 30);
   }
 
-  return value.toISOString();
+  return {
+    fromIso: start.toISOString(),
+    toIso: end.toISOString()
+  };
 }
 
 function percentile(sortedValues: number[], p: number): number {
@@ -504,12 +580,46 @@ function percentile(sortedValues: number[], p: number): number {
   return sortedValues[Math.max(0, idx)] ?? 0;
 }
 
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T, index: number) => Promise<R>
+): Promise<R[]> {
+  if (items.length === 0) {
+    return [];
+  }
+
+  const boundedConcurrency = Math.max(1, Math.min(concurrency, items.length));
+  const results: R[] = new Array(items.length);
+  let cursor = 0;
+
+  const worker = async () => {
+    while (true) {
+      const currentIndex = cursor;
+      cursor += 1;
+      if (currentIndex >= items.length) {
+        return;
+      }
+
+      const item = items[currentIndex];
+      if (!item) {
+        continue;
+      }
+      results[currentIndex] = await mapper(item, currentIndex);
+    }
+  };
+
+  await Promise.all(new Array(boundedConcurrency).fill(undefined).map(() => worker()));
+  return results;
+}
+
 export async function getMetrics(endpointId: string, windowInput: unknown): Promise<EndpointMetrics> {
   const parsed = metricsQuerySchema.parse(windowInput);
   const window = parsed.window;
   const orgId = getOrgIdFromEndpointId(endpointId);
   const pk = `${orgId}#${endpointId}`;
   const endpoint = await getEndpoint(endpointId);
+  const { fromIso, toIso } = getWindowBounds(window);
 
   const result = await ddb.send(
     new QueryCommand({
@@ -517,16 +627,23 @@ export async function getMetrics(endpointId: string, windowInput: unknown): Prom
       KeyConditionExpression: "probePk = :pk AND timestampIso BETWEEN :from AND :to",
       ExpressionAttributeValues: {
         ":pk": pk,
-        ":from": getWindowStart(window),
-        ":to": nowIso()
+        ":from": fromIso,
+        ":to": toIso
       },
       Limit: 4000
     })
   );
 
-  const items = ((result.Items ?? []) as ProbeResult[]).map(normalizeProbeResult);
+  const items = ((result.Items ?? []) as ProbeResult[]).map((item) => {
+    const normalized = normalizeProbeResult(item);
+    return {
+      ...normalized,
+      classification: normalized.classification ?? classifyProbe(normalized)
+    };
+  });
   const success = items.filter((item) => item.ok).length;
   const failure = items.length - success;
+  const failureRatePct = items.length > 0 ? Number(((failure / items.length) * 100).toFixed(2)) : 0;
   const latencies = items
     .map((item) => item.latencyMs)
     .filter((value): value is number => typeof value === "number")
@@ -535,6 +652,11 @@ export async function getMetrics(endpointId: string, windowInput: unknown): Prom
     latencies.length > 0 ? Number((latencies.reduce((acc, n) => acc + n, 0) / latencies.length).toFixed(2)) : 0;
   const uptimePct = items.length > 0 ? Number(((success / items.length) * 100).toFixed(2)) : 100;
   const slaStats = getSlaStats(uptimePct, endpoint.slaTargetPct);
+  const burnRate = calculateBurnRate(failureRatePct, endpoint.slaTargetPct);
+  const burnRateAlert = burnRate >= BURN_RATE_ALERT_THRESHOLD;
+  const latencyThresholdMs = endpoint.latencyThresholdMs ?? DEFAULT_LATENCY_THRESHOLD_MS;
+  const failureRateThresholdPct =
+    endpoint.failureRateThresholdPct ?? DEFAULT_FAILURE_RATE_THRESHOLD_PCT;
 
   const regionStats = new Map<
     MonitoringRegion,
@@ -573,14 +695,22 @@ export async function getMetrics(endpointId: string, windowInput: unknown): Prom
     checks: items.length,
     success,
     failure,
+    failureRatePct,
     uptimePct,
     latency: {
       avgMs,
       p50Ms: percentile(latencies, 50),
-      p95Ms: percentile(latencies, 95)
+      p95Ms: percentile(latencies, 95),
+      p99Ms: percentile(latencies, 99)
     },
     slaTargetPct: endpoint.slaTargetPct,
     slaMet: slaStats.slaMet,
+    burnRate,
+    burnRateAlert,
+    latencyThresholdMs,
+    latencyThresholdBreached: avgMs > latencyThresholdMs,
+    failureRateThresholdPct,
+    failureRateThresholdBreached: failureRatePct > failureRateThresholdPct,
     errorBudgetRemainingPct: slaStats.errorBudgetRemainingPct,
     byRegion
   };
@@ -592,21 +722,29 @@ export async function getEndpointSlaReport(
 ): Promise<EndpointSlaReport> {
   const parsed = endpointSlaQuerySchema.parse(windowInput);
   const metrics = await getMetrics(endpointId, parsed);
+  const { fromIso, toIso } = getWindowBounds(metrics.window);
   const totalWindowMinutes = WINDOW_MINUTES[metrics.window];
-  const allowedDowntimeMinutes = ((100 - metrics.slaTargetPct) / 100) * totalWindowMinutes;
-  const consumedDowntimeMinutes = ((100 - metrics.uptimePct) / 100) * totalWindowMinutes;
-  const remainingDowntimeMinutes = Number(Math.max(0, allowedDowntimeMinutes - consumedDowntimeMinutes).toFixed(2));
+  const errorBudgetMinutes = Number((((100 - metrics.slaTargetPct) / 100) * totalWindowMinutes).toFixed(2));
+  const achievedSlaPct = metrics.checks > 0 ? metrics.uptimePct : null;
+  const consumedDowntimeMinutes =
+    achievedSlaPct === null ? 0 : ((100 - achievedSlaPct) / 100) * totalWindowMinutes;
+  const errorBudgetRemainingMinutes = Number(
+    Math.max(0, errorBudgetMinutes - consumedDowntimeMinutes).toFixed(2)
+  );
 
   return {
     endpointId: metrics.endpointId,
     window: metrics.window,
-    uptimePct: metrics.uptimePct,
-    checks: metrics.checks,
-    failures: metrics.failure,
-    slaTargetPct: metrics.slaTargetPct,
-    slaMet: metrics.slaMet,
-    errorBudgetRemainingPct: metrics.errorBudgetRemainingPct,
-    remainingDowntimeMinutes
+    periodStartIso: fromIso,
+    periodEndIso: toIso,
+    targetSlaPct: metrics.slaTargetPct,
+    achievedSlaPct,
+    errorBudgetMinutes,
+    errorBudgetRemainingMinutes,
+    burnRate: metrics.burnRate,
+    burnRateAlert: metrics.burnRateAlert,
+    totalChecks: metrics.checks,
+    failedChecks: metrics.failure
   };
 }
 
@@ -655,6 +793,139 @@ export async function listIncidents(params: unknown): Promise<{ items: Incident[
       };
 }
 
+async function findIncidentById(incidentId: string): Promise<Incident | null> {
+  let lastKey: Record<string, unknown> | undefined;
+
+  do {
+    const page = await ddb.send(
+      new ScanCommand({
+        TableName: env.incidentsTable,
+        FilterExpression: "incidentId = :incidentId",
+        ExpressionAttributeValues: {
+          ":incidentId": incidentId
+        },
+        ExclusiveStartKey: lastKey,
+        Limit: 200
+      })
+    );
+
+    const found = (page.Items ?? [])[0] as Incident | undefined;
+    if (found) {
+      return normalizeIncident(found);
+    }
+
+    lastKey = page.LastEvaluatedKey;
+  } while (lastKey);
+
+  return null;
+}
+
+export async function getIncidentById(incidentId: string): Promise<Incident> {
+  const incident = await findIncidentById(incidentId);
+  if (!incident) {
+    throw new Error("Incident not found");
+  }
+
+  return incident;
+}
+
+export async function getIncidentTimeline(
+  incidentId: string,
+  input?: {
+    limit?: number | undefined;
+  }
+): Promise<IncidentTimeline> {
+  const incident = await getIncidentById(incidentId);
+  const region = incident.region ? toMonitoringRegion(incident.region) : undefined;
+  const openedAtTs = Date.parse(incident.openedAt);
+  const resolvedAtTs = incident.resolvedAt ? Date.parse(incident.resolvedAt) : Date.now();
+  const fromIso = new Date(openedAtTs - 30 * 60 * 1000).toISOString();
+  const toIso = new Date(resolvedAtTs + 30 * 60 * 1000).toISOString();
+  const probePk = `${incident.orgId}#${incident.endpointId}`;
+
+  const probesResponse = await ddb.send(
+    new QueryCommand({
+      TableName: env.probeResultsTable,
+      KeyConditionExpression: "probePk = :probePk AND timestampIso BETWEEN :from AND :to",
+      ExpressionAttributeValues: {
+        ":probePk": probePk,
+        ":from": fromIso,
+        ":to": toIso
+      },
+      ScanIndexForward: true,
+      Limit: 600
+    })
+  );
+
+  const probeEvents: IncidentTimelineEvent[] = ((probesResponse.Items ?? []) as ProbeResult[])
+    .map(normalizeProbeResult)
+    .filter((probe) => (region ? toMonitoringRegion(probe.region) === region : true))
+    .map((probe) => {
+      const classification = probe.classification ?? classifyProbe(probe);
+      const message = probe.ok
+        ? `Probe recovered from ${probe.region} (${probe.statusCode ?? 200})`
+        : `Probe failed from ${probe.region} (${classification})`;
+
+      return {
+        ts: probe.timestampIso,
+        type: probe.ok ? "PROBE_RECOVERED" : "PROBE_FAILED",
+        message,
+        region: toMonitoringRegion(probe.region),
+        ...(typeof probe.statusCode === "number" ? { statusCode: probe.statusCode } : {}),
+        ...(typeof probe.latencyMs === "number" ? { latencyMs: probe.latencyMs } : {}),
+        ...(probe.errorType ? { errorType: probe.errorType } : {})
+      };
+    });
+
+  const events: IncidentTimelineEvent[] = [
+    {
+      ts: incident.openedAt,
+      type: "INCIDENT_OPENED",
+      message: "Incident opened after consecutive failures",
+      ...(region ? { region } : {})
+    },
+    {
+      ts: incident.openedAt,
+      type: "ALERT_SENT",
+      message: "Alert fanout triggered for incident open",
+      ...(region ? { region } : {})
+    },
+    ...probeEvents
+  ];
+
+  if (incident.resolvedAt) {
+    events.push(
+      {
+        ts: incident.resolvedAt,
+        type: "INCIDENT_RESOLVED",
+        message: "Incident resolved on first successful probe",
+        ...(region ? { region } : {})
+      },
+      {
+        ts: incident.resolvedAt,
+        type: "ALERT_SENT",
+        message: "Alert fanout triggered for incident resolve",
+        ...(region ? { region } : {})
+      }
+    );
+  }
+
+  const sorted = events.sort((a, b) => Date.parse(a.ts) - Date.parse(b.ts));
+  const limit = input?.limit ?? 100;
+  const limited = sorted.length > limit ? sorted.slice(sorted.length - limit) : sorted;
+
+  return {
+    incidentId: incident.incidentId,
+    orgId: incident.orgId,
+    endpointId: incident.endpointId,
+    ...(region ? { region } : {}),
+    state: incident.state,
+    openedAt: incident.openedAt,
+    ...(incident.resolvedAt ? { resolvedAt: incident.resolvedAt } : {}),
+    events: limited
+  };
+}
+
 export async function registerEmailChannel(input: unknown): Promise<AlertChannel> {
   const payload = emailChannelSchema.parse(input);
   const current = nowIso();
@@ -684,14 +955,19 @@ async function createSecretBackedChannel(
   orgId: string,
   channelId: string,
   type: "SLACK" | "WEBHOOK",
-  webhookUrl: string
+  secretValue: string,
+  options?: {
+    name?: string;
+    events?: AlertEvent[];
+    secretHeaderName?: string;
+  }
 ): Promise<AlertChannel> {
   const current = nowIso();
   const secretName = `netpulse/${orgId}/${type.toLowerCase()}/${channelId}`;
   const secret = await secretsManager.send(
     new CreateSecretCommand({
       Name: secretName,
-      SecretString: webhookUrl
+      SecretString: secretValue
     })
   );
 
@@ -702,8 +978,11 @@ async function createSecretBackedChannel(
   const channel: AlertChannel = {
     orgId,
     channelId,
+    ...(options?.name ? { name: options.name } : {}),
     type,
     target: secret.ARN,
+    ...(options?.events ? { events: options.events } : {}),
+    ...(options?.secretHeaderName ? { secretHeaderName: options.secretHeaderName } : {}),
     verified: true,
     muted: false,
     createdAt: current,
@@ -729,7 +1008,17 @@ export async function registerSlackChannel(input: unknown): Promise<AlertChannel
 export async function registerWebhookChannel(input: unknown): Promise<AlertChannel> {
   const payload = webhookChannelSchema.parse(input);
   const channelId = makeChannelId("webhook");
-  return createSecretBackedChannel(payload.orgId, channelId, "WEBHOOK", payload.webhookUrl);
+  const secretPayload = JSON.stringify({
+    url: payload.url,
+    ...(payload.secretHeaderName ? { secretHeaderName: payload.secretHeaderName } : {}),
+    ...(payload.secretHeaderValue ? { secretHeaderValue: payload.secretHeaderValue } : {})
+  });
+
+  return createSecretBackedChannel(payload.orgId, channelId, "WEBHOOK", secretPayload, {
+    name: payload.name,
+    events: payload.events,
+    ...(payload.secretHeaderName ? { secretHeaderName: payload.secretHeaderName } : {})
+  });
 }
 
 export async function getDashboardSummary(params: unknown): Promise<DashboardSummary> {
@@ -755,14 +1044,79 @@ export async function getDashboardSummary(params: unknown): Promise<DashboardSum
   const degraded = countStatus("DEGRADED");
   const down = countStatus("DOWN");
   const paused = countStatus("PAUSED");
-  const uptimePct = total > 0 ? Number((((healthy + degraded) / total) * 100).toFixed(2)) : 100;
+  const defaultUptime = total > 0 ? Number((((healthy + degraded) / total) * 100).toFixed(2)) : 100;
+  const averageSlaTargetPct =
+    total > 0
+      ? Number(
+          (
+            activeEndpoints.reduce((sum, endpoint) => sum + (endpoint.slaTargetPct ?? DEFAULT_SLA_TARGET_PCT), 0) /
+            total
+          ).toFixed(2)
+        )
+      : DEFAULT_SLA_TARGET_PCT;
 
   const sparklinePoints = parsed.window === "24h" ? 24 : parsed.window === "7d" ? 14 : 30;
   const sparkline: DashboardSummary["sparkline"] = [];
+  const burnRateSparkline: DashboardSummary["burnRateSparkline"] = [];
+  const { fromIso, toIso } = getWindowBounds(parsed.window);
+  const fromMs = Date.parse(fromIso);
+  const toMs = Date.parse(toIso);
+  const bucketMs = Math.max(1, Math.floor((toMs - fromMs) / sparklinePoints));
+  const bucketChecks = new Array<number>(sparklinePoints).fill(0);
+  const bucketFailures = new Array<number>(sparklinePoints).fill(0);
+  let totalChecks = 0;
+  let totalFailures = 0;
 
-  for (let i = sparklinePoints - 1; i >= 0; i -= 1) {
-    const t = new Date(Date.now() - i * 60 * 60 * 1000).toISOString();
-    sparkline.push({ t, uptimePct });
+  for (const endpoint of activeEndpoints) {
+    const probePk = `${endpoint.orgId}#${endpoint.endpointId}`;
+    const page = await ddb.send(
+      new QueryCommand({
+        TableName: env.probeResultsTable,
+        KeyConditionExpression: "probePk = :probePk AND timestampIso BETWEEN :from AND :to",
+        ExpressionAttributeValues: {
+          ":probePk": probePk,
+          ":from": fromIso,
+          ":to": toIso
+        },
+        Limit: 4000
+      })
+    );
+
+    for (const item of (page.Items ?? []) as ProbeResult[]) {
+      const tsMs = Date.parse(item.timestampIso);
+      if (Number.isNaN(tsMs)) {
+        continue;
+      }
+
+      const rawIndex = Math.floor((tsMs - fromMs) / bucketMs);
+      const bucketIndex = Math.max(0, Math.min(sparklinePoints - 1, rawIndex));
+      totalChecks += 1;
+      bucketChecks[bucketIndex] = (bucketChecks[bucketIndex] ?? 0) + 1;
+
+      if (!item.ok) {
+        totalFailures += 1;
+        bucketFailures[bucketIndex] = (bucketFailures[bucketIndex] ?? 0) + 1;
+      }
+    }
+  }
+
+  const failureRatePct =
+    totalChecks > 0 ? Number(((totalFailures / totalChecks) * 100).toFixed(2)) : Number((100 - defaultUptime).toFixed(2));
+  const uptimePct = totalChecks > 0 ? Number((((totalChecks - totalFailures) / totalChecks) * 100).toFixed(2)) : defaultUptime;
+  const burnRate = calculateBurnRate(failureRatePct, averageSlaTargetPct);
+  const burnRateAlert = burnRate >= BURN_RATE_ALERT_THRESHOLD;
+
+  for (let i = 0; i < sparklinePoints; i += 1) {
+    const t = new Date(fromMs + i * bucketMs).toISOString();
+    const checks = bucketChecks[i] ?? 0;
+    const failures = bucketFailures[i] ?? 0;
+    const pointFailureRate = checks > 0 ? (failures / checks) * 100 : failureRatePct;
+    const pointUptime = checks > 0 ? ((checks - failures) / checks) * 100 : uptimePct;
+    sparkline.push({ t, uptimePct: Number(pointUptime.toFixed(2)) });
+    burnRateSparkline.push({
+      t,
+      burnRate: Number(calculateBurnRate(Number(pointFailureRate.toFixed(2)), averageSlaTargetPct).toFixed(2))
+    });
   }
 
   return {
@@ -774,16 +1128,173 @@ export async function getDashboardSummary(params: unknown): Promise<DashboardSum
     downEndpoints: down,
     pausedEndpoints: paused,
     uptimePct,
-    sparkline
+    failureRatePct,
+    burnRate,
+    burnRateAlert,
+    sparkline,
+    burnRateSparkline
   };
 }
 
-export async function setEndpointSimulation(endpointId: string, input: unknown): Promise<Endpoint> {
-  const parsed = failureSimulationSchema.parse(input);
-  const orgId = getOrgIdFromEndpointId(endpointId);
-  const updatedAt = nowIso();
+export async function getOrgAiInsights(params: unknown): Promise<OrgAiInsights> {
+  const parsed = aiInsightsQuerySchema.parse(params);
+  const { fromIso, toIso } = getWindowBounds(parsed.window);
 
+  const endpointResult = await ddb.send(
+    new QueryCommand({
+      TableName: env.endpointsTable,
+      KeyConditionExpression: "orgId = :orgId",
+      ExpressionAttributeValues: {
+        ":orgId": parsed.orgId
+      }
+    })
+  );
+
+  const endpoints = ((endpointResult.Items ?? []) as Endpoint[])
+    .map(normalizeEndpoint)
+    .filter((endpoint) => endpoint.status !== "DELETED");
+
+  const snapshots = await mapWithConcurrency(endpoints, 20, async (endpoint): Promise<EndpointAiSnapshot> => {
+    const probePk = `${endpoint.orgId}#${endpoint.endpointId}`;
+    const probeResult = await ddb.send(
+      new QueryCommand({
+        TableName: env.probeResultsTable,
+        KeyConditionExpression: "probePk = :probePk AND timestampIso BETWEEN :from AND :to",
+        ExpressionAttributeValues: {
+          ":probePk": probePk,
+          ":from": fromIso,
+          ":to": toIso
+        },
+        Limit: 4000
+      })
+    );
+
+    const probes = ((probeResult.Items ?? []) as ProbeResult[]).map(normalizeProbeResult);
+    const checks = probes.length;
+    const failedChecks = probes.filter((probe) => !probe.ok).length;
+    const failureRatePct = checks > 0 ? Number(((failedChecks / checks) * 100).toFixed(2)) : 0;
+    const latencies = probes
+      .map((probe) => probe.latencyMs)
+      .filter((value): value is number => typeof value === "number")
+      .sort((a, b) => a - b);
+    const avgLatencyMs =
+      latencies.length > 0 ? Number((latencies.reduce((sum, item) => sum + item, 0) / latencies.length).toFixed(2)) : 0;
+    const p95LatencyMs = percentile(latencies, 95);
+    const slaTargetPct = endpoint.slaTargetPct ?? DEFAULT_SLA_TARGET_PCT;
+    const burnRate = calculateBurnRate(failureRatePct, slaTargetPct);
+
+    return {
+      endpointId: endpoint.endpointId,
+      endpointName: endpoint.name,
+      checks,
+      failedChecks,
+      failureRatePct,
+      burnRate,
+      avgLatencyMs,
+      p95LatencyMs,
+      latencyThresholdMs: endpoint.latencyThresholdMs ?? DEFAULT_LATENCY_THRESHOLD_MS
+    };
+  });
+
+  return buildOrgAiInsights({
+    orgId: parsed.orgId,
+    window: parsed.window,
+    generatedAt: nowIso(),
+    endpoints: snapshots
+  });
+}
+
+function buildSimulationState(input: SimulationRequest, appliedAtIso: string): SimulationState {
+  const expiresAtIso =
+    typeof input.durationMinutes === "number"
+      ? new Date(Date.parse(appliedAtIso) + input.durationMinutes * 60 * 1000).toISOString()
+      : null;
+
+  if (input.mode === "FORCE_FAIL") {
+    return {
+      mode: "FORCE_FAIL",
+      appliedAtIso,
+      expiresAtIso,
+      failureStatusCode: input.failureStatusCode ?? 503
+    };
+  }
+
+  return {
+    mode: "FORCE_DEGRADED",
+    appliedAtIso,
+    expiresAtIso,
+    forcedLatencyMs: input.forcedLatencyMs ?? 2500
+  };
+}
+
+async function hasActiveSimulation(orgId: string, endpointId: string): Promise<boolean> {
   const result = await ddb.send(
+    new GetCommand({
+      TableName: env.endpointsTable,
+      Key: { orgId, endpointId },
+      ProjectionExpression: "#simulation",
+      ExpressionAttributeNames: {
+        "#simulation": "simulation"
+      }
+    })
+  );
+
+  const item = result.Item as { simulation?: SimulationState } | undefined;
+  return Boolean(item?.simulation);
+}
+
+function simulationResponse(
+  endpointId: string,
+  mode: SimulationResponse["mode"],
+  appliedAtIso: string,
+  expiresAtIso: string | null
+): SimulationResponse {
+  return {
+    endpointId,
+    mode,
+    appliedAtIso,
+    expiresAtIso
+  };
+}
+
+export async function applyEndpointSimulation(
+  endpointId: string,
+  input: unknown
+): Promise<SimulationResponse> {
+  const parsed = failureSimulationSchema.parse(input) as SimulationRequest;
+  const orgId = getOrgIdFromEndpointId(endpointId);
+  const appliedAtIso = nowIso();
+
+  if (parsed.mode === "CLEAR") {
+    if (env.simulationClearStrict) {
+      const active = await hasActiveSimulation(orgId, endpointId);
+      if (!active) {
+        throw new Error("INVALID_SIMULATION_STATE: no active simulation to clear");
+      }
+    }
+
+    await ddb.send(
+      new UpdateCommand({
+        TableName: env.endpointsTable,
+        Key: { orgId, endpointId },
+        UpdateExpression: "SET #updatedAt = :updatedAt REMOVE #simulation",
+        ExpressionAttributeNames: {
+          "#updatedAt": "updatedAt",
+          "#simulation": "simulation"
+        },
+        ExpressionAttributeValues: {
+          ":updatedAt": appliedAtIso
+        },
+        ConditionExpression: "attribute_exists(orgId) AND attribute_exists(endpointId)"
+      })
+    );
+
+    return simulationResponse(endpointId, "CLEAR", appliedAtIso, null);
+  }
+
+  const state = buildSimulationState(parsed, appliedAtIso);
+
+  await ddb.send(
     new UpdateCommand({
       TableName: env.endpointsTable,
       Key: { orgId, endpointId },
@@ -793,39 +1304,14 @@ export async function setEndpointSimulation(endpointId: string, input: unknown):
         "#updatedAt": "updatedAt"
       },
       ExpressionAttributeValues: {
-        ":simulation": parsed,
-        ":updatedAt": updatedAt
+        ":simulation": state,
+        ":updatedAt": appliedAtIso
       },
-      ConditionExpression: "attribute_exists(orgId) AND attribute_exists(endpointId)",
-      ReturnValues: "ALL_NEW"
+      ConditionExpression: "attribute_exists(orgId) AND attribute_exists(endpointId)"
     })
   );
 
-  return normalizeEndpoint(result.Attributes as Endpoint);
-}
-
-export async function clearEndpointSimulation(endpointId: string): Promise<Endpoint> {
-  const orgId = getOrgIdFromEndpointId(endpointId);
-  const updatedAt = nowIso();
-
-  const result = await ddb.send(
-    new UpdateCommand({
-      TableName: env.endpointsTable,
-      Key: { orgId, endpointId },
-      UpdateExpression: "SET #updatedAt = :updatedAt REMOVE #simulation",
-      ExpressionAttributeNames: {
-        "#updatedAt": "updatedAt",
-        "#simulation": "simulation"
-      },
-      ExpressionAttributeValues: {
-        ":updatedAt": updatedAt
-      },
-      ConditionExpression: "attribute_exists(orgId) AND attribute_exists(endpointId)",
-      ReturnValues: "ALL_NEW"
-    })
-  );
-
-  return normalizeEndpoint(result.Attributes as Endpoint);
+  return simulationResponse(endpointId, state.mode, state.appliedAtIso, state.expiresAtIso ?? null);
 }
 
 export async function removeConnection(connectionId: string): Promise<void> {

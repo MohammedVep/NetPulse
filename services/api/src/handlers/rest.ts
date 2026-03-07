@@ -4,21 +4,26 @@ import type {
 } from "aws-lambda";
 import { getIdentity, requireRole, enforcePermission } from "@netpulse/authz";
 import {
+  aiInsightsQuerySchema,
   checksQuerySchema,
   dashboardSummaryQuerySchema,
   endpointSlaQuerySchema,
   failureSimulationSchema,
+  incidentTimelineQuerySchema,
   incidentListQuerySchema,
   listEndpointsQuerySchema,
   metricsQuerySchema,
   type Permission
 } from "@netpulse/shared";
 import {
-  clearEndpointSimulation,
+  applyEndpointSimulation,
   createEndpoint,
   createOrganization,
   getDashboardSummary,
+  getOrgAiInsights,
   getEndpoint,
+  getIncidentById,
+  getIncidentTimeline,
   getEndpointSlaReport,
   getMetrics,
   getOrganization,
@@ -30,13 +35,14 @@ import {
   registerEmailChannel,
   registerSlackChannel,
   registerWebhookChannel,
-  setEndpointSimulation,
   softDeleteEndpoint,
   upsertMember
 } from "../lib/data-access.js";
 import { env } from "../lib/env.js";
 import { getOrgIdFromEndpointId } from "../lib/ids.js";
 import { fail, getBody, json, noContent } from "../lib/http.js";
+import { correlationIdForEvent, logError, logInfo } from "../lib/observability.js";
+import { enforceRateLimit } from "../lib/rate-limit.js";
 
 type ApiEvent = APIGatewayProxyEventV2WithJWTAuthorizer;
 
@@ -118,20 +124,77 @@ function getCapture(match: RegExpMatchArray, index: number, name: string): strin
   return decodeURIComponent(value);
 }
 
+function safeIdentityUserId(event: ApiEvent): string | null {
+  try {
+    return getIdentity(event).userId;
+  } catch {
+    return null;
+  }
+}
+
 export async function handler(event: ApiEvent): Promise<APIGatewayProxyResultV2> {
   const requestId = event.requestContext.requestId;
+  const correlationId = correlationIdForEvent(event);
+  const startedAt = Date.now();
+  const sourceIp = event.requestContext.http.sourceIp ?? "unknown";
+  const responseHeaders = {
+    "x-request-id": requestId,
+    "x-correlation-id": correlationId
+  };
+
+  const complete = (statusCode: number) => {
+    logInfo("api_request_completed", {
+      requestId,
+      correlationId,
+      method: event.requestContext.http.method.toUpperCase(),
+      rawPath: event.rawPath,
+      statusCode,
+      durationMs: Date.now() - startedAt
+    });
+  };
+
+  const respondJson = (statusCode: number, body: unknown): APIGatewayProxyResultV2 => {
+    complete(statusCode);
+    return json(statusCode, body, responseHeaders);
+  };
+
+  const respondNoContent = (): APIGatewayProxyResultV2 => {
+    complete(204);
+    return noContent(responseHeaders);
+  };
 
   try {
     const { path, method, context } = getPathAndMethod(event);
+    const identityUserId = safeIdentityUserId(event);
+    const requester = context.isPublic
+      ? `ip:${sourceIp}`
+      : (identityUserId ? `user:${identityUserId}` : `ip:${sourceIp}`);
+    const maxRequests = context.isPublic ? env.rateLimitPublicRpm : env.rateLimitAuthRpm;
+
+    await enforceRateLimit({
+      key: `rest:${context.isPublic ? "public" : "auth"}:${method}:${requester}`,
+      maxRequests
+    });
+
+    logInfo("api_request_received", {
+      requestId,
+      correlationId,
+      method,
+      path,
+      rawPath: event.rawPath,
+      sourceIp,
+      requester,
+      isPublic: context.isPublic
+    });
 
     if (context.isPublic && method !== "GET") {
-      return json(405, { code: "ERR_405", message: "Public demo route is read-only", requestId });
+      return respondJson(405, { code: "ERR_405", message: "Public demo route is read-only", requestId });
     }
 
     if (method === "POST" && path === "/v1/organizations") {
       const identity = getIdentity(event);
       const organization = await createOrganization(getBody(event.body), identity);
-      return json(201, organization);
+      return respondJson(201, organization);
     }
 
     const orgMatch = path.match(/^\/v1\/organizations\/([^/]+)$/);
@@ -139,7 +202,7 @@ export async function handler(event: ApiEvent): Promise<APIGatewayProxyResultV2>
       const orgId = getCapture(orgMatch, 1, "orgId");
       await requireOrgAccess(event, orgId, "org:read", context);
       const organization = await getOrganization(orgId);
-      return json(200, organization);
+      return respondJson(200, organization);
     }
 
     const memberCreateMatch = path.match(/^\/v1\/organizations\/([^/]+)\/members$/);
@@ -147,7 +210,7 @@ export async function handler(event: ApiEvent): Promise<APIGatewayProxyResultV2>
       const orgId = getCapture(memberCreateMatch, 1, "orgId");
       await requireOrgAccess(event, orgId, "member:write", context);
       const member = await upsertMember(orgId, getBody(event.body));
-      return json(201, member);
+      return respondJson(201, member);
     }
 
     const memberPatchMatch = path.match(/^\/v1\/organizations\/([^/]+)\/members\/([^/]+)$/);
@@ -156,21 +219,21 @@ export async function handler(event: ApiEvent): Promise<APIGatewayProxyResultV2>
       const memberId = getCapture(memberPatchMatch, 2, "memberId");
       await requireOrgAccess(event, orgId, "member:write", context);
       const member = await patchMember(orgId, memberId, getBody(event.body));
-      return json(200, member);
+      return respondJson(200, member);
     }
 
     if (method === "POST" && path === "/v1/endpoints") {
       const payload = getBody<{ orgId: string }>(event.body);
       await requireOrgAccess(event, payload.orgId, "endpoint:write", context);
       const endpoint = await createEndpoint(payload);
-      return json(201, endpoint);
+      return respondJson(201, endpoint);
     }
 
     if (method === "GET" && path === "/v1/endpoints") {
       const query = listEndpointsQuerySchema.parse(event.queryStringParameters ?? {});
       await requireOrgAccess(event, query.orgId, "endpoint:read", context);
       const results = await listEndpoints(query);
-      return json(200, results);
+      return respondJson(200, results);
     }
 
     const endpointMatch = path.match(/^\/v1\/endpoints\/([^/]+)$/);
@@ -181,19 +244,19 @@ export async function handler(event: ApiEvent): Promise<APIGatewayProxyResultV2>
       if (method === "GET") {
         await requireOrgAccess(event, orgId, "endpoint:read", context);
         const endpoint = await getEndpoint(endpointId);
-        return json(200, endpoint);
+        return respondJson(200, endpoint);
       }
 
       if (method === "PATCH") {
         await requireOrgAccess(event, orgId, "endpoint:write", context);
         const endpoint = await patchEndpoint(endpointId, getBody(event.body));
-        return json(200, endpoint);
+        return respondJson(200, endpoint);
       }
 
       if (method === "DELETE") {
         await requireOrgAccess(event, orgId, "endpoint:write", context);
         await softDeleteEndpoint(endpointId);
-        return noContent();
+        return respondNoContent();
       }
     }
 
@@ -205,7 +268,7 @@ export async function handler(event: ApiEvent): Promise<APIGatewayProxyResultV2>
 
       const query = checksQuerySchema.parse(event.queryStringParameters ?? {});
       const checks = await listChecks(endpointId, query);
-      return json(200, checks);
+      return respondJson(200, checks);
     }
 
     const endpointMetricsMatch = path.match(/^\/v1\/endpoints\/([^/]+)\/metrics$/);
@@ -216,7 +279,7 @@ export async function handler(event: ApiEvent): Promise<APIGatewayProxyResultV2>
 
       const query = metricsQuerySchema.parse(event.queryStringParameters ?? {});
       const metrics = await getMetrics(endpointId, query);
-      return json(200, metrics);
+      return respondJson(200, metrics);
     }
 
     const endpointSlaMatch = path.match(/^\/v1\/endpoints\/([^/]+)\/sla$/);
@@ -227,7 +290,7 @@ export async function handler(event: ApiEvent): Promise<APIGatewayProxyResultV2>
 
       const query = endpointSlaQuerySchema.parse(event.queryStringParameters ?? {});
       const report = await getEndpointSlaReport(endpointId, query);
-      return json(200, report);
+      return respondJson(200, report);
     }
 
     const endpointSimulationMatch = path.match(/^\/v1\/endpoints\/([^/]+)\/simulate$/);
@@ -238,13 +301,13 @@ export async function handler(event: ApiEvent): Promise<APIGatewayProxyResultV2>
 
       if (method === "POST") {
         const simulation = failureSimulationSchema.parse(getBody(event.body));
-        const endpoint = await setEndpointSimulation(endpointId, simulation);
-        return json(200, endpoint);
+        const simulationState = await applyEndpointSimulation(endpointId, simulation);
+        return respondJson(200, simulationState);
       }
 
       if (method === "DELETE") {
-        const endpoint = await clearEndpointSimulation(endpointId);
-        return json(200, endpoint);
+        const simulationState = await applyEndpointSimulation(endpointId, { mode: "CLEAR" });
+        return respondJson(200, simulationState);
       }
     }
 
@@ -252,39 +315,66 @@ export async function handler(event: ApiEvent): Promise<APIGatewayProxyResultV2>
       const query = incidentListQuerySchema.parse(event.queryStringParameters ?? {});
       await requireOrgAccess(event, query.orgId, "incident:read", context);
       const incidents = await listIncidents(query);
-      return json(200, incidents);
+      return respondJson(200, incidents);
+    }
+
+    const incidentTimelineMatch = path.match(/^\/v1\/incidents\/([^/]+)\/timeline$/);
+    if (method === "GET" && incidentTimelineMatch) {
+      const incidentId = getCapture(incidentTimelineMatch, 1, "incidentId");
+      const incident = await getIncidentById(incidentId);
+      await requireOrgAccess(event, incident.orgId, "incident:read", context);
+      const query = incidentTimelineQuerySchema.parse(event.queryStringParameters ?? {});
+      const timeline = await getIncidentTimeline(incidentId, query);
+      return respondJson(200, timeline);
     }
 
     if (method === "POST" && path === "/v1/alert-channels/email") {
       const body = getBody<{ orgId: string }>(event.body);
       await requireOrgAccess(event, body.orgId, "channel:write", context);
       const channel = await registerEmailChannel(body);
-      return json(201, channel);
+      return respondJson(201, channel);
     }
 
     if (method === "POST" && path === "/v1/alert-channels/slack") {
       const body = getBody<{ orgId: string }>(event.body);
       await requireOrgAccess(event, body.orgId, "channel:write", context);
       const channel = await registerSlackChannel(body);
-      return json(201, channel);
+      return respondJson(201, channel);
     }
 
     if (method === "POST" && path === "/v1/alert-channels/webhook") {
       const body = getBody<{ orgId: string }>(event.body);
       await requireOrgAccess(event, body.orgId, "channel:write", context);
       const channel = await registerWebhookChannel(body);
-      return json(201, channel);
+      return respondJson(201, channel);
     }
 
     if (method === "GET" && path === "/v1/dashboard/summary") {
       const query = dashboardSummaryQuerySchema.parse(event.queryStringParameters ?? {});
       await requireOrgAccess(event, query.orgId, "dashboard:read", context);
       const summary = await getDashboardSummary(query);
-      return json(200, summary);
+      return respondJson(200, summary);
     }
 
-    return json(404, { code: "ERR_404", message: "Route not found", requestId });
+    if (method === "GET" && path === "/v1/ai/insights") {
+      const query = aiInsightsQuerySchema.parse(event.queryStringParameters ?? {});
+      await requireOrgAccess(event, query.orgId, "dashboard:read", context);
+      const insights = await getOrgAiInsights(query);
+      return respondJson(200, insights);
+    }
+
+    return respondJson(404, { code: "ERR_404", message: "Route not found", requestId });
   } catch (error) {
-    return fail(error, requestId);
+    logError("api_request_failed", {
+      requestId,
+      correlationId,
+      method: event.requestContext.http.method.toUpperCase(),
+      rawPath: event.rawPath,
+      sourceIp,
+      error: error instanceof Error ? error.message : String(error)
+    });
+    const failed = fail(error, { requestId, correlationId });
+    complete(failed.statusCode ?? 500);
+    return failed;
   }
 }

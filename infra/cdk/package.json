@@ -7,9 +7,9 @@
     "build": "tsc -b",
     "typecheck": "tsc -b --pretty false",
     "synth": "npm run build && cdk synth",
-    "deploy:dev": "npm run build && cdk deploy NetPulse-dev",
-    "deploy:staging": "npm run build && cdk deploy NetPulse-staging",
-    "deploy:prod": "npm run build && cdk deploy NetPulse-prod"
+    "deploy:dev": "npm run build && cdk deploy NetPulse-dev --require-approval never",
+    "deploy:staging": "npm run build && cdk deploy NetPulse-staging --require-approval never",
+    "deploy:prod": "npm run build && cdk deploy NetPulse-prod --require-approval never"
   },
   "dependencies": {
     "aws-cdk-lib": "^2.196.0",

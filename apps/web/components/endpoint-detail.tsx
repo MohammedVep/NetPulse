@@ -279,6 +279,10 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
           <div style={{ fontSize: 28, fontWeight: 700 }}>{metrics?.latency.p95Ms ?? 0} ms</div>
         </article>
         <article className="panel">
+          <div className="small">p99 Latency</div>
+          <div style={{ fontSize: 28, fontWeight: 700 }}>{metrics?.latency.p99Ms ?? 0} ms</div>
+        </article>
+        <article className="panel">
           <div className="small">Checks</div>
           <div style={{ fontSize: 28, fontWeight: 700 }}>{metrics?.checks ?? 0}</div>
         </article>

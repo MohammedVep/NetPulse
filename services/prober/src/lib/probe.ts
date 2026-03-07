@@ -1,6 +1,64 @@
 import type { ProbeExecution, ProbeJob } from "./types.js";
 
-async function attemptProbe(job: ProbeJob): Promise<ProbeExecution> {
+const MAX_ATTEMPTS = 3;
+const BASE_BACKOFF_MS = 200;
+const MAX_BACKOFF_MS = 1_200;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function classifyProbeResult(result: ProbeExecution): NonNullable<ProbeExecution["classification"]> {
+  if (result.errorType === "SIMULATED_FORCE_FAIL") {
+    return "SIMULATED_FORCE_FAIL";
+  }
+
+  if (result.errorType === "SIMULATED_FORCE_DEGRADED") {
+    return "SIMULATED_FORCE_DEGRADED";
+  }
+
+  if (result.errorType === "TIMEOUT") {
+    return "TIMEOUT";
+  }
+
+  if (result.errorType === "NETWORK") {
+    return "NETWORK";
+  }
+
+  if (result.errorType === "CIRCUIT_OPEN") {
+    return "CIRCUIT_OPEN";
+  }
+
+  if ((result.statusCode ?? 0) >= 500) {
+    return "HTTP_5XX";
+  }
+
+  if ((result.statusCode ?? 0) >= 400) {
+    return "HTTP_4XX";
+  }
+
+  return "HTTP_2XX_3XX";
+}
+
+function isRetryable(result: ProbeExecution): boolean {
+  if (result.ok) {
+    return false;
+  }
+
+  return (
+    result.errorType === "TIMEOUT" ||
+    result.errorType === "NETWORK" ||
+    ((result.statusCode ?? 0) >= 500 && (result.statusCode ?? 0) <= 599)
+  );
+}
+
+function backoffMs(attempt: number): number {
+  const exp = Math.min(MAX_BACKOFF_MS, BASE_BACKOFF_MS * 2 ** Math.max(0, attempt - 1));
+  const jitter = Math.floor(Math.random() * 100);
+  return exp + jitter;
+}
+
+async function attemptProbe(job: ProbeJob, attempt: number): Promise<ProbeExecution> {
   const startedAt = performance.now();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), job.timeoutMs);
@@ -21,16 +79,25 @@ async function attemptProbe(job: ProbeJob): Promise<ProbeExecution> {
       statusCode: response.status,
       latencyMs,
       timestampIso: new Date().toISOString(),
-      region: job.region
+      region: job.region,
+      attemptCount: attempt,
+      ...(job.traceId ? { traceId: job.traceId } : {})
     };
   } catch (error) {
-    const isAbort = error instanceof DOMException && error.name === "AbortError";
+    const isAbort =
+      (error instanceof DOMException && error.name === "AbortError") ||
+      (typeof error === "object" &&
+        error !== null &&
+        "name" in error &&
+        String((error as { name?: string }).name) === "AbortError");
 
     return {
       ok: false,
       errorType: isAbort ? "TIMEOUT" : "NETWORK",
       timestampIso: new Date().toISOString(),
-      region: job.region
+      region: job.region,
+      attemptCount: attempt,
+      ...(job.traceId ? { traceId: job.traceId } : {})
     };
   } finally {
     clearTimeout(timeout);
@@ -39,56 +106,101 @@ async function attemptProbe(job: ProbeJob): Promise<ProbeExecution> {
 
 function isSimulationActive(job: ProbeJob): boolean {
   const simulation = job.simulation;
-  if (!simulation || simulation.mode === "NONE") {
+  if (!simulation) {
     return false;
   }
 
-  if (!simulation.until) {
+  if (!simulation.expiresAtIso) {
     return true;
   }
 
-  return new Date(simulation.until).getTime() > Date.now();
+  return new Date(simulation.expiresAtIso).getTime() > Date.now();
 }
 
-function shouldSimulateFlakyFailure(failureRatePct: number | undefined): boolean {
-  const rate = Math.min(100, Math.max(1, failureRatePct ?? 50));
-  return Math.random() * 100 < rate;
-}
-
-function simulationFailure(job: ProbeJob, errorType: string): ProbeExecution {
-  return {
+function simulationFailure(job: ProbeJob): ProbeExecution {
+  const failureStatusCode = job.simulation?.failureStatusCode ?? 503;
+  const result: ProbeExecution = {
     ok: false,
-    errorType,
+    statusCode: failureStatusCode,
+    errorType: "SIMULATED_FORCE_FAIL",
     timestampIso: new Date().toISOString(),
     region: job.region,
-    simulated: true
+    simulated: true,
+    simulationMode: "FORCE_FAIL",
+    attemptCount: 1,
+    ...(job.traceId ? { traceId: job.traceId } : {})
+  };
+
+  return {
+    ...result,
+    classification: classifyProbeResult(result)
+  };
+}
+
+export function circuitOpenProbe(job: ProbeJob): ProbeExecution {
+  const result: ProbeExecution = {
+    ok: false,
+    errorType: "CIRCUIT_OPEN",
+    timestampIso: new Date().toISOString(),
+    region: job.region,
+    attemptCount: 0,
+    ...(job.traceId ? { traceId: job.traceId } : {})
+  };
+
+  return {
+    ...result,
+    classification: "CIRCUIT_OPEN"
   };
 }
 
 export async function executeProbe(job: ProbeJob): Promise<ProbeExecution> {
   if (isSimulationActive(job) && job.simulation?.mode === "FORCE_FAIL") {
-    return simulationFailure(job, "SIMULATED_FORCE_FAIL");
+    return simulationFailure(job);
   }
 
-  if (isSimulationActive(job) && job.simulation?.mode === "FLAKY" && shouldSimulateFlakyFailure(job.simulation.failureRatePct)) {
-    return simulationFailure(job, "SIMULATED_FLAKY_FAIL");
+  let result: ProbeExecution | undefined;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+    result = await attemptProbe(job, attempt);
+
+    if (!isRetryable(result) || attempt === MAX_ATTEMPTS) {
+      break;
+    }
+
+    await sleep(backoffMs(attempt));
   }
 
-  const firstAttempt = await attemptProbe(job);
+  const resolvedResult =
+    result ??
+    ({
+      ok: false,
+      errorType: "NETWORK",
+      timestampIso: new Date().toISOString(),
+      region: job.region,
+      attemptCount: MAX_ATTEMPTS,
+      ...(job.traceId ? { traceId: job.traceId } : {})
+    } satisfies ProbeExecution);
 
-  let result = firstAttempt;
+  if (isSimulationActive(job) && job.simulation?.mode === "FORCE_DEGRADED") {
+    const baseLatency = resolvedResult.latencyMs ?? 1;
+    const degraded: ProbeExecution = {
+      ...resolvedResult,
+      ok: true,
+      statusCode: resolvedResult.statusCode ?? 200,
+      latencyMs: baseLatency + (job.simulation.forcedLatencyMs ?? 2500),
+      simulated: true,
+      simulationMode: "FORCE_DEGRADED",
+      errorType: "SIMULATED_FORCE_DEGRADED"
+    };
 
-  if (!firstAttempt.ok && firstAttempt.errorType === "TIMEOUT") {
-    result = await attemptProbe(job);
-  }
-
-  if (isSimulationActive(job) && job.simulation?.mode === "LATENCY_SPIKE" && typeof result.latencyMs === "number") {
     return {
-      ...result,
-      latencyMs: result.latencyMs + (job.simulation.extraLatencyMs ?? 5000),
-      simulated: true
+      ...degraded,
+      classification: classifyProbeResult(degraded)
     };
   }
 
-  return result;
+  return {
+    ...resolvedResult,
+    classification: classifyProbeResult(resolvedResult)
+  };
 }

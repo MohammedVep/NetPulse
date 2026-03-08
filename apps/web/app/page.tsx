@@ -34,6 +34,9 @@ export default function HomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => hasAuthToken());
   const hasTestingPresets =
     Boolean(config.testAlertEmail) || Boolean(config.testSlackWebhookUrl) || Boolean(config.testWebhookUrl);
+  const loadBalancerBaseUrl = config.loadBalancerUrl.trim().replace(/\/$/, "");
+  const grafanaDashboardUrl = config.grafanaDashboardUrl.trim();
+  const prometheusUrl = config.prometheusUrl.trim();
 
   const resetMessages = () => {
     setAuthError(null);
@@ -191,6 +194,44 @@ export default function HomePage() {
             <p className="small" style={{ marginTop: 0 }}>
               Preset generic webhook: <code>{config.testWebhookUrl || "not configured"}</code>
             </p>
+          </div>
+        ) : null}
+        {loadBalancerBaseUrl ? (
+          <div className="panel" style={{ marginTop: 14 }}>
+            <h2 style={{ marginTop: 0 }}>Load Balancer Drill Surface</h2>
+            <p className="small" style={{ marginTop: 0 }}>
+              Dynamic service discovery + circuit breaker endpoints are live for this environment.
+            </p>
+            <p className="small" style={{ marginTop: 0 }}>
+              URL: <code>{loadBalancerBaseUrl}</code>
+            </p>
+            <div className="input-row">
+              <a href={`${loadBalancerBaseUrl}/healthz`} target="_blank" rel="noreferrer">
+                <code>/healthz</code>
+              </a>
+              <a href={`${loadBalancerBaseUrl}/backends`} target="_blank" rel="noreferrer">
+                <code>/backends</code>
+              </a>
+              <a href={`${loadBalancerBaseUrl}/metrics`} target="_blank" rel="noreferrer">
+                <code>/metrics</code>
+              </a>
+            </div>
+            {grafanaDashboardUrl ? (
+              <p className="small" style={{ marginTop: 10 }}>
+                Grafana:{" "}
+                <a href={grafanaDashboardUrl} target="_blank" rel="noreferrer">
+                  <code>{grafanaDashboardUrl}</code>
+                </a>
+              </p>
+            ) : null}
+            {prometheusUrl ? (
+              <p className="small" style={{ marginTop: 0 }}>
+                Prometheus:{" "}
+                <a href={prometheusUrl} target="_blank" rel="noreferrer">
+                  <code>{prometheusUrl}</code>
+                </a>
+              </p>
+            ) : null}
           </div>
         ) : null}
 

@@ -17,6 +17,7 @@ Usage:
   $(basename "$0") --env <dev|staging|prod> --app-id <AMPLIFY_APP_ID> --branch <BRANCH_NAME> [--profile <aws-profile>] [--region <aws-region>] [--demo-org-id <org_id>] [--dry-run]
                [--default-workspace-name <name>] [--default-endpoint-name <name>] [--default-endpoint-url <url>]
                [--test-alert-email <email>] [--test-slack-webhook-url <url>] [--test-webhook-url <url>] [--show-testing-hints <true|false>]
+               [--grafana-dashboard-url <url>] [--prometheus-url <url>]
 
 Example:
   $(basename "$0") --env dev --app-id d123example --branch dev --profile netpulse-base --demo-org-id org_demo_public \\
@@ -37,6 +38,8 @@ TEST_ALERT_EMAIL=""
 TEST_SLACK_WEBHOOK_URL=""
 TEST_WEBHOOK_URL=""
 SHOW_TESTING_HINTS="false"
+GRAFANA_DASHBOARD_URL=""
+PROMETHEUS_URL=""
 DRY_RUN="false"
 
 while [ $# -gt 0 ]; do
@@ -93,6 +96,14 @@ while [ $# -gt 0 ]; do
       SHOW_TESTING_HINTS="$2"
       shift 2
       ;;
+    --grafana-dashboard-url)
+      GRAFANA_DASHBOARD_URL="$2"
+      shift 2
+      ;;
+    --prometheus-url)
+      PROMETHEUS_URL="$2"
+      shift 2
+      ;;
     --dry-run)
       DRY_RUN="true"
       shift
@@ -134,7 +145,11 @@ API_BASE_URL="$(get_stack_output "NetPulseHttpApiUrl")"
 WS_URL="$(get_stack_output "NetPulseWebSocketUrl")"
 COGNITO_USER_POOL_ID="$(get_stack_output "NetPulseUserPoolId")"
 COGNITO_USER_POOL_CLIENT_ID="$(get_stack_output "NetPulseUserPoolClientId")"
+LOAD_BALANCER_URL="$(get_stack_output "NetPulseLoadBalancerUrl")"
 API_BASE_URL="${API_BASE_URL%/}"
+if [ "$LOAD_BALANCER_URL" = "None" ]; then
+  LOAD_BALANCER_URL=""
+fi
 
 if [ -z "$API_BASE_URL" ] || [ "$API_BASE_URL" = "None" ]; then
   echo "Could not resolve API URL from $STACK_NAME outputs" >&2
@@ -146,6 +161,9 @@ ENV_JSON="$(jq -n \
   --arg ws "$WS_URL" \
   --arg pool "$COGNITO_USER_POOL_ID" \
   --arg client "$COGNITO_USER_POOL_CLIENT_ID" \
+  --arg lb "$LOAD_BALANCER_URL" \
+  --arg grafana "$GRAFANA_DASHBOARD_URL" \
+  --arg prometheus "$PROMETHEUS_URL" \
   --arg demo "$DEMO_ORG_ID" \
   --arg workspace "$DEFAULT_WORKSPACE_NAME" \
   --arg endpointName "$DEFAULT_ENDPOINT_NAME" \
@@ -159,6 +177,9 @@ ENV_JSON="$(jq -n \
     NEXT_PUBLIC_WS_URL: $ws,
     NEXT_PUBLIC_COGNITO_USER_POOL_ID: $pool,
     NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID: $client,
+    NEXT_PUBLIC_LOAD_BALANCER_URL: $lb,
+    NEXT_PUBLIC_GRAFANA_DASHBOARD_URL: $grafana,
+    NEXT_PUBLIC_PROMETHEUS_URL: $prometheus,
     NEXT_PUBLIC_DEMO_ORG_ID: $demo,
     NEXT_PUBLIC_DEFAULT_WORKSPACE_NAME: $workspace,
     NEXT_PUBLIC_DEFAULT_ENDPOINT_NAME: $endpointName,

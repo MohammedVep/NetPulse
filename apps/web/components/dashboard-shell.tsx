@@ -50,6 +50,17 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const hasTestingPresets =
     Boolean(config.testAlertEmail) || Boolean(config.testSlackWebhookUrl) || Boolean(config.testWebhookUrl);
+  const loadBalancerBaseUrl = config.loadBalancerUrl.trim().replace(/\/$/, "");
+  const grafanaDashboardUrl = config.grafanaDashboardUrl.trim();
+  const prometheusUrl = config.prometheusUrl.trim();
+  const loadBalancerLinks = loadBalancerBaseUrl
+    ? {
+        healthz: `${loadBalancerBaseUrl}/healthz`,
+        backends: `${loadBalancerBaseUrl}/backends`,
+        metrics: `${loadBalancerBaseUrl}/metrics`,
+        drill: `${loadBalancerBaseUrl}/admin/failure-mode?unhealthy=true`
+      }
+    : null;
 
   const refresh = useCallback(async () => {
     try {
@@ -405,6 +416,60 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
           <div style={{ fontSize: 34, fontWeight: 700 }}>{incidents.length}</div>
         </article>
       </section>
+
+      {loadBalancerLinks ? (
+        <section className="panel" style={{ marginBottom: 14 }}>
+          <h2 style={{ marginTop: 0 }}>Load Balancer Runtime</h2>
+          <p className="small" style={{ marginTop: 0 }}>
+            Service discovery, health checks, and circuit-breaking endpoints from this deployed stack.
+          </p>
+          <p className="small" style={{ marginTop: 0 }}>
+            URL: <code>{loadBalancerBaseUrl}</code>
+          </p>
+          <div className="grid cards">
+            <article className="panel">
+              <div className="small">Runtime Health</div>
+              <a href={loadBalancerLinks.healthz} target="_blank" rel="noreferrer">
+                <code>/healthz</code>
+              </a>
+            </article>
+            <article className="panel">
+              <div className="small">Routing Table</div>
+              <a href={loadBalancerLinks.backends} target="_blank" rel="noreferrer">
+                <code>/backends</code>
+              </a>
+            </article>
+            <article className="panel">
+              <div className="small">Prometheus Metrics</div>
+              <a href={loadBalancerLinks.metrics} target="_blank" rel="noreferrer">
+                <code>/metrics</code>
+              </a>
+            </article>
+          </div>
+          <p className="small" style={{ marginTop: 10 }}>
+            Failure drill endpoint:{" "}
+            <a href={loadBalancerLinks.drill} target="_blank" rel="noreferrer">
+              <code>/admin/failure-mode?unhealthy=true</code>
+            </a>
+          </p>
+          {grafanaDashboardUrl ? (
+            <p className="small" style={{ marginTop: 0 }}>
+              Grafana dashboard:{" "}
+              <a href={grafanaDashboardUrl} target="_blank" rel="noreferrer">
+                <code>{grafanaDashboardUrl}</code>
+              </a>
+            </p>
+          ) : null}
+          {prometheusUrl ? (
+            <p className="small" style={{ marginTop: 0 }}>
+              Prometheus UI:{" "}
+              <a href={prometheusUrl} target="_blank" rel="noreferrer">
+                <code>{prometheusUrl}</code>
+              </a>
+            </p>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="panel" style={{ marginBottom: 14 }}>
         <h2 style={{ marginTop: 0 }}>Uptime Trend</h2>

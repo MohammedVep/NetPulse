@@ -291,17 +291,25 @@ export class NetPulseStack extends Stack {
     const loadBalancerImage = ecs.ContainerImage.fromAsset(repositoryRoot, {
       file: "services/load-balancer/Dockerfile"
     });
+    const arm64RuntimePlatform: ecs.RuntimePlatform = {
+      cpuArchitecture: ecs.CpuArchitecture.ARM64,
+      operatingSystemFamily: ecs.OperatingSystemFamily.LINUX
+    };
 
     const consulTaskDefinition = new ecs.FargateTaskDefinition(this, "ConsulTaskDefinition", {
       cpu: 256,
-      memoryLimitMiB: 512
+      memoryLimitMiB: 512,
+      runtimePlatform: arm64RuntimePlatform
     });
     const consulContainer = consulTaskDefinition.addContainer("ConsulContainer", {
-      image: ecs.ContainerImage.fromRegistry("public.ecr.aws/docker/library/hashicorp/consul:1.20"),
+      image: ecs.ContainerImage.fromRegistry("hashicorp/consul:1.20"),
       logging: ecs.LogDrivers.awsLogs({
         streamPrefix: `np-consul-${suffix}`
       }),
-      command: ["agent", "-dev", "-client=0.0.0.0", "-bind=0.0.0.0"]
+      environment: {
+        CONSUL_BIND_INTERFACE: "eth0"
+      },
+      command: ["agent", "-dev", "-client=0.0.0.0"]
     });
     consulContainer.addPortMappings({
       containerPort: 8500
@@ -325,7 +333,8 @@ export class NetPulseStack extends Stack {
 
     const backendTaskDefinition = new ecs.FargateTaskDefinition(this, "DemoBackendTaskDefinition", {
       cpu: 256,
-      memoryLimitMiB: 512
+      memoryLimitMiB: 512,
+      runtimePlatform: arm64RuntimePlatform
     });
     const backendContainer = backendTaskDefinition.addContainer("DemoBackendContainer", {
       image: loadBalancerImage,
@@ -364,7 +373,8 @@ export class NetPulseStack extends Stack {
 
     const lbTaskDefinition = new ecs.FargateTaskDefinition(this, "LoadBalancerTaskDefinition", {
       cpu: 512,
-      memoryLimitMiB: 1024
+      memoryLimitMiB: 1024,
+      runtimePlatform: arm64RuntimePlatform
     });
     const lbContainer = lbTaskDefinition.addContainer("LoadBalancerContainer", {
       image: loadBalancerImage,

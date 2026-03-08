@@ -69,12 +69,21 @@ async function loadToken(): Promise<string | null> {
   return getValidTokenFromStorage();
 }
 
-function isUnauthorizedError(error: unknown): boolean {
+function shouldFallbackToPublic(error: unknown): { fallback: boolean; clearToken: boolean } {
   if (!(error instanceof Error)) {
-    return false;
+    return { fallback: false, clearToken: false };
   }
 
-  return error.message.includes("API 401");
+  const lower = error.message.toLowerCase();
+  if (lower.includes("api 401")) {
+    return { fallback: true, clearToken: true };
+  }
+
+  if (lower.includes("active org member")) {
+    return { fallback: true, clearToken: false };
+  }
+
+  return { fallback: false, clearToken: false };
 }
 
 const authenticatedClient = createApiClient({
@@ -115,8 +124,11 @@ export const apiClient = new Proxy(authenticatedClient, {
       try {
         return await (authValue as (...innerArgs: unknown[]) => Promise<unknown>)(...args);
       } catch (error) {
-        if (isUnauthorizedError(error) && typeof window !== "undefined") {
-          window.localStorage.removeItem("netpulse_token");
+        const fallbackDecision = shouldFallbackToPublic(error);
+        if (fallbackDecision.fallback && typeof window !== "undefined") {
+          if (fallbackDecision.clearToken) {
+            window.localStorage.removeItem("netpulse_token");
+          }
           return (publicValue as (...innerArgs: unknown[]) => Promise<unknown>)(...args);
         }
 

@@ -476,7 +476,7 @@ export class NetPulseStack extends Stack {
         RATE_LIMIT_PUBLIC_RPM: "60",
         RATE_LIMIT_AUTH_RPM: suffix === "prod" ? "600" : "300",
         ENDPOINT_LIMIT_DEFAULT: "2000",
-        PUBLIC_DEMO_ENABLED: suffix === "dev" ? "true" : "false",
+        PUBLIC_DEMO_ENABLED: "true",
         PUBLIC_DEMO_ORG_ID: "org_demo_public"
       }
     });
@@ -500,6 +500,8 @@ export class NetPulseStack extends Stack {
         MEMBERSHIPS_TABLE: membershipsTable.tableName,
         WS_CONNECTIONS_TABLE: wsConnectionsTable.tableName,
         ALLOW_UNAUTHENTICATED_WS: suffix === "dev" ? "true" : "false",
+        PUBLIC_DEMO_ENABLED: "true",
+        PUBLIC_DEMO_ORG_ID: "org_demo_public",
         COGNITO_USER_POOL_ID: userPool.userPoolId,
         COGNITO_USER_POOL_CLIENT_ID: userPoolClient.userPoolClientId
       }

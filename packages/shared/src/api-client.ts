@@ -126,6 +126,10 @@ export function createApiClient(options: ApiClientOptions) {
         body: JSON.stringify({ name })
       }),
     getOrganization: (orgId: string) => request<Organization>(options, `/v1/organizations/${orgId}`),
+    joinOrganization: (orgId: string) =>
+      request<Membership>(options, `/v1/organizations/${orgId}/join`, {
+        method: "POST"
+      }),
     upsertMember: (orgId: string, payload: Partial<Membership> & { userId: string; email: string }) =>
       request<Membership>(options, `/v1/organizations/${orgId}/members`, {
         method: "POST",

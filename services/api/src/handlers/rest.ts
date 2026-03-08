@@ -30,6 +30,7 @@ import {
   listChecks,
   listEndpoints,
   listIncidents,
+  joinOrganizationAsViewer,
   patchEndpoint,
   patchMember,
   registerEmailChannel,
@@ -72,6 +73,10 @@ function assertPublicAccess(orgId: string, permission: Permission) {
   }
 }
 
+function canBypassMembershipForDemoRead(orgId: string, permission: Permission): boolean {
+  return env.publicDemoEnabled && orgId === env.publicDemoOrgId && PUBLIC_READ_PERMISSIONS.has(permission);
+}
+
 async function requireOrgAccess(
   event: ApiEvent,
   orgId: string,
@@ -84,6 +89,10 @@ async function requireOrgAccess(
   }
 
   const identity = getIdentity(event);
+  if (canBypassMembershipForDemoRead(orgId, permission)) {
+    return;
+  }
+
   const role = await requireRole(orgId, identity.userId);
   enforcePermission(role, permission);
 }
@@ -211,6 +220,25 @@ export async function handler(event: ApiEvent): Promise<APIGatewayProxyResultV2>
       await requireOrgAccess(event, orgId, "member:write", context);
       const member = await upsertMember(orgId, getBody(event.body));
       return respondJson(201, member);
+    }
+
+    const joinOrgMatch = path.match(/^\/v1\/organizations\/([^/]+)\/join$/);
+    if (method === "POST" && joinOrgMatch) {
+      const orgId = getCapture(joinOrgMatch, 1, "orgId");
+      const identity = getIdentity(event);
+      if (!env.publicDemoEnabled) {
+        throw new Error("Public demo access is disabled");
+      }
+      if (orgId !== env.publicDemoOrgId) {
+        throw new Error("Public demo access is limited to demo organization data");
+      }
+      const organization = await getOrganization(orgId);
+      if (!organization.isActive) {
+        throw new Error("Organization is not active");
+      }
+
+      const membership = await joinOrganizationAsViewer(orgId, identity);
+      return respondJson(200, membership);
     }
 
     const memberPatchMatch = path.match(/^\/v1\/organizations\/([^/]+)\/members\/([^/]+)$/);

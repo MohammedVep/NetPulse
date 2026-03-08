@@ -41,6 +41,13 @@ function normalizeToken(rawToken?: string): string | undefined {
   return rawToken.replace(/^Bearer\s+/i, "").trim();
 }
 
+const publicDemoEnabled = process.env.PUBLIC_DEMO_ENABLED === "true";
+const publicDemoOrgId = process.env.PUBLIC_DEMO_ORG_ID ?? "org_demo_public";
+
+function isPublicDemoOrg(orgId: string): boolean {
+  return publicDemoEnabled && orgId === publicDemoOrgId;
+}
+
 async function verifyCognitoToken(rawToken?: string): Promise<string | undefined> {
   const token = normalizeToken(rawToken);
 
@@ -89,9 +96,14 @@ export async function handler(event: APIGatewayProxyWebsocketEventV2): Promise<A
       if (process.env.ALLOW_UNAUTHENTICATED_WS !== "true") {
         return bad("Missing authenticated identity claims", 401);
       }
+      if (!isPublicDemoOrg(payload.orgId)) {
+        return bad("Unauthenticated websocket access is limited to public demo organization data", 403);
+      }
     } else {
-      const role = await requireRole(payload.orgId, userId);
-      enforcePermission(role, "dashboard:read");
+      if (!isPublicDemoOrg(payload.orgId)) {
+        const role = await requireRole(payload.orgId, userId);
+        enforcePermission(role, "dashboard:read");
+      }
     }
 
     if (routeKey === "subscribe") {

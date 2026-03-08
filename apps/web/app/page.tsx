@@ -31,6 +31,9 @@ export default function HomePage() {
   const [authNotice, setAuthNotice] = useState<string | null>(null);
   const [isCreatingOrg, setIsCreatingOrg] = useState(false);
   const [createOrgError, setCreateOrgError] = useState<string | null>(null);
+  const [isJoiningOrg, setIsJoiningOrg] = useState(false);
+  const [joinOrgError, setJoinOrgError] = useState<string | null>(null);
+  const [joinOrgNotice, setJoinOrgNotice] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(() => hasAuthToken());
   const hasTestingPresets =
     Boolean(config.testAlertEmail) || Boolean(config.testSlackWebhookUrl) || Boolean(config.testWebhookUrl);
@@ -178,6 +181,34 @@ export default function HomePage() {
     }
   };
 
+  const handleJoinOrganization = async () => {
+    if (!orgId.trim()) {
+      setJoinOrgError("Organization id is required");
+      setJoinOrgNotice(null);
+      return;
+    }
+
+    if (!hasAuthToken()) {
+      setJoinOrgError("Sign in first to join an organization");
+      setJoinOrgNotice(null);
+      return;
+    }
+
+    try {
+      setIsJoiningOrg(true);
+      setJoinOrgError(null);
+      setJoinOrgNotice(null);
+      await apiClient.joinOrganization(orgId.trim());
+      setJoinOrgNotice("Joined organization as Viewer. Open dashboard to start tracking.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to join organization";
+      setJoinOrgError(message);
+      setJoinOrgNotice(null);
+    } finally {
+      setIsJoiningOrg(false);
+    }
+  };
+
   return (
     <main>
       <section className="panel soft" style={{ marginTop: 26 }}>
@@ -279,12 +310,17 @@ export default function HomePage() {
               <button type="button" onClick={() => router.push("/register")}>
                 Register Route
               </button>
+              <button type="button" disabled={isJoiningOrg} onClick={() => void handleJoinOrganization()}>
+                {isJoiningOrg ? "Joining..." : "Join Org as Viewer"}
+              </button>
               <button
                 type="button"
                 onClick={() => {
                   signOut();
                   setIsAuthenticated(false);
                   resetMessages();
+                  setJoinOrgError(null);
+                  setJoinOrgNotice(null);
                   router.push(`/org/${encodeURIComponent(config.demoOrgId)}`);
                 }}
               >
@@ -297,12 +333,16 @@ export default function HomePage() {
                     signOut();
                     setIsAuthenticated(false);
                     resetMessages();
+                    setJoinOrgError(null);
+                    setJoinOrgNotice(null);
                   }}
                 >
                   Sign Out
                 </button>
               ) : null}
             </div>
+            {joinOrgError ? <p style={{ color: "var(--down)", margin: 0 }}>{joinOrgError}</p> : null}
+            {joinOrgNotice ? <p style={{ color: "var(--ok)", margin: 0 }}>{joinOrgNotice}</p> : null}
           </article>
         </div>
       </section>

@@ -312,6 +312,38 @@ export async function upsertMember(orgId: string, input: unknown): Promise<Membe
   return membership;
 }
 
+export async function joinOrganizationAsViewer(
+  orgId: string,
+  identity: { userId: string; email: string }
+): Promise<Membership> {
+  const current = nowIso();
+  const output = await ddb.send(
+    new UpdateCommand({
+      TableName: env.membershipsTable,
+      Key: { orgId, userId: identity.userId },
+      UpdateExpression:
+        "SET #email = :email, #updatedAt = :updatedAt, #isActive = :isActive, #createdAt = if_not_exists(#createdAt, :createdAt), #role = if_not_exists(#role, :role)",
+      ExpressionAttributeNames: {
+        "#email": "email",
+        "#updatedAt": "updatedAt",
+        "#isActive": "isActive",
+        "#createdAt": "createdAt",
+        "#role": "role"
+      },
+      ExpressionAttributeValues: {
+        ":email": identity.email,
+        ":updatedAt": current,
+        ":isActive": true,
+        ":createdAt": current,
+        ":role": "Viewer"
+      },
+      ReturnValues: "ALL_NEW"
+    })
+  );
+
+  return output.Attributes as Membership;
+}
+
 export async function patchMember(
   orgId: string,
   userId: string,

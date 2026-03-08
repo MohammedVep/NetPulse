@@ -33,6 +33,10 @@ const windows: MetricsWindow[] = ["24h", "7d", "30d"];
 const availableRegions: MonitoringRegion[] = ["us-east-1", "us-west-2", "eu-west-1", "ap-southeast-1"];
 const READ_ONLY_MESSAGE = "Public demo is read-only. Add a JWT token on the home page to enable write actions.";
 
+function isMembershipBlockedError(message: string): boolean {
+  return message.toLowerCase().includes("active org member");
+}
+
 export function DashboardShell({ orgId }: DashboardShellProps) {
   const [selectedWindow, setSelectedWindow] = useState<MetricsWindow>("24h");
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
@@ -40,6 +44,9 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
   const [endpoints, setEndpoints] = useState<Endpoint[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [membershipBlocked, setMembershipBlocked] = useState(false);
+  const [isJoiningOrg, setIsJoiningOrg] = useState(false);
+  const [joinNotice, setJoinNotice] = useState<string | null>(null);
   const [newEndpointName, setNewEndpointName] = useState(config.defaultEndpointName);
   const [newEndpointUrl, setNewEndpointUrl] = useState(config.defaultEndpointUrl);
   const [newEndpointSlaTarget, setNewEndpointSlaTarget] = useState("99.9");
@@ -66,6 +73,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
     try {
       setIsAuthenticated(hasAuthToken());
       setError(null);
+      setMembershipBlocked(false);
       const [summaryResponse, aiInsightsResponse, endpointResponse, incidentResponse] = await Promise.all([
         apiClient.getDashboardSummary(orgId, selectedWindow),
         apiClient.getAiInsights(orgId, selectedWindow),
@@ -80,6 +88,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load dashboard";
       setError(message);
+      setMembershipBlocked(isMembershipBlockedError(message));
     }
   }, [orgId, selectedWindow]);
 
@@ -281,6 +290,29 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
     setGenericWebhook(config.testWebhookUrl);
   }, []);
 
+  const joinOrganization = useCallback(async () => {
+    const authenticated = hasAuthToken();
+    setIsAuthenticated(authenticated);
+    if (!authenticated) {
+      setError("Sign in first to join this organization");
+      return;
+    }
+
+    try {
+      setIsJoiningOrg(true);
+      setError(null);
+      setJoinNotice(null);
+      await apiClient.joinOrganization(orgId);
+      setJoinNotice("Joined organization as Viewer. Reloading dashboard...");
+      await refresh();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to join organization";
+      setError(message);
+    } finally {
+      setIsJoiningOrg(false);
+    }
+  }, [orgId, refresh]);
+
   const registerEmailAlert = useCallback(async () => {
     const authenticated = hasAuthToken();
     setIsAuthenticated(authenticated);
@@ -393,6 +425,25 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
         </div>
         {error ? <p style={{ color: "var(--down)", margin: 0 }}>{error}</p> : null}
       </section>
+
+      {membershipBlocked && isAuthenticated ? (
+        <section className="panel soft stack" style={{ marginBottom: 14 }}>
+          <h2 className="section-head">Access Required</h2>
+          <p className="small" style={{ margin: 0 }}>
+            You are authenticated but not an active member of <code>{orgId}</code>.
+          </p>
+          <div className="control-row">
+            <button type="button" disabled={isJoiningOrg} onClick={() => void joinOrganization()}>
+              {isJoiningOrg ? "Joining..." : "Join This Org as Viewer"}
+            </button>
+          </div>
+          {joinNotice ? (
+            <p className="small" style={{ margin: 0, color: "var(--ok)" }}>
+              {joinNotice}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="kpi-grid" style={{ marginBottom: 14 }}>
         <article className="kpi-card">

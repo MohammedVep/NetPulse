@@ -288,6 +288,49 @@ export async function getOrganization(orgId: string): Promise<Organization> {
   return item;
 }
 
+export async function ensureOrganization(
+  orgId: string,
+  options?: { name?: string; isActive?: boolean }
+): Promise<Organization> {
+  const existing = await ddb.send(
+    new GetCommand({
+      TableName: env.organizationsTable,
+      Key: { orgId }
+    })
+  );
+
+  const current = existing.Item as Organization | undefined;
+  if (current) {
+    return current;
+  }
+
+  const createdAt = nowIso();
+  const organization: Organization = {
+    orgId,
+    name: options?.name ?? "NetPulse Public Demo",
+    createdAt,
+    endpointLimit: env.endpointLimitDefault,
+    isActive: options?.isActive ?? true
+  };
+
+  try {
+    await ddb.send(
+      new PutCommand({
+        TableName: env.organizationsTable,
+        Item: organization,
+        ConditionExpression: "attribute_not_exists(orgId)"
+      })
+    );
+    return organization;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("ConditionalCheckFailedException")) {
+      return getOrganization(orgId);
+    }
+    throw error;
+  }
+}
+
 export async function upsertMember(orgId: string, input: unknown): Promise<Membership> {
   const payload = upsertMemberSchema.parse(input);
   const current = nowIso();

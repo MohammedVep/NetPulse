@@ -19,6 +19,7 @@ import {
   applyEndpointSimulation,
   createEndpoint,
   createOrganization,
+  ensureOrganization,
   getDashboardSummary,
   getOrgAiInsights,
   getEndpoint,
@@ -210,7 +211,10 @@ export async function handler(event: ApiEvent): Promise<APIGatewayProxyResultV2>
     if (method === "GET" && orgMatch) {
       const orgId = getCapture(orgMatch, 1, "orgId");
       await requireOrgAccess(event, orgId, "org:read", context);
-      const organization = await getOrganization(orgId);
+      const organization =
+        env.publicDemoEnabled && orgId === env.publicDemoOrgId
+          ? await ensureOrganization(orgId, { name: "NetPulse Public Demo", isActive: true })
+          : await getOrganization(orgId);
       return respondJson(200, organization);
     }
 
@@ -232,7 +236,7 @@ export async function handler(event: ApiEvent): Promise<APIGatewayProxyResultV2>
       if (orgId !== env.publicDemoOrgId) {
         throw new Error("Public demo access is limited to demo organization data");
       }
-      const organization = await getOrganization(orgId);
+      const organization = await ensureOrganization(orgId, { name: "NetPulse Public Demo", isActive: true });
       if (!organization.isActive) {
         throw new Error("Organization is not active");
       }

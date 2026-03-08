@@ -28,4 +28,9 @@ describe('web config', () => {
     expect(typeof config.testWebhookUrl).toBe('string');
     expect(typeof config.showTestingHints).toBe('boolean');
   });
+
+  it("exposes proof-pack routing config", () => {
+    expect(typeof config.proofPackUrl).toBe("string");
+    expect(config.proofPackUrl.length).toBeGreaterThan(0);
+  });
 });

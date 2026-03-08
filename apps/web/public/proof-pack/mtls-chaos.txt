@@ -1,0 +1,82 @@
+
+> netpulse@0.1.0 drill:mtls:chaos
+> tsx scripts/mtls-chaos-drill.ts
+
+{
+  "message": "mTLS chaos queue server started",
+  "runId": "mtls-chaos-1772995770391",
+  "host": "127.0.0.1",
+  "port": 9443,
+  "workerCount": 4,
+  "eventsPerWorker": 2500,
+  "expectedMessages": 10000,
+  "killRatio": 0.5,
+  "killAfterMs": 1500,
+  "startedAtIso": "2026-03-08T18:49:30.391Z"
+}
+{
+  "message": "mTLS handshake rejected",
+  "atIso": "2026-03-08T18:49:30.427Z",
+  "error": "00F1D2ED01000000:error:0A0000C7:SSL routines:tls_process_client_certificate:peer did not return a certificate:../deps/openssl/openssl/ssl/statem/statem_srvr.c:3732:\n"
+}
+{
+  "message": "injecting worker outage",
+  "killAtIso": "2026-03-08T18:49:31.938Z",
+  "killCount": 2,
+  "killCommand": "chaos-injector kill regional-worker-1 regional-worker-2",
+  "killedWorkers": [
+    "regional-worker-1",
+    "regional-worker-2"
+  ]
+}
+{
+  "message": "mTLS chaos drill complete",
+  "report": {
+    "runId": "mtls-chaos-1772995770391",
+    "startedAtIso": "2026-03-08T18:49:30.391Z",
+    "endedAtIso": "2026-03-08T18:49:36.424Z",
+    "host": "127.0.0.1",
+    "port": 9443,
+    "workerCount": 4,
+    "eventsPerWorker": 2500,
+    "expectedMessages": 10000,
+    "killRatio": 0.5,
+    "killAfterMs": 1500,
+    "killCommand": "chaos-injector kill regional-worker-1 regional-worker-2",
+    "killedWorkers": [
+      "regional-worker-1",
+      "regional-worker-2"
+    ],
+    "killAtIso": "2026-03-08T18:49:31.938Z",
+    "detectionLatencyMs": 5,
+    "unauthorizedHandshakeFailures": 1,
+    "dlqQueued": 3684,
+    "dlqReplayed": 3684,
+    "receivedBeforeKill": 2631,
+    "receivedAfterKill": 7369,
+    "processedMessages": 10000,
+    "dataLoss": 0,
+    "throughputMessagesPerSecond": 1657.55,
+    "workerCloseEvents": [
+      {
+        "workerId": "regional-worker-1",
+        "closeAtIso": "2026-03-08T18:49:31.943Z",
+        "reason": "chaos_killed"
+      },
+      {
+        "workerId": "regional-worker-2",
+        "closeAtIso": "2026-03-08T18:49:31.943Z",
+        "reason": "chaos_killed"
+      },
+      {
+        "workerId": "regional-worker-3",
+        "closeAtIso": "2026-03-08T18:49:36.175Z"
+      },
+      {
+        "workerId": "regional-worker-4",
+        "closeAtIso": "2026-03-08T18:49:36.175Z"
+      }
+    ]
+  }
+}
+Chaos report saved to artifacts/proof-pack/proofpack-20260308T184847Z/mtls-chaos-report.json

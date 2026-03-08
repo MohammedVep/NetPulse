@@ -162,6 +162,16 @@ This repo now includes an optional staging drill path for PostgreSQL burst write
    - encrypted TLS transport between regional workers and central queue endpoint
    - expected message delivery volume under concurrent worker fan-in
 
+### Chaos Proof Pack drill (50% worker outage)
+
+Run a scripted failure drill that kills half of active workers, replays unsent events, and writes a structured report:
+
+- `MTLS_WORKERS=4 MTLS_EVENTS_PER_WORKER=2500 MTLS_KILL_RATIO=0.5 MTLS_KILL_AFTER_MS=1500 npm run drill:mtls:chaos`
+
+Frontend evidence view:
+
+- `/proof-pack` (or configure `NEXT_PUBLIC_PROOF_PACK_URL`)
+
 ## API surface (`/v1`)
 
 - `POST /organizations`

@@ -1,0 +1,28 @@
+
+> netpulse@0.1.0 drill:pgbouncer
+> tsx scripts/pgbouncer-spike.ts
+
+{
+  "message": "PgBouncer spike run complete",
+  "totalWrites": 10000,
+  "concurrency": 1000,
+  "completed": 10000,
+  "failed": 0,
+  "durationMs": 1797,
+  "writesPerSecond": 5564.83,
+  "sampleErrors": []
+}
+{
+  "message": "PgBouncer pool stats",
+  "database": "netpulse",
+  "clActive": 0,
+  "clWaiting": 0,
+  "svActive": 0,
+  "svIdle": 16,
+  "maxwaitSeconds": 0
+}
+{
+  "message": "PostgreSQL connection snapshot",
+  "totalConnections": 17,
+  "activeConnections": 1
+}

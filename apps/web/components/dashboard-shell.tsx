@@ -60,6 +60,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
   const loadBalancerBaseUrl = config.loadBalancerUrl.trim().replace(/\/$/, "");
   const grafanaDashboardUrl = config.grafanaDashboardUrl.trim();
   const prometheusUrl = config.prometheusUrl.trim();
+  const proofPackUrl = config.proofPackUrl.trim() || "/proof-pack";
   const loadBalancerLinks = loadBalancerBaseUrl
     ? {
         healthz: `${loadBalancerBaseUrl}/healthz`,
@@ -522,6 +523,12 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
                   </a>
                 </p>
               ) : null}
+              <p className="small" style={{ margin: 0 }}>
+                Proof Pack:{" "}
+                <a href={proofPackUrl} target="_blank" rel="noreferrer">
+                  <code>{proofPackUrl}</code>
+                </a>
+              </p>
             </>
           ) : (
             <p className="small" style={{ margin: 0 }}>

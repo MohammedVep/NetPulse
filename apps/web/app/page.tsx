@@ -40,6 +40,7 @@ export default function HomePage() {
   const loadBalancerBaseUrl = config.loadBalancerUrl.trim().replace(/\/$/, "");
   const grafanaDashboardUrl = config.grafanaDashboardUrl.trim();
   const prometheusUrl = config.prometheusUrl.trim();
+  const proofPackUrl = config.proofPackUrl.trim() || "/proof-pack";
   const loadBalancerLinks = loadBalancerBaseUrl
     ? {
         healthz: `${loadBalancerBaseUrl}/healthz`,
@@ -274,6 +275,12 @@ export default function HomePage() {
                     Prometheus: <a href={prometheusUrl}>{prometheusUrl}</a>
                   </p>
                 ) : null}
+                <p className="small" style={{ marginTop: 0 }}>
+                  Reliability proof:{" "}
+                  <a href={proofPackUrl} target="_blank" rel="noreferrer">
+                    View Reliability Proof Pack
+                  </a>
+                </p>
               </>
             ) : (
               <p className="small" style={{ marginTop: 0 }}>
@@ -325,6 +332,14 @@ export default function HomePage() {
                 }}
               >
                 Open Public Demo
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  router.push(proofPackUrl);
+                }}
+              >
+                View Reliability Proof Pack
               </button>
               {isAuthenticated ? (
                 <button

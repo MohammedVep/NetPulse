@@ -6,6 +6,7 @@ export const config = {
   loadBalancerUrl: process.env.NEXT_PUBLIC_LOAD_BALANCER_URL ?? "",
   grafanaDashboardUrl: process.env.NEXT_PUBLIC_GRAFANA_DASHBOARD_URL ?? "",
   prometheusUrl: process.env.NEXT_PUBLIC_PROMETHEUS_URL ?? "",
+  proofPackUrl: process.env.NEXT_PUBLIC_PROOF_PACK_URL ?? "/proof-pack",
   demoOrgId: process.env.NEXT_PUBLIC_DEMO_ORG_ID ?? "org_demo_public",
   defaultWorkspaceName: process.env.NEXT_PUBLIC_DEFAULT_WORKSPACE_NAME ?? "My NetPulse Workspace",
   defaultEndpointName: process.env.NEXT_PUBLIC_DEFAULT_ENDPOINT_NAME ?? "Recruiter Drill Endpoint",

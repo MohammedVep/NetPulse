@@ -37,6 +37,14 @@ export default function HomePage() {
   const loadBalancerBaseUrl = config.loadBalancerUrl.trim().replace(/\/$/, "");
   const grafanaDashboardUrl = config.grafanaDashboardUrl.trim();
   const prometheusUrl = config.prometheusUrl.trim();
+  const loadBalancerLinks = loadBalancerBaseUrl
+    ? {
+        healthz: `${loadBalancerBaseUrl}/healthz`,
+        backends: `${loadBalancerBaseUrl}/backends`,
+        metrics: `${loadBalancerBaseUrl}/metrics`,
+        drill: `${loadBalancerBaseUrl}/admin/failure-mode?unhealthy=true`
+      }
+    : null;
 
   const resetMessages = () => {
     setAuthError(null);
@@ -172,133 +180,137 @@ export default function HomePage() {
 
   return (
     <main>
-      <section className="panel" style={{ marginTop: 40 }}>
-        <h1 style={{ marginTop: 0, fontSize: "clamp(2rem, 6vw, 3.4rem)" }}>NetPulse</h1>
-        <p className="small" style={{ maxWidth: 720 }}>
-          I built a distributed uptime monitoring system similar to Datadog.
-          NetPulse provides multi-region checks, SLA tracking, failure simulation, live incident streams,
-          and alert fanout across email, Slack, and generic webhooks.
+      <section className="panel soft" style={{ marginTop: 26 }}>
+        <span className="pill">Monitoring SaaS · Massive Concurrency + Zero Trust</span>
+        <h1 className="hero-title" style={{ marginTop: 14 }}>
+          NetPulse Reliability Control Plane
+        </h1>
+        <p className="small hero-subtitle">
+          NetPulse now combines dynamic load balancer service discovery, automatic circuit breaking, Prometheus +
+          Grafana observability, PgBouncer-backed write burst handling, and mTLS worker-to-core encryption.
         </p>
-        <div className="panel" style={{ marginTop: 14 }}>
-          <h2 style={{ marginTop: 0 }}>Reliability Upgrade Highlights</h2>
-          <ul style={{ marginTop: 0 }}>
-            <li className="small">
-              Implemented PgBouncer for advanced PostgreSQL connection pooling, preventing database connection
-              exhaustion during simulated spikes of 10,000+ concurrent regional worker writes.
-            </li>
-            <li className="small">
-              Enforced Zero-Trust architecture by establishing Mutual TLS (mTLS) encryption between distributed
-              regional checkers and the centralized monitoring engine.
-            </li>
-          </ul>
+
+        <div className="signal-grid" style={{ marginTop: 8 }}>
+          <article className="signal-card">
+            <strong>Dynamic Service Discovery</strong>
+            <p className="small">Backends auto-register through Consul/etcd and routing updates without restarts.</p>
+          </article>
+          <article className="signal-card">
+            <strong>Active Health + Circuit Breaking</strong>
+            <p className="small">Failing nodes are auto-ejected, probed in isolation, then re-admitted on recovery.</p>
+          </article>
+          <article className="signal-card">
+            <strong>Observability Pipeline</strong>
+            <p className="small">Live runtime metrics expose connections, latency, and 5xx behavior for drill proof.</p>
+          </article>
+          <article className="signal-card">
+            <strong>PgBouncer Pooling</strong>
+            <p className="small">Connection pooling absorbs 10,000+ simulated worker writes without exhausting Postgres.</p>
+          </article>
+          <article className="signal-card">
+            <strong>mTLS Zero-Trust Plane</strong>
+            <p className="small">Regional checkers and queue core communicate over cert-authenticated encrypted links.</p>
+          </article>
         </div>
-        {config.showTestingHints || hasTestingPresets ? (
-          <div className="panel" style={{ marginTop: 14 }}>
-            <h2 style={{ marginTop: 0 }}>Recruiter Testing Presets</h2>
+
+        <div className="split-grid" style={{ marginTop: 14 }}>
+          <article className="panel soft stack">
+            <h2 className="section-head">Runtime Surface</h2>
+            {loadBalancerLinks ? (
+              <>
+                <p className="small" style={{ marginTop: 0 }}>
+                  Environment load balancer: <code>{loadBalancerBaseUrl}</code>
+                </p>
+                <div className="control-row">
+                  <a href={loadBalancerLinks.healthz} target="_blank" rel="noreferrer">
+                    <code>/healthz</code>
+                  </a>
+                  <a href={loadBalancerLinks.backends} target="_blank" rel="noreferrer">
+                    <code>/backends</code>
+                  </a>
+                  <a href={loadBalancerLinks.metrics} target="_blank" rel="noreferrer">
+                    <code>/metrics</code>
+                  </a>
+                </div>
+                <div className="command">curl {loadBalancerLinks.drill}</div>
+                {grafanaDashboardUrl ? (
+                  <p className="small" style={{ marginTop: 0 }}>
+                    Grafana: <a href={grafanaDashboardUrl}>{grafanaDashboardUrl}</a>
+                  </p>
+                ) : null}
+                {prometheusUrl ? (
+                  <p className="small" style={{ marginTop: 0 }}>
+                    Prometheus: <a href={prometheusUrl}>{prometheusUrl}</a>
+                  </p>
+                ) : null}
+              </>
+            ) : (
+              <p className="small" style={{ marginTop: 0 }}>
+                Set <code>NEXT_PUBLIC_LOAD_BALANCER_URL</code> to surface live service discovery, routing, and drill
+                endpoints in this page.
+              </p>
+            )}
+          </article>
+
+          <article className="panel soft stack">
+            <h2 className="section-head">Quick Access</h2>
             <p className="small" style={{ marginTop: 0 }}>
-              Sign in, create a workspace, then open the dashboard to use prefilled alert-channel test values.
-            </p>
-            <p className="small" style={{ marginTop: 0 }}>
-              Preset email: <code>{config.testAlertEmail || "not configured"}</code>
-            </p>
-            <p className="small" style={{ marginTop: 0 }}>
-              Preset Slack webhook: <code>{config.testSlackWebhookUrl || "not configured"}</code>
-            </p>
-            <p className="small" style={{ marginTop: 0 }}>
-              Preset generic webhook: <code>{config.testWebhookUrl || "not configured"}</code>
-            </p>
-          </div>
-        ) : null}
-        {loadBalancerBaseUrl ? (
-          <div className="panel" style={{ marginTop: 14 }}>
-            <h2 style={{ marginTop: 0 }}>Load Balancer Drill Surface</h2>
-            <p className="small" style={{ marginTop: 0 }}>
-              Dynamic service discovery + circuit breaker endpoints are live for this environment.
-            </p>
-            <p className="small" style={{ marginTop: 0 }}>
-              URL: <code>{loadBalancerBaseUrl}</code>
+              Session: <span className={`status ${isAuthenticated ? "HEALTHY" : "DEGRADED"}`}>{isAuthenticated ? "AUTHENTICATED" : "ANONYMOUS"}</span>
             </p>
             <div className="input-row">
-              <a href={`${loadBalancerBaseUrl}/healthz`} target="_blank" rel="noreferrer">
-                <code>/healthz</code>
-              </a>
-              <a href={`${loadBalancerBaseUrl}/backends`} target="_blank" rel="noreferrer">
-                <code>/backends</code>
-              </a>
-              <a href={`${loadBalancerBaseUrl}/metrics`} target="_blank" rel="noreferrer">
-                <code>/metrics</code>
-              </a>
+              <input
+                type="text"
+                placeholder="org_..."
+                value={orgId}
+                onChange={(event) => setOrgId(event.currentTarget.value)}
+                style={{ minWidth: 280 }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (!orgId.trim()) return;
+                  router.push(`/org/${encodeURIComponent(orgId.trim())}`);
+                }}
+              >
+                Open Dashboard
+              </button>
             </div>
-            {grafanaDashboardUrl ? (
-              <p className="small" style={{ marginTop: 10 }}>
-                Grafana:{" "}
-                <a href={grafanaDashboardUrl} target="_blank" rel="noreferrer">
-                  <code>{grafanaDashboardUrl}</code>
-                </a>
-              </p>
-            ) : null}
-            {prometheusUrl ? (
-              <p className="small" style={{ marginTop: 0 }}>
-                Prometheus:{" "}
-                <a href={prometheusUrl} target="_blank" rel="noreferrer">
-                  <code>{prometheusUrl}</code>
-                </a>
-              </p>
-            ) : null}
-          </div>
-        ) : null}
-
-        <div className="input-row" style={{ marginTop: 16 }}>
-          <input
-            type="text"
-            placeholder="org_..."
-            value={orgId}
-            onChange={(event) => setOrgId(event.currentTarget.value)}
-            style={{ minWidth: 320 }}
-          />
-          <button
-            type="button"
-            onClick={() => {
-              if (!orgId.trim()) return;
-              router.push(`/org/${encodeURIComponent(orgId.trim())}`);
-            }}
-          >
-            Open Dashboard
-          </button>
-          <button
-            type="button"
-            onClick={() => router.push("/register")}
-          >
-            Register
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              signOut();
-              setIsAuthenticated(false);
-              resetMessages();
-              router.push(`/org/${encodeURIComponent(config.demoOrgId)}`);
-            }}
-          >
-            Open Public Demo
-          </button>
-          {isAuthenticated ? (
-            <button
-              type="button"
-              onClick={() => {
-                signOut();
-                setIsAuthenticated(false);
-                resetMessages();
-              }}
-            >
-              Sign Out
-            </button>
-          ) : null}
+            <div className="control-row">
+              <button type="button" onClick={() => router.push("/register")}>
+                Register Route
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  signOut();
+                  setIsAuthenticated(false);
+                  resetMessages();
+                  router.push(`/org/${encodeURIComponent(config.demoOrgId)}`);
+                }}
+              >
+                Open Public Demo
+              </button>
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    signOut();
+                    setIsAuthenticated(false);
+                    resetMessages();
+                  }}
+                >
+                  Sign Out
+                </button>
+              ) : null}
+            </div>
+          </article>
         </div>
+      </section>
 
-        <div className="panel" style={{ marginTop: 18 }}>
-          <h2 style={{ marginTop: 0 }}>Authentication</h2>
-          <div className="input-row" style={{ marginBottom: 12 }}>
+      <section className="split-grid" style={{ marginTop: 14 }}>
+        <article className="panel stack">
+          <h2 className="section-head">Authentication</h2>
+          <div className="control-row" style={{ marginBottom: 2 }}>
             <button
               type="button"
               onClick={() => {
@@ -328,14 +340,14 @@ export default function HomePage() {
               placeholder="Email"
               value={email}
               onChange={(event) => setEmail(event.currentTarget.value)}
-              style={{ minWidth: 280 }}
+              style={{ minWidth: 250 }}
             />
             <input
               type="password"
               placeholder="Password"
               value={password}
               onChange={(event) => setPassword(event.currentTarget.value)}
-              style={{ minWidth: 280 }}
+              style={{ minWidth: 220 }}
             />
             {authMode === "register" ? (
               <input
@@ -343,12 +355,12 @@ export default function HomePage() {
                 placeholder="Confirm Password"
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.currentTarget.value)}
-                style={{ minWidth: 280 }}
+                style={{ minWidth: 220 }}
               />
             ) : null}
           </div>
 
-          <div className="input-row" style={{ marginTop: 12 }}>
+          <div className="control-row">
             {authMode === "signin" ? (
               <button type="button" disabled={isBusy} onClick={() => void handleSignIn()}>
                 {isBusy ? "Signing In..." : "Sign In"}
@@ -361,8 +373,8 @@ export default function HomePage() {
           </div>
 
           {needsVerification ? (
-            <div className="panel" style={{ marginTop: 12 }}>
-              <h3 style={{ marginTop: 0 }}>Verify Email</h3>
+            <div className="panel soft stack">
+              <h3 className="section-head">Verify Email</h3>
               <div className="input-row">
                 <input
                   type="text"
@@ -380,14 +392,14 @@ export default function HomePage() {
             </div>
           ) : null}
 
-          {authError ? <p style={{ color: "var(--down)", marginTop: 10 }}>{authError}</p> : null}
-          {authNotice ? <p style={{ color: "var(--ok)", marginTop: 10 }}>{authNotice}</p> : null}
-        </div>
+          {authError ? <p style={{ color: "var(--down)", margin: 0 }}>{authError}</p> : null}
+          {authNotice ? <p style={{ color: "var(--ok)", margin: 0 }}>{authNotice}</p> : null}
+        </article>
 
-        <div className="panel" style={{ marginTop: 18 }}>
-          <h2 style={{ marginTop: 0 }}>Get Started Faster</h2>
+        <article className="panel stack">
+          <h2 className="section-head">Workspace Bootstrap</h2>
           <p className="small" style={{ marginTop: 0 }}>
-            After signing in, create a workspace and open it immediately.
+            Create a workspace and jump directly into the dashboard. Public demo mode remains read-only.
           </p>
           <div className="input-row">
             <input
@@ -395,18 +407,32 @@ export default function HomePage() {
               placeholder="Workspace name"
               value={orgName}
               onChange={(event) => setOrgName(event.currentTarget.value)}
-              style={{ minWidth: 320 }}
+              style={{ minWidth: 260 }}
             />
             <button type="button" disabled={isCreatingOrg} onClick={() => void handleCreateWorkspace()}>
               {isCreatingOrg ? "Creating..." : "Create Workspace & Open"}
             </button>
           </div>
-          {createOrgError ? <p style={{ color: "var(--down)", marginTop: 10 }}>{createOrgError}</p> : null}
-        </div>
+          {createOrgError ? <p style={{ color: "var(--down)", margin: 0 }}>{createOrgError}</p> : null}
 
-        <p className="small" style={{ marginTop: 12 }}>
-          Public demo is read-only and does not require login.
-        </p>
+          {(config.showTestingHints || hasTestingPresets) ? (
+            <div className="panel soft stack">
+              <h3 className="section-head">Recruiter Test Presets</h3>
+              <p className="small" style={{ marginTop: 0 }}>
+                Presets are auto-loaded from environment values for quick failure and alert-channel drills.
+              </p>
+              <p className="small" style={{ margin: 0 }}>
+                Email: <code>{config.testAlertEmail || "not configured"}</code>
+              </p>
+              <p className="small" style={{ margin: 0 }}>
+                Slack: <code>{config.testSlackWebhookUrl || "not configured"}</code>
+              </p>
+              <p className="small" style={{ margin: 0 }}>
+                Webhook: <code>{config.testWebhookUrl || "not configured"}</code>
+              </p>
+            </div>
+          ) : null}
+        </article>
       </section>
     </main>
   );

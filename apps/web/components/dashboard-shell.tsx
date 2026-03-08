@@ -353,13 +353,26 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
 
   return (
     <main>
-      <section className="panel" style={{ marginBottom: 14 }}>
-        <h1 style={{ marginTop: 0 }}>NetPulse Dashboard</h1>
-        <p className="small" style={{ marginTop: 4 }}>
-          Organization <code>{orgId}</code>
+      <section className="panel soft stack" style={{ marginBottom: 14 }}>
+        <div className="control-row">
+          <span className="pill">Reliability Control Plane</span>
+          <p className="small" style={{ margin: 0 }}>
+            Organization <code>{orgId}</code>
+          </p>
+        </div>
+        <h1 className="hero-title" style={{ margin: 0, fontSize: "clamp(1.8rem, 5vw, 3rem)" }}>
+          NetPulse Operations Dashboard
+        </h1>
+        <p className="small" style={{ marginTop: 0, maxWidth: 900 }}>
+          Live status for multi-region health checks, service-discovered load balancer routing, circuit-breaker
+          behavior, and SaaS reliability controls hardened by PgBouncer + mTLS.
         </p>
-        {!isAuthenticated ? <p className="small" style={{ marginTop: 8 }}>{READ_ONLY_MESSAGE}</p> : null}
-        <div className="input-row" style={{ marginTop: 12 }}>
+        {!isAuthenticated ? (
+          <p className="small" style={{ margin: 0 }}>
+            {READ_ONLY_MESSAGE}
+          </p>
+        ) : null}
+        <div className="control-row">
           <label className="small" htmlFor="window">
             Window
           </label>
@@ -378,126 +391,134 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
             Refresh
           </button>
         </div>
-        {error ? <p style={{ color: "#ff6c7a" }}>{error}</p> : null}
+        {error ? <p style={{ color: "var(--down)", margin: 0 }}>{error}</p> : null}
       </section>
 
-      <section className="grid cards" style={{ marginBottom: 14 }}>
-        <article className="panel">
-          <div className="small">Uptime ({selectedWindow})</div>
-          <div style={{ fontSize: 34, fontWeight: 700 }}>{summary?.uptimePct ?? 0}%</div>
+      <section className="kpi-grid" style={{ marginBottom: 14 }}>
+        <article className="kpi-card">
+          <div className="kpi-label">Uptime ({selectedWindow})</div>
+          <div className="kpi-value">{summary?.uptimePct ?? 0}%</div>
         </article>
-        <article className="panel">
-          <div className="small">Failure Rate ({selectedWindow})</div>
-          <div style={{ fontSize: 34, fontWeight: 700 }}>{summary?.failureRatePct ?? 0}%</div>
+        <article className="kpi-card">
+          <div className="kpi-label">Failure Rate ({selectedWindow})</div>
+          <div className="kpi-value">{summary?.failureRatePct ?? 0}%</div>
         </article>
-        <article className="panel">
-          <div className="small">Burn Rate</div>
-          <div
-            style={{
-              fontSize: 34,
-              fontWeight: 700,
-              color: summary?.burnRateAlert ? "var(--down)" : "inherit"
-            }}
-          >
+        <article className="kpi-card">
+          <div className="kpi-label">Burn Rate</div>
+          <div className="kpi-value" style={{ color: summary?.burnRateAlert ? "var(--down)" : "inherit" }}>
             {summary?.burnRate ?? 0}x
           </div>
           <div className="small">{summary?.burnRateAlert ? "Budget burn alert" : "Within SLO budget"}</div>
         </article>
-        <article className="panel">
-          <div className="small">Endpoints</div>
-          <div style={{ fontSize: 34, fontWeight: 700 }}>{totals.total}</div>
+        <article className="kpi-card">
+          <div className="kpi-label">Endpoints</div>
+          <div className="kpi-value">{totals.total}</div>
         </article>
-        <article className="panel">
-          <div className="small">Down</div>
-          <div style={{ fontSize: 34, fontWeight: 700, color: "var(--down)" }}>{totals.down}</div>
-        </article>
-        <article className="panel">
-          <div className="small">Open Incidents</div>
-          <div style={{ fontSize: 34, fontWeight: 700 }}>{incidents.length}</div>
-        </article>
-      </section>
-
-      {loadBalancerLinks ? (
-        <section className="panel" style={{ marginBottom: 14 }}>
-          <h2 style={{ marginTop: 0 }}>Load Balancer Runtime</h2>
-          <p className="small" style={{ marginTop: 0 }}>
-            Service discovery, health checks, and circuit-breaking endpoints from this deployed stack.
-          </p>
-          <p className="small" style={{ marginTop: 0 }}>
-            URL: <code>{loadBalancerBaseUrl}</code>
-          </p>
-          <div className="grid cards">
-            <article className="panel">
-              <div className="small">Runtime Health</div>
-              <a href={loadBalancerLinks.healthz} target="_blank" rel="noreferrer">
-                <code>/healthz</code>
-              </a>
-            </article>
-            <article className="panel">
-              <div className="small">Routing Table</div>
-              <a href={loadBalancerLinks.backends} target="_blank" rel="noreferrer">
-                <code>/backends</code>
-              </a>
-            </article>
-            <article className="panel">
-              <div className="small">Prometheus Metrics</div>
-              <a href={loadBalancerLinks.metrics} target="_blank" rel="noreferrer">
-                <code>/metrics</code>
-              </a>
-            </article>
+        <article className="kpi-card">
+          <div className="kpi-label">Down</div>
+          <div className="kpi-value" style={{ color: "var(--down)" }}>
+            {totals.down}
           </div>
-          <p className="small" style={{ marginTop: 10 }}>
-            Failure drill endpoint:{" "}
-            <a href={loadBalancerLinks.drill} target="_blank" rel="noreferrer">
-              <code>/admin/failure-mode?unhealthy=true</code>
-            </a>
-          </p>
-          {grafanaDashboardUrl ? (
-            <p className="small" style={{ marginTop: 0 }}>
-              Grafana dashboard:{" "}
-              <a href={grafanaDashboardUrl} target="_blank" rel="noreferrer">
-                <code>{grafanaDashboardUrl}</code>
-              </a>
-            </p>
-          ) : null}
-          {prometheusUrl ? (
-            <p className="small" style={{ marginTop: 0 }}>
-              Prometheus UI:{" "}
-              <a href={prometheusUrl} target="_blank" rel="noreferrer">
-                <code>{prometheusUrl}</code>
-              </a>
-            </p>
-          ) : null}
-        </section>
-      ) : null}
-
-      <section className="panel" style={{ marginBottom: 14 }}>
-        <h2 style={{ marginTop: 0 }}>Uptime Trend</h2>
-        <div className="sparkline" aria-label="Uptime sparkline">
-          {(summary?.sparkline ?? []).map((point: { t: string; uptimePct: number }) => (
-            <span key={point.t} style={{ height: `${Math.max(8, point.uptimePct * 0.75)}px` }} />
-          ))}
-        </div>
+        </article>
+        <article className="kpi-card">
+          <div className="kpi-label">Paused</div>
+          <div className="kpi-value" style={{ color: "var(--warn)" }}>
+            {totals.paused}
+          </div>
+        </article>
+        <article className="kpi-card">
+          <div className="kpi-label">Open Incidents</div>
+          <div className="kpi-value">{incidents.length}</div>
+        </article>
       </section>
 
-      <section className="panel" style={{ marginBottom: 14 }}>
-        <h2 style={{ marginTop: 0 }}>Burn Rate Trend</h2>
-        <div className="sparkline" aria-label="Burn rate sparkline">
-          {(summary?.burnRateSparkline ?? []).map((point: { t: string; burnRate: number }) => (
-            <span key={point.t} style={{ height: `${Math.max(8, Math.min(100, point.burnRate * 15))}px` }} />
-          ))}
-        </div>
+      <section className="split-grid" style={{ marginBottom: 14 }}>
+        <article className="panel stack">
+          <h2 className="section-head">Load Balancer Runtime</h2>
+          {loadBalancerLinks ? (
+            <>
+              <p className="small" style={{ margin: 0 }}>
+                Service discovery + circuit breaker URLs from this deployed stack.
+              </p>
+              <p className="small" style={{ margin: 0 }}>
+                Base URL: <code>{loadBalancerBaseUrl}</code>
+              </p>
+              <div className="control-row">
+                <a href={loadBalancerLinks.healthz} target="_blank" rel="noreferrer">
+                  <code>/healthz</code>
+                </a>
+                <a href={loadBalancerLinks.backends} target="_blank" rel="noreferrer">
+                  <code>/backends</code>
+                </a>
+                <a href={loadBalancerLinks.metrics} target="_blank" rel="noreferrer">
+                  <code>/metrics</code>
+                </a>
+              </div>
+              <div className="command mono">curl {loadBalancerLinks.drill}</div>
+              {grafanaDashboardUrl ? (
+                <p className="small" style={{ margin: 0 }}>
+                  Grafana:{" "}
+                  <a href={grafanaDashboardUrl} target="_blank" rel="noreferrer">
+                    <code>{grafanaDashboardUrl}</code>
+                  </a>
+                </p>
+              ) : null}
+              {prometheusUrl ? (
+                <p className="small" style={{ margin: 0 }}>
+                  Prometheus:{" "}
+                  <a href={prometheusUrl} target="_blank" rel="noreferrer">
+                    <code>{prometheusUrl}</code>
+                  </a>
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <p className="small" style={{ margin: 0 }}>
+              Configure <code>NEXT_PUBLIC_LOAD_BALANCER_URL</code> to render runtime service-discovery and
+              circuit-breaker drill links in this view.
+            </p>
+          )}
+        </article>
+
+        <article className="panel stack">
+          <h2 className="section-head">Architecture Upgrade Signals</h2>
+          <ul className="list-tight">
+            <li className="small">Dynamic backend registration updates routing tables without load balancer restarts.</li>
+            <li className="small">Active health probes trip failing nodes out of rotation and reintroduce on recovery.</li>
+            <li className="small">Prometheus metrics and Grafana panels expose latency, connection load, and 5xx rates.</li>
+            <li className="small">PgBouncer protects PostgreSQL against connection exhaustion under concurrency spikes.</li>
+            <li className="small">mTLS secures regional worker traffic to central queue endpoints under zero-trust policy.</li>
+          </ul>
+        </article>
       </section>
 
-      <section className="panel" style={{ marginBottom: 14 }}>
-        <h2 style={{ marginTop: 0 }}>AI Insights</h2>
-        <div className="grid cards" style={{ marginBottom: 10 }}>
-          <article className="panel">
-            <div className="small">Risk Level</div>
+      <section className="split-grid" style={{ marginBottom: 14 }}>
+        <article className="panel stack">
+          <h2 className="section-head">Uptime Trend</h2>
+          <div className="sparkline" aria-label="Uptime sparkline">
+            {(summary?.sparkline ?? []).map((point: { t: string; uptimePct: number }) => (
+              <span key={point.t} style={{ height: `${Math.max(8, point.uptimePct * 0.75)}px` }} />
+            ))}
+          </div>
+        </article>
+        <article className="panel stack">
+          <h2 className="section-head">Burn Rate Trend</h2>
+          <div className="sparkline" aria-label="Burn rate sparkline">
+            {(summary?.burnRateSparkline ?? []).map((point: { t: string; burnRate: number }) => (
+              <span key={point.t} style={{ height: `${Math.max(8, Math.min(100, point.burnRate * 15))}px` }} />
+            ))}
+          </div>
+        </article>
+      </section>
+
+      <section className="panel stack" style={{ marginBottom: 14 }}>
+        <h2 className="section-head">AI Insights</h2>
+        <div className="kpi-grid">
+          <article className="kpi-card">
+            <div className="kpi-label">Risk Level</div>
             <div
+              className="kpi-value"
               style={{
-                fontSize: 30,
-                fontWeight: 700,
                 color:
                   aiInsights?.riskLevel === "CRITICAL" || aiInsights?.riskLevel === "HIGH"
                     ? "var(--down)"
@@ -507,47 +528,49 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
               {aiInsights?.riskLevel ?? "-"}
             </div>
           </article>
-          <article className="panel">
-            <div className="small">AI Failure Rate</div>
-            <div style={{ fontSize: 30, fontWeight: 700 }}>{aiInsights?.totals.failureRatePct ?? 0}%</div>
+          <article className="kpi-card">
+            <div className="kpi-label">AI Failure Rate</div>
+            <div className="kpi-value">{aiInsights?.totals.failureRatePct ?? 0}%</div>
           </article>
-          <article className="panel">
-            <div className="small">AI Avg Burn Rate</div>
-            <div style={{ fontSize: 30, fontWeight: 700 }}>{aiInsights?.totals.avgBurnRate ?? 0}x</div>
+          <article className="kpi-card">
+            <div className="kpi-label">AI Avg Burn Rate</div>
+            <div className="kpi-value">{aiInsights?.totals.avgBurnRate ?? 0}x</div>
           </article>
-          <article className="panel">
-            <div className="small">Anomalies</div>
-            <div style={{ fontSize: 30, fontWeight: 700 }}>{aiInsights?.anomalies.length ?? 0}</div>
+          <article className="kpi-card">
+            <div className="kpi-label">Anomalies</div>
+            <div className="kpi-value">{aiInsights?.anomalies.length ?? 0}</div>
           </article>
         </div>
 
-        <p className="small" style={{ marginTop: 0 }}>
+        <p className="small" style={{ margin: 0 }}>
           {aiInsights?.summary ?? "No AI summary available yet."}
         </p>
-        <p className="small" style={{ marginTop: 0 }}>
+        <p className="small" style={{ margin: 0 }}>
           Model: <code>{aiInsights?.model ?? "n/a"}</code> | Generated:{" "}
           {aiInsights?.generatedAt ? new Date(aiInsights.generatedAt).toLocaleString() : "-"}
         </p>
 
-        <h3 style={{ marginBottom: 6 }}>Top At-Risk Endpoints</h3>
+        <h3 className="section-head">Top At-Risk Endpoints</h3>
         {aiInsights?.topAtRiskEndpoints.length ? (
           <div className="grid">
             {aiInsights.topAtRiskEndpoints.map((risk) => (
-              <article key={risk.endpointId} className="panel">
+              <article key={risk.endpointId} className="signal-card">
                 <div style={{ fontWeight: 700 }}>{risk.endpointName}</div>
-                <div className="small">{risk.endpointId}</div>
+                <div className="small mono">{risk.endpointId}</div>
                 <div style={{ marginTop: 6 }}>Risk Score: {risk.riskScore}</div>
                 <div className="small">{risk.reasons.join(" | ") || "No specific drivers"}</div>
               </article>
             ))}
           </div>
         ) : (
-          <p className="small">No elevated endpoint risk detected.</p>
+          <p className="small" style={{ margin: 0 }}>
+            No elevated endpoint risk detected.
+          </p>
         )}
 
-        <h3 style={{ marginBottom: 6 }}>Recommendations</h3>
+        <h3 className="section-head">Recommendations</h3>
         {aiInsights?.recommendations.length ? (
-          <ul style={{ marginTop: 0 }}>
+          <ul className="list-tight">
             {aiInsights.recommendations.map((recommendation) => (
               <li key={recommendation} className="small">
                 {recommendation}
@@ -555,131 +578,132 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
             ))}
           </ul>
         ) : (
-          <p className="small">No recommendations yet.</p>
+          <p className="small" style={{ margin: 0 }}>
+            No recommendations yet.
+          </p>
         )}
       </section>
 
-      <section className="panel" style={{ marginBottom: 14 }}>
-        <h2 style={{ marginTop: 0 }}>Endpoints</h2>
-        {config.showTestingHints ? (
-          <p className="small" style={{ marginTop: 0 }}>
-            Recruiter mode is enabled. Endpoint defaults are preloaded from environment configuration.
-          </p>
-        ) : null}
-        <div className="input-row" style={{ marginBottom: 12 }}>
-          <input
-            type="text"
-            placeholder="Endpoint name"
-            value={newEndpointName}
-            onChange={(event) => setNewEndpointName(event.currentTarget.value)}
-          />
-          <input
-            type="text"
-            placeholder="https://api.example.com/health"
-            value={newEndpointUrl}
-            onChange={(event) => setNewEndpointUrl(event.currentTarget.value)}
-            style={{ minWidth: 280 }}
-          />
-          <input
-            type="number"
-            min={90}
-            max={100}
-            step={0.01}
-            placeholder="SLA target %"
-            value={newEndpointSlaTarget}
-            onChange={(event) => setNewEndpointSlaTarget(event.currentTarget.value)}
-            style={{ width: 130 }}
-          />
-          <button type="button" disabled={!isAuthenticated} onClick={() => void createEndpoint()}>
-            Add Endpoint
-          </button>
-          {(config.showTestingHints || hasTestingPresets) && isAuthenticated ? (
-            <button type="button" onClick={loadTestingPresets}>
-              Load Test Presets
-            </button>
+      <section className="split-grid" style={{ marginBottom: 14 }}>
+        <article className="panel stack">
+          <h2 className="section-head">Endpoints</h2>
+          {config.showTestingHints ? (
+            <p className="small" style={{ margin: 0 }}>
+              Recruiter mode is enabled. Endpoint defaults are preloaded from environment configuration.
+            </p>
           ) : null}
-        </div>
-        <div className="input-row" style={{ marginBottom: 12 }}>
-          <span className="small">Check regions:</span>
-          {availableRegions.map((region) => (
-            <label key={region} className="small" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-              <input
-                type="checkbox"
-                checked={newEndpointRegions.includes(region)}
-                onChange={() => toggleRegionSelection(region)}
-              />
-              {region}
-            </label>
-          ))}
-        </div>
-        <div className="grid">
-          {endpoints.map((endpoint) => (
-            <article
-              key={endpoint.endpointId}
-              className="panel"
-              style={{
-                background: "rgba(8, 16, 32, 0.75)",
-                border: "1px solid rgba(103, 211, 255, 0.2)"
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                <div>
-                  <Link
-                    href={`/org/${encodeURIComponent(orgId)}/endpoints/${encodeURIComponent(endpoint.endpointId)}`}
-                    style={{ fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 4 }}
-                  >
-                    {endpoint.name}
-                  </Link>
-                  <div className="small" style={{ fontFamily: "var(--font-mono)" }}>
-                    {endpoint.url}
+          <div className="input-row">
+            <input
+              type="text"
+              placeholder="Endpoint name"
+              value={newEndpointName}
+              onChange={(event) => setNewEndpointName(event.currentTarget.value)}
+            />
+            <input
+              type="text"
+              placeholder="https://api.example.com/health"
+              value={newEndpointUrl}
+              onChange={(event) => setNewEndpointUrl(event.currentTarget.value)}
+              style={{ minWidth: 260 }}
+            />
+            <input
+              type="number"
+              min={90}
+              max={100}
+              step={0.01}
+              placeholder="SLA target %"
+              value={newEndpointSlaTarget}
+              onChange={(event) => setNewEndpointSlaTarget(event.currentTarget.value)}
+              style={{ width: 130 }}
+            />
+            <button type="button" disabled={!isAuthenticated} onClick={() => void createEndpoint()}>
+              Add Endpoint
+            </button>
+            {(config.showTestingHints || hasTestingPresets) && isAuthenticated ? (
+              <button type="button" onClick={loadTestingPresets}>
+                Load Test Presets
+              </button>
+            ) : null}
+          </div>
+          <div className="input-row">
+            <span className="small">Check regions:</span>
+            {availableRegions.map((region) => (
+              <label key={region} className="small" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <input
+                  type="checkbox"
+                  checked={newEndpointRegions.includes(region)}
+                  onChange={() => toggleRegionSelection(region)}
+                />
+                {region}
+              </label>
+            ))}
+          </div>
+
+          <div className="grid">
+            {endpoints.map((endpoint) => (
+              <article
+                key={endpoint.endpointId}
+                className="signal-card"
+                style={{
+                  background: "rgba(8, 16, 32, 0.75)",
+                  border: "1px solid rgba(103, 211, 255, 0.2)"
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                  <div>
+                    <Link
+                      href={`/org/${encodeURIComponent(orgId)}/endpoints/${encodeURIComponent(endpoint.endpointId)}`}
+                      style={{ fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 4 }}
+                    >
+                      {endpoint.name}
+                    </Link>
+                    <div className="small mono">{endpoint.url}</div>
                   </div>
+                  <span className={`status ${endpoint.status}`}>{endpoint.status}</span>
                 </div>
-                <span className={`status ${endpoint.status}`}>{endpoint.status}</span>
-              </div>
-              <div className="small" style={{ marginTop: 8 }}>
-                Last latency: {endpoint.lastLatencyMs ?? "-"} ms
-              </div>
-              <div className="small">
-                Regions: {(endpoint.checkRegions ?? ["us-east-1"]).join(", ")}
-              </div>
-              <div className="small">SLA target: {endpoint.slaTargetPct ?? 99.9}%</div>
-              <div className="input-row" style={{ marginTop: 10 }}>
-                <button type="button" disabled={!isAuthenticated} onClick={() => void togglePause(endpoint)}>
-                  {endpoint.paused ? "Resume" : "Pause"}
-                </button>
-                <button
-                  type="button"
-                  disabled={!isAuthenticated}
-                  onClick={() => void deleteEndpoint(endpoint.endpointId)}
-                  style={{ background: "linear-gradient(135deg, #8f2f46, #d2555f)" }}
-                >
-                  Delete
-                </button>
-              </div>
-            </article>
-          ))}
-        </div>
+                <div className="small" style={{ marginTop: 8 }}>
+                  Last latency: {endpoint.lastLatencyMs ?? "-"} ms
+                </div>
+                <div className="small">Regions: {(endpoint.checkRegions ?? ["us-east-1"]).join(", ")}</div>
+                <div className="small">SLA target: {endpoint.slaTargetPct ?? 99.9}%</div>
+                <div className="input-row" style={{ marginTop: 10 }}>
+                  <button type="button" disabled={!isAuthenticated} onClick={() => void togglePause(endpoint)}>
+                    {endpoint.paused ? "Resume" : "Pause"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!isAuthenticated}
+                    onClick={() => void deleteEndpoint(endpoint.endpointId)}
+                    style={{ background: "linear-gradient(135deg, #8f2f46, #d2555f)" }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </article>
+
+        <article className="panel stack">
+          <h2 className="section-head">Open Incidents</h2>
+          {incidents.length === 0 ? <p className="small">No open incidents.</p> : null}
+          <div className="grid">
+            {incidents.map((incident) => (
+              <article key={incident.incidentId} className="signal-card" style={{ background: "rgba(42, 8, 17, 0.4)" }}>
+                <div style={{ fontWeight: 700 }}>{incident.endpointId}</div>
+                <div className="small">Region: {incident.region ?? "us-east-1"}</div>
+                <div className="small">Opened: {new Date(incident.openedAt).toLocaleString()}</div>
+                <div className="small">State: {incident.state}</div>
+              </article>
+            ))}
+          </div>
+        </article>
       </section>
 
-      <section className="panel">
-        <h2 style={{ marginTop: 0 }}>Open Incidents</h2>
-        {incidents.length === 0 ? <p className="small">No open incidents.</p> : null}
-        <div className="grid">
-          {incidents.map((incident) => (
-            <article key={incident.incidentId} className="panel" style={{ background: "rgba(42, 8, 17, 0.4)" }}>
-              <div style={{ fontWeight: 700 }}>{incident.endpointId}</div>
-              <div className="small">Region: {incident.region ?? "us-east-1"}</div>
-              <div className="small">Opened: {new Date(incident.openedAt).toLocaleString()}</div>
-              <div className="small">State: {incident.state}</div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="panel" style={{ marginTop: 14 }}>
-        <h2 style={{ marginTop: 0 }}>Alert Channels</h2>
+      <section className="panel stack">
+        <h2 className="section-head">Alert Channels</h2>
         {hasTestingPresets ? (
-          <p className="small" style={{ marginTop: 0 }}>
+          <p className="small" style={{ margin: 0 }}>
             Prefilled test values are loaded from frontend env vars for recruiter demo drills.
           </p>
         ) : null}
@@ -702,7 +726,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
               placeholder="https://hooks.slack.com/services/..."
               value={slackWebhook}
               onChange={(event) => setSlackWebhook(event.currentTarget.value)}
-              style={{ minWidth: 380 }}
+              style={{ minWidth: 360 }}
             />
             <button type="button" disabled={!isAuthenticated} onClick={() => void registerSlackAlert()}>
               Add Slack Channel
@@ -714,7 +738,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
               placeholder="https://alerts.example.com/netpulse"
               value={genericWebhook}
               onChange={(event) => setGenericWebhook(event.currentTarget.value)}
-              style={{ minWidth: 380 }}
+              style={{ minWidth: 360 }}
             />
             <button type="button" disabled={!isAuthenticated} onClick={() => void registerWebhookAlert()}>
               Add Webhook Channel

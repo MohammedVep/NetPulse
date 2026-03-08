@@ -9,11 +9,13 @@
     "infra/*"
   ],
   "scripts": {
-    "build": "npm run build --workspace @netpulse/shared && npm run build --workspace @netpulse/authz && npm run build --workspace @netpulse/api && npm run build --workspace @netpulse/prober && npm run build --workspace @netpulse/cdk && npm run build --workspace @netpulse/web",
+    "build": "npm run build --workspace @netpulse/shared && npm run build --workspace @netpulse/authz && npm run build --workspace @netpulse/api && npm run build --workspace @netpulse/prober && npm run build --workspace @netpulse/load-balancer && npm run build --workspace @netpulse/cdk && npm run build --workspace @netpulse/web",
     "dev:web": "npm run dev --workspace @netpulse/web",
+    "dev:lb": "npm run dev --workspace @netpulse/load-balancer",
+    "drill:lb": "bash scripts/load-balancer-failure-drill.sh",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspace @netpulse/shared && npm run typecheck --workspace @netpulse/authz && npm run typecheck --workspace @netpulse/api && npm run typecheck --workspace @netpulse/prober && npm run typecheck --workspace @netpulse/cdk && npm run typecheck --workspace @netpulse/web",
+    "typecheck": "npm run typecheck --workspace @netpulse/shared && npm run typecheck --workspace @netpulse/authz && npm run typecheck --workspace @netpulse/api && npm run typecheck --workspace @netpulse/prober && npm run typecheck --workspace @netpulse/load-balancer && npm run typecheck --workspace @netpulse/cdk && npm run typecheck --workspace @netpulse/web",
     "cdk:synth": "npm run build && npm run synth --workspace @netpulse/cdk",
     "prod:check": "bash scripts/prod-readiness-check.sh",
     "deploy:dev": "npm run build && npm run deploy:dev --workspace @netpulse/cdk",

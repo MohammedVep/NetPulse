@@ -11,6 +11,7 @@ Portfolio pitch: I built a distributed uptime monitoring system similar to Datad
 - `services/authz`: JWT-claim and org-membership authorization helpers.
 - `services/api`: REST and WebSocket Lambda handlers.
 - `services/prober`: Scheduler, probe worker, notifier, WebSocket broadcaster, monthly exporter.
+- `services/load-balancer`: L7 proxy with dynamic service discovery, active health checks, circuit breaking, and Prometheus metrics.
 - `infra/cdk`: AWS CDK stack with Cognito, API Gateway, Lambda, DynamoDB, SQS, SNS, S3, EventBridge.
 
 ## Implemented core flows
@@ -58,6 +59,74 @@ How this is implemented:
   - probe results are written to DynamoDB with `probePk = orgId#endpointId` and sort key `timestampIso`.
   - incidents are partitioned by endpoint (`incidentPk = orgId#endpointId`) and indexed by org/state for dashboard reads.
   - endpoint records are partitioned by `orgId`, preserving tenant isolation and bounded org queries.
+
+## Dynamic load balancing extension
+
+`services/load-balancer` provides a dedicated request router for backend workloads:
+
+- Dynamic service discovery:
+  - `DISCOVERY_PROVIDER=consul|etcd|static`
+  - Consul mode watches `/v1/health/service/{service}?passing=true`
+  - etcd mode watches `/v3/kv/range` under `ETCD_KEY_PREFIX`
+  - Routing table updates in-memory on every refresh; no restart required.
+- Active health checks + circuit breaking:
+  - each backend is health-checked on `HEALTH_CHECK_INTERVAL_MS`.
+  - repeated failures trip an open circuit (`CIRCUIT_OPEN_AFTER_FAILURES`) and traffic is removed.
+  - open circuits are periodically probed and automatically restored via half-open -> closed recovery.
+- Observability pipeline:
+  - Prometheus metrics endpoint on `/metrics`.
+  - Core metrics include:
+    - `netpulse_lb_active_connections`
+    - `netpulse_lb_request_duration_seconds`
+    - `netpulse_lb_upstream_5xx_total`
+    - `netpulse_lb_backend_healthy`
+    - `netpulse_lb_backend_circuit_state`
+
+### Run with Consul discovery (local)
+
+1. Start Consul:
+   - `docker run --rm -p 8500:8500 -p 8600:8600/udp --name consul hashicorp/consul:1.20 agent -dev -client=0.0.0.0`
+2. Start one or more backend instances that auto-register in Consul:
+   - `CONSUL_URL=http://127.0.0.1:8500 BACKEND_PORT=3001 npm run dev:backend --workspace @netpulse/load-balancer`
+   - `CONSUL_URL=http://127.0.0.1:8500 BACKEND_PORT=3002 npm run dev:backend --workspace @netpulse/load-balancer`
+3. Start the load balancer:
+   - `DISCOVERY_PROVIDER=consul CONSUL_URL=http://127.0.0.1:8500 CONSUL_SERVICE_NAME=netpulse-backend PORT=8080 npm run dev --workspace @netpulse/load-balancer`
+4. Send traffic:
+   - `curl http://127.0.0.1:8080/`
+   - `curl http://127.0.0.1:8080/backends`
+
+### Prometheus + Grafana dashboard
+
+1. Start observability stack:
+   - `docker compose -f infra/observability/docker-compose.yml up -d`
+2. Open tools:
+   - Prometheus: `http://localhost:9090`
+   - Grafana: `http://localhost:3000` (admin/admin)
+3. Open dashboard:
+   - `NetPulse / NetPulse Load Balancer`
+
+### Automated failure drill
+
+1. Keep Consul, two demo backends, and the load balancer running locally.
+2. Run:
+   - `npm run drill:lb`
+3. The drill will:
+   - force one backend unhealthy (`/admin/failure-mode`),
+   - drive traffic until circuit state flips to `OPEN`,
+   - restore backend health,
+   - wait for circuit state to return to `CLOSED`.
+
+### ECS/Fargate deployment (CDK)
+
+The CDK stack now provisions:
+
+- dedicated VPC + ECS cluster for load-balancing workloads.
+- Consul service (`np-consul-*`) in ECS.
+- demo backend ECS service (`np-demo-backend-*`) auto-registering to Consul.
+- NetPulse load balancer ECS service (`np-load-balancer-*`) discovering backends from Consul.
+- internet-facing ALB exporting:
+  - `NetPulseLoadBalancerDns-{env}`
+  - `NetPulseLoadBalancerUrl-{env}`
 
 ## API surface (`/v1`)
 

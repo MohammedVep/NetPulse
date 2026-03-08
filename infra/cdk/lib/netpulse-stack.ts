@@ -24,6 +24,9 @@ import { Topic } from "aws-cdk-lib/aws-sns";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Alarm, ComparisonOperator, TreatMissingData } from "aws-cdk-lib/aws-cloudwatch";
 import { ManagedPolicy, PolicyStatement, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
+import * as ec2 from "aws-cdk-lib/aws-ec2";
+import * as ecs from "aws-cdk-lib/aws-ecs";
+import * as elbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import { Construct } from "constructs";
 
 interface NetPulseStackProps extends StackProps {
@@ -224,6 +227,216 @@ export class NetPulseStack extends Stack {
     const apiRuntime = Runtime.NODEJS_24_X;
     const repositoryRoot = path.resolve(process.cwd(), "../..");
     const depsLockFilePath = path.join(repositoryRoot, "package-lock.json");
+    const backendServiceName = `netpulse-backend-${suffix}`;
+
+    const loadBalancerVpc = new ec2.Vpc(this, "LoadBalancerVpc", {
+      vpcName: `np-lb-vpc-${suffix}`,
+      maxAzs: 2,
+      natGateways: 0,
+      subnetConfiguration: [
+        {
+          name: "public",
+          subnetType: ec2.SubnetType.PUBLIC,
+          cidrMask: 24
+        }
+      ]
+    });
+    const loadBalancerVpcRef = loadBalancerVpc as ec2.IVpc;
+
+    const loadBalancerCluster = new ecs.Cluster(this, "LoadBalancerCluster", {
+      clusterName: `np-lb-cluster-${suffix}`,
+      vpc: loadBalancerVpcRef,
+      containerInsightsV2: ecs.ContainerInsights.ENABLED
+    });
+    const loadBalancerClusterRef = loadBalancerCluster as ecs.ICluster;
+    const serviceNamespace = loadBalancerCluster.addDefaultCloudMapNamespace({
+      name: `np-${suffix}.internal`
+    });
+
+    const lbAlbSecurityGroup = new ec2.SecurityGroup(this, "LoadBalancerAlbSecurityGroup", {
+      vpc: loadBalancerVpcRef,
+      description: "Security group for NetPulse load balancer ALB",
+      allowAllOutbound: true
+    });
+    lbAlbSecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80), "Public HTTP traffic");
+
+    const lbTaskSecurityGroup = new ec2.SecurityGroup(this, "LoadBalancerTaskSecurityGroup", {
+      vpc: loadBalancerVpcRef,
+      description: "Security group for load balancer tasks",
+      allowAllOutbound: true
+    });
+
+    const backendTaskSecurityGroup = new ec2.SecurityGroup(this, "BackendTaskSecurityGroup", {
+      vpc: loadBalancerVpcRef,
+      description: "Security group for demo backend tasks",
+      allowAllOutbound: true
+    });
+
+    const consulTaskSecurityGroup = new ec2.SecurityGroup(this, "ConsulTaskSecurityGroup", {
+      vpc: loadBalancerVpcRef,
+      description: "Security group for Consul service",
+      allowAllOutbound: true
+    });
+
+    lbTaskSecurityGroup.addIngressRule(lbAlbSecurityGroup, ec2.Port.tcp(8080), "ALB to load balancer");
+    backendTaskSecurityGroup.addIngressRule(lbTaskSecurityGroup, ec2.Port.tcp(3001), "LB proxy traffic");
+    backendTaskSecurityGroup.addIngressRule(consulTaskSecurityGroup, ec2.Port.tcp(3001), "Consul checks");
+    consulTaskSecurityGroup.addIngressRule(lbTaskSecurityGroup, ec2.Port.tcp(8500), "LB discovery calls");
+    consulTaskSecurityGroup.addIngressRule(
+      backendTaskSecurityGroup,
+      ec2.Port.tcp(8500),
+      "Backend registration calls"
+    );
+
+    const loadBalancerImage = ecs.ContainerImage.fromAsset(repositoryRoot, {
+      file: "services/load-balancer/Dockerfile"
+    });
+
+    const consulTaskDefinition = new ecs.FargateTaskDefinition(this, "ConsulTaskDefinition", {
+      cpu: 256,
+      memoryLimitMiB: 512
+    });
+    const consulContainer = consulTaskDefinition.addContainer("ConsulContainer", {
+      image: ecs.ContainerImage.fromRegistry("public.ecr.aws/docker/library/hashicorp/consul:1.20"),
+      logging: ecs.LogDrivers.awsLogs({
+        streamPrefix: `np-consul-${suffix}`
+      }),
+      command: ["agent", "-dev", "-client=0.0.0.0", "-bind=0.0.0.0"]
+    });
+    consulContainer.addPortMappings({
+      containerPort: 8500
+    });
+
+    const consulService = new ecs.FargateService(this, "ConsulService", {
+      serviceName: `np-consul-${suffix}`,
+      cluster: loadBalancerClusterRef,
+      taskDefinition: consulTaskDefinition,
+      desiredCount: 1,
+      minHealthyPercent: 0,
+      assignPublicIp: true,
+      securityGroups: [consulTaskSecurityGroup],
+      cloudMapOptions: {
+        name: "consul"
+      },
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PUBLIC
+      }
+    });
+
+    const backendTaskDefinition = new ecs.FargateTaskDefinition(this, "DemoBackendTaskDefinition", {
+      cpu: 256,
+      memoryLimitMiB: 512
+    });
+    const backendContainer = backendTaskDefinition.addContainer("DemoBackendContainer", {
+      image: loadBalancerImage,
+      logging: ecs.LogDrivers.awsLogs({
+        streamPrefix: `np-demo-backend-${suffix}`
+      }),
+      command: ["node", "services/load-balancer/dist/demo/backend.js"],
+      environment: {
+        BACKEND_PORT: "3001",
+        HEALTH_PATH: "/health",
+        CONSUL_AUTO_REGISTER: "true",
+        CONSUL_URL: `http://consul.${serviceNamespace.namespaceName}:8500`,
+        CONSUL_SERVICE_NAME: backendServiceName
+      }
+    });
+    backendContainer.addPortMappings({
+      containerPort: 3001
+    });
+
+    const backendService = new ecs.FargateService(this, "DemoBackendService", {
+      serviceName: `np-demo-backend-${suffix}`,
+      cluster: loadBalancerClusterRef,
+      taskDefinition: backendTaskDefinition,
+      desiredCount: 2,
+      minHealthyPercent: 50,
+      assignPublicIp: true,
+      securityGroups: [backendTaskSecurityGroup],
+      cloudMapOptions: {
+        name: "demo-backend"
+      },
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PUBLIC
+      }
+    });
+    backendService.node.addDependency(consulService);
+
+    const lbTaskDefinition = new ecs.FargateTaskDefinition(this, "LoadBalancerTaskDefinition", {
+      cpu: 512,
+      memoryLimitMiB: 1024
+    });
+    const lbContainer = lbTaskDefinition.addContainer("LoadBalancerContainer", {
+      image: loadBalancerImage,
+      logging: ecs.LogDrivers.awsLogs({
+        streamPrefix: `np-load-balancer-${suffix}`
+      }),
+      environment: {
+        INSTANCE_NAME: `np-lb-${suffix}`,
+        PORT: "8080",
+        DISCOVERY_PROVIDER: "consul",
+        DISCOVERY_REFRESH_INTERVAL_MS: "5000",
+        CONSUL_URL: `http://consul.${serviceNamespace.namespaceName}:8500`,
+        CONSUL_SERVICE_NAME: backendServiceName,
+        HEALTH_PATH: "/health",
+        HEALTH_CHECK_INTERVAL_MS: "5000",
+        HEALTH_CHECK_TIMEOUT_MS: "1500",
+        LOAD_BALANCER_TIMEOUT_MS: "10000",
+        CIRCUIT_OPEN_AFTER_FAILURES: "3",
+        CIRCUIT_BASE_COOLDOWN_MS: "5000",
+        CIRCUIT_MAX_COOLDOWN_MS: "60000",
+        CIRCUIT_HALF_OPEN_SUCCESSES: "2"
+      }
+    });
+    lbContainer.addPortMappings({
+      containerPort: 8080
+    });
+
+    const lbService = new ecs.FargateService(this, "LoadBalancerService", {
+      serviceName: `np-load-balancer-${suffix}`,
+      cluster: loadBalancerClusterRef,
+      taskDefinition: lbTaskDefinition,
+      desiredCount: 1,
+      minHealthyPercent: 0,
+      assignPublicIp: true,
+      securityGroups: [lbTaskSecurityGroup],
+      cloudMapOptions: {
+        name: "load-balancer"
+      },
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PUBLIC
+      }
+    });
+    lbService.node.addDependency(consulService);
+    lbService.node.addDependency(backendService);
+
+    const externalLoadBalancer = new elbv2.ApplicationLoadBalancer(this, "ExternalLoadBalancer", {
+      loadBalancerName: `np-lb-${suffix}`,
+      vpc: loadBalancerVpcRef,
+      internetFacing: true,
+      securityGroup: lbAlbSecurityGroup,
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PUBLIC
+      }
+    });
+
+    const externalListener = externalLoadBalancer.addListener("ExternalHttpListener", {
+      port: 80,
+      open: true
+    });
+    externalListener.addTargets("EcsLoadBalancerTarget", {
+      port: 8080,
+      targets: [
+        lbService.loadBalancerTarget({
+          containerName: lbContainer.containerName,
+          containerPort: 8080
+        })
+      ],
+      healthCheck: {
+        path: "/healthz",
+        healthyHttpCodes: "200"
+      }
+    });
 
     const apiRest = new NodejsFunction(this, "ApiRestLambda", {
       functionName: `np-api-rest-${suffix}`,
@@ -628,5 +841,11 @@ export class NetPulseStack extends Stack {
     this.exportValue(userPool.userPoolId, { name: `NetPulseUserPoolId-${suffix}` });
     this.exportValue(userPoolClient.userPoolClientId, { name: `NetPulseUserPoolClientId-${suffix}` });
     this.exportValue(emailTopic.topicArn, { name: `NetPulseEmailTopicArn-${suffix}` });
+    this.exportValue(externalLoadBalancer.loadBalancerDnsName, {
+      name: `NetPulseLoadBalancerDns-${suffix}`
+    });
+    this.exportValue(`http://${externalLoadBalancer.loadBalancerDnsName}`, {
+      name: `NetPulseLoadBalancerUrl-${suffix}`
+    });
   }
 }

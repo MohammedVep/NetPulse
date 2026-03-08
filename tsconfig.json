@@ -5,6 +5,7 @@
     { "path": "services/authz" },
     { "path": "services/api" },
     { "path": "services/prober" },
+    { "path": "services/load-balancer" },
     { "path": "apps/web" },
     { "path": "infra/cdk" }
   ]

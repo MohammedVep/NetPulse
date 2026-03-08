@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: netpulse-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: netpulse
+      POSTGRES_PASSWORD: netpulse_dev_password
+      POSTGRES_DB: netpulse
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U netpulse -d netpulse"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: netpulse-pgbouncer
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_USER: netpulse
+      DB_PASSWORD: netpulse_dev_password
+      DB_HOST: postgres
+      DB_NAME: netpulse
+      AUTH_TYPE: plain
+      ADMIN_USERS: netpulse
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: "20000"
+      DEFAULT_POOL_SIZE: "80"
+      RESERVE_POOL_SIZE: "20"
+      RESERVE_POOL_TIMEOUT: "2"
+      SERVER_RESET_QUERY: DISCARD ALL
+      IGNORE_STARTUP_PARAMETERS: extra_float_digits
+    ports:
+      - "6432:5432"
+
+volumes:
+  postgres_data:

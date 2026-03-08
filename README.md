@@ -4,6 +4,11 @@ NetPulse is a production-leaning, multi-tenant cloud infrastructure monitor buil
 
 Portfolio pitch: I built a distributed uptime monitoring system similar to Datadog.
 
+Portfolio highlights:
+
+- "Implemented PgBouncer for advanced PostgreSQL connection pooling, preventing database connection exhaustion during simulated spikes of 10,000+ concurrent regional worker writes."
+- "Enforced Zero-Trust architecture by establishing Mutual TLS (mTLS) encryption between distributed regional checkers and the centralized monitoring engine."
+
 ## Monorepo structure
 
 - `apps/web`: Next.js dashboard (org overview, endpoint detail, incidents, live updates).
@@ -13,6 +18,7 @@ Portfolio pitch: I built a distributed uptime monitoring system similar to Datad
 - `services/prober`: Scheduler, probe worker, notifier, WebSocket broadcaster, monthly exporter.
 - `services/load-balancer`: L7 proxy with dynamic service discovery, active health checks, circuit breaking, and Prometheus metrics.
 - `infra/cdk`: AWS CDK stack with Cognito, API Gateway, Lambda, DynamoDB, SQS, SNS, S3, EventBridge.
+- `infra/high-concurrency`: PgBouncer/PostgreSQL and mTLS queue drill assets for reliability stress testing.
 
 ## Implemented core flows
 
@@ -127,6 +133,34 @@ The CDK stack now provisions:
 - internet-facing ALB exporting:
   - `NetPulseLoadBalancerDns-{env}`
   - `NetPulseLoadBalancerUrl-{env}`
+
+## Massive concurrency + zero-trust extension
+
+This repo now includes an optional staging drill path for PostgreSQL burst writes and mTLS queue transport:
+
+- PgBouncer connection pooling sits in front of PostgreSQL for write-spike simulation.
+- A mutual-TLS queue drill enforces client-certificate auth for regional workers.
+
+### PgBouncer spike drill (10k+ writes)
+
+1. Start PostgreSQL + PgBouncer:
+   - `docker compose -f infra/high-concurrency/docker-compose.yml up -d`
+2. Run a spike test through PgBouncer:
+   - `TOTAL_WRITES=10000 WRITE_CONCURRENCY=1000 npm run drill:pgbouncer`
+3. Optional: increase beyond 10k writes:
+   - `TOTAL_WRITES=25000 WRITE_CONCURRENCY=2000 npm run drill:pgbouncer`
+
+### mTLS queue drill
+
+1. Generate local CA/server/worker certificates:
+   - `npm run certs:mtls`
+2. Run the end-to-end mTLS drill:
+   - `npm run drill:mtls`
+   - optional burst tuning: `MTLS_WORKERS=200 MTLS_EVENTS_PER_WORKER=50 MTLS_CONNECT_CONCURRENCY=25 npm run drill:mtls`
+3. The drill validates:
+   - worker client cert is required (`rejectUnauthorized=true`)
+   - encrypted TLS transport between regional workers and central queue endpoint
+   - expected message delivery volume under concurrent worker fan-in
 
 ## API surface (`/v1`)
 

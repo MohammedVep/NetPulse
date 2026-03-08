@@ -179,6 +179,19 @@ export default function HomePage() {
           NetPulse provides multi-region checks, SLA tracking, failure simulation, live incident streams,
           and alert fanout across email, Slack, and generic webhooks.
         </p>
+        <div className="panel" style={{ marginTop: 14 }}>
+          <h2 style={{ marginTop: 0 }}>Reliability Upgrade Highlights</h2>
+          <ul style={{ marginTop: 0 }}>
+            <li className="small">
+              Implemented PgBouncer for advanced PostgreSQL connection pooling, preventing database connection
+              exhaustion during simulated spikes of 10,000+ concurrent regional worker writes.
+            </li>
+            <li className="small">
+              Enforced Zero-Trust architecture by establishing Mutual TLS (mTLS) encryption between distributed
+              regional checkers and the centralized monitoring engine.
+            </li>
+          </ul>
+        </div>
         {config.showTestingHints || hasTestingPresets ? (
           <div className="panel" style={{ marginTop: 14 }}>
             <h2 style={{ marginTop: 0 }}>Recruiter Testing Presets</h2>

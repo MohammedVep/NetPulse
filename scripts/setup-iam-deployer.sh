@@ -95,6 +95,7 @@ IMAGE_ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/${IMAGE_ROLE_NAME}"
 LOOKUP_ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/${LOOKUP_ROLE_NAME}"
 
 DEPLOY_CHAIN_POLICY_NAME="NetPulseDeployRoleAssumeBootstrapRoles"
+DEPLOY_ECS_OPS_POLICY_NAME="NetPulseDeployRoleEcsOperations"
 
 WORKDIR="$(pwd)"
 TMP_DIR="$(mktemp -d)"
@@ -104,6 +105,7 @@ CFN_EXEC_POLICY_FILE="$TMP_DIR/cfn-exec-policy.json"
 ASSUME_POLICY_FILE="$TMP_DIR/assume-role-policy.json"
 CFN_READ_POLICY_FILE="$TMP_DIR/cfn-read-policy.json"
 DEPLOY_CHAIN_POLICY_FILE="$TMP_DIR/deploy-role-chain-policy.json"
+DEPLOY_ECS_OPS_POLICY_FILE="$TMP_DIR/deploy-role-ecs-ops-policy.json"
 
 cat >"$CFN_EXEC_POLICY_FILE" <<JSON
 {
@@ -209,6 +211,35 @@ cat >"$DEPLOY_CHAIN_POLICY_FILE" <<JSON
 }
 JSON
 
+cat >"$DEPLOY_ECS_OPS_POLICY_FILE" <<JSON
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "NetPulseEcsInventory",
+      "Effect": "Allow",
+      "Action": [
+        "ecs:DescribeClusters",
+        "ecs:DescribeServices",
+        "ecs:DescribeTasks",
+        "ecs:ListClusters",
+        "ecs:ListServices",
+        "ecs:ListTasks"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "NetPulseEcsServiceUpdates",
+      "Effect": "Allow",
+      "Action": [
+        "ecs:UpdateService"
+      ],
+      "Resource": "arn:aws:ecs:${REGION}:${ACCOUNT_ID}:service/np-lb-cluster-*/*"
+    }
+  ]
+}
+JSON
+
 upsert_managed_policy() {
   local policy_name="$1"
   local policy_arn="$2"
@@ -282,6 +313,14 @@ aws iam put-role-policy \
   --role-name "$DEPLOY_ROLE_NAME" \
   --policy-name "$DEPLOY_CHAIN_POLICY_NAME" \
   --policy-document "file://$DEPLOY_CHAIN_POLICY_FILE" >/dev/null
+
+echo "Ensuring deploy role can inspect and rotate NetPulse ECS services"
+aws iam put-role-policy \
+  --profile "$BOOTSTRAP_PROFILE" \
+  --region "$REGION" \
+  --role-name "$DEPLOY_ROLE_NAME" \
+  --policy-name "$DEPLOY_ECS_OPS_POLICY_NAME" \
+  --policy-document "file://$DEPLOY_ECS_OPS_POLICY_FILE" >/dev/null
 
 echo "Ensuring IAM deployer user: $DEPLOYER_USER"
 if ! aws iam get-user --profile "$BOOTSTRAP_PROFILE" --region "$REGION" --user-name "$DEPLOYER_USER" >/dev/null 2>&1; then

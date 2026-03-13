@@ -17,6 +17,7 @@
     "certs:mtls": "bash scripts/generate-mtls-certs.sh",
     "drill:mtls": "tsx scripts/mtls-queue-drill.ts",
     "drill:mtls:chaos": "tsx scripts/mtls-chaos-drill.ts",
+    "check:repo-hygiene": "bash scripts/check-duplicate-artifacts.sh",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspace @netpulse/shared && npm run typecheck --workspace @netpulse/authz && npm run typecheck --workspace @netpulse/api && npm run typecheck --workspace @netpulse/prober && npm run typecheck --workspace @netpulse/load-balancer && npm run typecheck --workspace @netpulse/cdk && npm run typecheck --workspace @netpulse/web",

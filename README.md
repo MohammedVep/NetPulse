@@ -212,9 +212,11 @@ WebSocket routes:
    - `npm test`
 4. Run type checks:
    - `npm run typecheck`
-5. Synthesize CDK:
+5. Run repo hygiene checks:
+   - `npm run check:repo-hygiene`
+6. Synthesize CDK:
    - `npm run cdk:synth`
-6. Run the web app:
+7. Run the web app:
    - `npm run dev:web`
 
 Web login uses Cognito `USER_PASSWORD_AUTH` (username/email + password), no manual JWT paste required.

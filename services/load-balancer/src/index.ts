@@ -122,7 +122,7 @@ async function bootstrap(): Promise<void> {
       return;
     }
 
-    if (method === "GET" && path === "/healthz") {
+    if (method === "GET" && (path === "/healthz" || path === "/statusz")) {
       const backends = pool.listBackends();
       const healthy = backends.filter((backend) => backend.healthy).length;
       response.statusCode = 200;

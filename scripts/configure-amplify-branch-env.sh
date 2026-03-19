@@ -18,7 +18,7 @@ Usage:
                [--default-workspace-name <name>] [--default-endpoint-name <name>] [--default-endpoint-url <url>]
                [--test-alert-email <email>] [--test-slack-webhook-url <url>] [--test-webhook-url <url>] [--show-testing-hints <true|false>]
                [--grafana-dashboard-url <url>] [--prometheus-url <url>] [--aws-load-balancer-url <url>]
-               [--gcp-load-balancer-url <url>] [--gcp-web-url <url>]
+               [--gcp-load-balancer-url <url>] [--gcp-web-url <url>] [--load-balancer-health-path <path>]
 
 Example:
   $(basename "$0") --env dev --app-id d123example --branch dev --profile netpulse-base --demo-org-id org_demo_public \\
@@ -44,6 +44,7 @@ PROMETHEUS_URL=""
 AWS_LOAD_BALANCER_URL=""
 GCP_LOAD_BALANCER_URL=""
 GCP_WEB_URL=""
+LOAD_BALANCER_HEALTH_PATH="/healthz"
 DRY_RUN="false"
 
 while [ $# -gt 0 ]; do
@@ -120,6 +121,10 @@ while [ $# -gt 0 ]; do
       GCP_WEB_URL="$2"
       shift 2
       ;;
+    --load-balancer-health-path)
+      LOAD_BALANCER_HEALTH_PATH="$2"
+      shift 2
+      ;;
     --dry-run)
       DRY_RUN="true"
       shift
@@ -184,6 +189,7 @@ ENV_JSON="$(jq -n \
   --arg awsLb "$AWS_LOAD_BALANCER_URL" \
   --arg gcpLb "$GCP_LOAD_BALANCER_URL" \
   --arg gcpWeb "$GCP_WEB_URL" \
+  --arg lbHealthPath "$LOAD_BALANCER_HEALTH_PATH" \
   --arg grafana "$GRAFANA_DASHBOARD_URL" \
   --arg prometheus "$PROMETHEUS_URL" \
   --arg demo "$DEMO_ORG_ID" \
@@ -200,6 +206,7 @@ ENV_JSON="$(jq -n \
     NEXT_PUBLIC_COGNITO_USER_POOL_ID: $pool,
     NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID: $client,
     NEXT_PUBLIC_LOAD_BALANCER_URL: $lb,
+    NEXT_PUBLIC_LOAD_BALANCER_HEALTH_PATH: $lbHealthPath,
     NEXT_PUBLIC_AWS_LOAD_BALANCER_URL: $awsLb,
     NEXT_PUBLIC_GCP_LOAD_BALANCER_URL: $gcpLb,
     NEXT_PUBLIC_GCP_WEB_URL: $gcpWeb,

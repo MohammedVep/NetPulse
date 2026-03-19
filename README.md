@@ -146,6 +146,7 @@ Phase 1 multi-cloud support deploys the portable runtime to Google Cloud while k
 - two demo backends on Cloud Run.
 - one Cloud Run load balancer using `DISCOVERY_PROVIDER=static` against those HTTPS backend URLs.
 - one optional Cloud Run web frontend that points at AWS API Gateway, Cognito, WebSocket, and exposes both AWS and GCP runtime links in the UI.
+- because exact `/healthz` is intercepted on Cloud Run, the GCP frontend uses `/backends` for its runtime health surface.
 
 Deploy:
 

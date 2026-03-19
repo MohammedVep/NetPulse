@@ -12,6 +12,7 @@ describe('web config', () => {
   it('exposes Cognito public config fields', () => {
     expect(typeof config.cognitoUserPoolId).toBe('string');
     expect(typeof config.cognitoUserPoolClientId).toBe('string');
+    expect(typeof config.loadBalancerHealthPath).toBe('string');
     expect(typeof config.awsLoadBalancerUrl).toBe('string');
     expect(typeof config.gcpLoadBalancerUrl).toBe('string');
     expect(typeof config.gcpWebUrl).toBe('string');

@@ -4,6 +4,7 @@ export const config = {
   cognitoUserPoolId: process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID ?? "",
   cognitoUserPoolClientId: process.env.NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID ?? "",
   loadBalancerUrl: process.env.NEXT_PUBLIC_LOAD_BALANCER_URL ?? "",
+  loadBalancerHealthPath: process.env.NEXT_PUBLIC_LOAD_BALANCER_HEALTH_PATH ?? "/healthz",
   awsLoadBalancerUrl: process.env.NEXT_PUBLIC_AWS_LOAD_BALANCER_URL ?? "",
   gcpLoadBalancerUrl: process.env.NEXT_PUBLIC_GCP_LOAD_BALANCER_URL ?? "",
   gcpWebUrl: process.env.NEXT_PUBLIC_GCP_WEB_URL ?? "",

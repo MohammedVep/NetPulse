@@ -39,6 +39,20 @@ run_cmd() {
   fi
 }
 
+build_and_push_image() {
+  local dockerfile="$1"
+  local image="$2"
+  shift 2
+
+  run_cmd docker buildx build \
+    --platform linux/amd64 \
+    -f "$dockerfile" \
+    -t "$image" \
+    "$@" \
+    --push \
+    .
+}
+
 trim_trailing_slash() {
   local value="${1:-}"
   printf '%s' "${value%/}"
@@ -335,13 +349,8 @@ else
   run_cmd gcloud auth configure-docker "$REGISTRY_HOST" --quiet
 fi
 
-run_cmd docker build -f services/load-balancer/Dockerfile.demo-backend -t "$BACKEND_IMAGE" .
-run_cmd docker build -f services/load-balancer/Dockerfile -t "$LOAD_BALANCER_IMAGE" .
-run_cmd docker build -f apps/web/Dockerfile -t "$WEB_IMAGE" .
-
-run_cmd docker push "$BACKEND_IMAGE"
-run_cmd docker push "$LOAD_BALANCER_IMAGE"
-run_cmd docker push "$WEB_IMAGE"
+build_and_push_image services/load-balancer/Dockerfile.demo-backend "$BACKEND_IMAGE"
+build_and_push_image services/load-balancer/Dockerfile "$LOAD_BALANCER_IMAGE"
 
 run_cmd gcloud run deploy "$BACKEND_A_SERVICE" \
   --project "$PROJECT_ID" \
@@ -418,6 +427,7 @@ write_env_file "$WEB_ENV_FILE" \
   NEXT_PUBLIC_COGNITO_USER_POOL_ID "$COGNITO_USER_POOL_ID" \
   NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID "$COGNITO_USER_POOL_CLIENT_ID" \
   NEXT_PUBLIC_LOAD_BALANCER_URL "$GCP_LOAD_BALANCER_URL" \
+  NEXT_PUBLIC_LOAD_BALANCER_HEALTH_PATH "/backends" \
   NEXT_PUBLIC_AWS_LOAD_BALANCER_URL "$AWS_LOAD_BALANCER_URL" \
   NEXT_PUBLIC_GCP_LOAD_BALANCER_URL "$GCP_LOAD_BALANCER_URL" \
   NEXT_PUBLIC_GRAFANA_DASHBOARD_URL "$GRAFANA_DASHBOARD_URL" \
@@ -426,6 +436,22 @@ write_env_file "$WEB_ENV_FILE" \
   NEXT_PUBLIC_DEFAULT_WORKSPACE_NAME "$DEFAULT_WORKSPACE_NAME" \
   NEXT_PUBLIC_DEFAULT_ENDPOINT_NAME "$DEFAULT_ENDPOINT_NAME" \
   NEXT_PUBLIC_DEFAULT_ENDPOINT_URL "$DEFAULT_ENDPOINT_URL"
+
+build_and_push_image apps/web/Dockerfile "$WEB_IMAGE" \
+  --build-arg "NEXT_PUBLIC_API_BASE_URL=$API_BASE_URL" \
+  --build-arg "NEXT_PUBLIC_WS_URL=$WS_URL" \
+  --build-arg "NEXT_PUBLIC_COGNITO_USER_POOL_ID=$COGNITO_USER_POOL_ID" \
+  --build-arg "NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID=$COGNITO_USER_POOL_CLIENT_ID" \
+  --build-arg "NEXT_PUBLIC_LOAD_BALANCER_URL=$GCP_LOAD_BALANCER_URL" \
+  --build-arg "NEXT_PUBLIC_LOAD_BALANCER_HEALTH_PATH=/backends" \
+  --build-arg "NEXT_PUBLIC_AWS_LOAD_BALANCER_URL=$AWS_LOAD_BALANCER_URL" \
+  --build-arg "NEXT_PUBLIC_GCP_LOAD_BALANCER_URL=$GCP_LOAD_BALANCER_URL" \
+  --build-arg "NEXT_PUBLIC_GRAFANA_DASHBOARD_URL=$GRAFANA_DASHBOARD_URL" \
+  --build-arg "NEXT_PUBLIC_PROMETHEUS_URL=$PROMETHEUS_URL" \
+  --build-arg "NEXT_PUBLIC_DEMO_ORG_ID=$DEMO_ORG_ID" \
+  --build-arg "NEXT_PUBLIC_DEFAULT_WORKSPACE_NAME=$DEFAULT_WORKSPACE_NAME" \
+  --build-arg "NEXT_PUBLIC_DEFAULT_ENDPOINT_NAME=$DEFAULT_ENDPOINT_NAME" \
+  --build-arg "NEXT_PUBLIC_DEFAULT_ENDPOINT_URL=$DEFAULT_ENDPOINT_URL"
 
 run_cmd gcloud run deploy "$WEB_SERVICE" \
   --project "$PROJECT_ID" \
@@ -454,6 +480,7 @@ write_env_file "$WEB_ENV_FILE" \
   NEXT_PUBLIC_COGNITO_USER_POOL_ID "$COGNITO_USER_POOL_ID" \
   NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID "$COGNITO_USER_POOL_CLIENT_ID" \
   NEXT_PUBLIC_LOAD_BALANCER_URL "$GCP_LOAD_BALANCER_URL" \
+  NEXT_PUBLIC_LOAD_BALANCER_HEALTH_PATH "/backends" \
   NEXT_PUBLIC_AWS_LOAD_BALANCER_URL "$AWS_LOAD_BALANCER_URL" \
   NEXT_PUBLIC_GCP_LOAD_BALANCER_URL "$GCP_LOAD_BALANCER_URL" \
   NEXT_PUBLIC_GCP_WEB_URL "$GCP_WEB_URL" \

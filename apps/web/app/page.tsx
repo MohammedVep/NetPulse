@@ -38,6 +38,7 @@ export default function HomePage() {
   const hasTestingPresets =
     Boolean(config.testAlertEmail) || Boolean(config.testSlackWebhookUrl) || Boolean(config.testWebhookUrl);
   const loadBalancerBaseUrl = config.loadBalancerUrl.trim().replace(/\/$/, "");
+  const loadBalancerHealthPath = `/${config.loadBalancerHealthPath.trim().replace(/^\/+/, "") || "healthz"}`;
   const awsLoadBalancerBaseUrl = config.awsLoadBalancerUrl.trim().replace(/\/$/, "");
   const gcpLoadBalancerBaseUrl = config.gcpLoadBalancerUrl.trim().replace(/\/$/, "");
   const gcpWebUrl = config.gcpWebUrl.trim();
@@ -46,7 +47,7 @@ export default function HomePage() {
   const proofPackUrl = config.proofPackUrl.trim() || "/proof-pack";
   const loadBalancerLinks = loadBalancerBaseUrl
     ? {
-        healthz: `${loadBalancerBaseUrl}/healthz`,
+        healthz: `${loadBalancerBaseUrl}${loadBalancerHealthPath}`,
         backends: `${loadBalancerBaseUrl}/backends`,
         metrics: `${loadBalancerBaseUrl}/metrics`,
         drill: `${loadBalancerBaseUrl}/admin/failure-mode?unhealthy=true`
@@ -263,11 +264,13 @@ export default function HomePage() {
                 </p>
                 <div className="control-row">
                   <a href={loadBalancerLinks.healthz} target="_blank" rel="noreferrer">
-                    <code>/healthz</code>
+                    <code>{loadBalancerHealthPath}</code>
                   </a>
-                  <a href={loadBalancerLinks.backends} target="_blank" rel="noreferrer">
-                    <code>/backends</code>
-                  </a>
+                  {loadBalancerLinks.backends !== loadBalancerLinks.healthz ? (
+                    <a href={loadBalancerLinks.backends} target="_blank" rel="noreferrer">
+                      <code>/backends</code>
+                    </a>
+                  ) : null}
                   <a href={loadBalancerLinks.metrics} target="_blank" rel="noreferrer">
                     <code>/metrics</code>
                   </a>

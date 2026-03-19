@@ -57,20 +57,21 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const hasTestingPresets =
     Boolean(config.testAlertEmail) || Boolean(config.testSlackWebhookUrl) || Boolean(config.testWebhookUrl);
-  const loadBalancerBaseUrl = config.loadBalancerUrl.trim().replace(/\/$/, "");
-  const loadBalancerHealthPath = `/${config.loadBalancerHealthPath.trim().replace(/^\/+/, "") || "healthz"}`;
   const awsLoadBalancerBaseUrl = config.awsLoadBalancerUrl.trim().replace(/\/$/, "");
   const gcpLoadBalancerBaseUrl = config.gcpLoadBalancerUrl.trim().replace(/\/$/, "");
+  const loadBalancerBaseUrl = config.loadBalancerUrl.trim().replace(/\/$/, "");
+  const runtimeLoadBalancerBaseUrl = loadBalancerBaseUrl || gcpLoadBalancerBaseUrl || awsLoadBalancerBaseUrl;
+  const loadBalancerHealthPath = `/${config.loadBalancerHealthPath.trim().replace(/^\/+/, "") || "healthz"}`;
   const gcpWebUrl = config.gcpWebUrl.trim();
   const grafanaDashboardUrl = config.grafanaDashboardUrl.trim();
   const prometheusUrl = config.prometheusUrl.trim();
   const proofPackUrl = config.proofPackUrl.trim() || "/proof-pack";
-  const loadBalancerLinks = loadBalancerBaseUrl
+  const loadBalancerLinks = runtimeLoadBalancerBaseUrl
     ? {
-        healthz: `${loadBalancerBaseUrl}${loadBalancerHealthPath}`,
-        backends: `${loadBalancerBaseUrl}/backends`,
-        metrics: `${loadBalancerBaseUrl}/metrics`,
-        drill: `${loadBalancerBaseUrl}/admin/failure-mode?unhealthy=true`
+        healthz: `${runtimeLoadBalancerBaseUrl}${loadBalancerHealthPath}`,
+        backends: `${runtimeLoadBalancerBaseUrl}/backends`,
+        metrics: `${runtimeLoadBalancerBaseUrl}/metrics`,
+        drill: `${runtimeLoadBalancerBaseUrl}/admin/failure-mode?unhealthy=true`
       }
     : null;
 
@@ -497,7 +498,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
                 Service discovery + circuit breaker URLs from this deployed stack.
               </p>
               <p className="small" style={{ margin: 0 }}>
-                Base URL: <code>{loadBalancerBaseUrl}</code>
+                Base URL: <code>{runtimeLoadBalancerBaseUrl}</code>
               </p>
               <div className="control-row">
                 <a href={loadBalancerLinks.healthz} target="_blank" rel="noreferrer">
@@ -566,8 +567,8 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
             </>
           ) : (
             <p className="small" style={{ margin: 0 }}>
-              Configure <code>NEXT_PUBLIC_LOAD_BALANCER_URL</code> to render runtime service-discovery and
-              circuit-breaker drill links in this view.
+              Configure <code>NEXT_PUBLIC_LOAD_BALANCER_URL</code> or <code>NEXT_PUBLIC_GCP_LOAD_BALANCER_URL</code>{" "}
+              to render runtime service-discovery and circuit-breaker drill links in this view.
             </p>
           )}
         </article>

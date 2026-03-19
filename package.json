@@ -12,6 +12,7 @@
     "build": "npm run build --workspace @netpulse/shared && npm run build --workspace @netpulse/authz && npm run build --workspace @netpulse/api && npm run build --workspace @netpulse/prober && npm run build --workspace @netpulse/load-balancer && npm run build --workspace @netpulse/cdk && npm run build --workspace @netpulse/web",
     "dev:web": "npm run dev --workspace @netpulse/web",
     "dev:lb": "npm run dev --workspace @netpulse/load-balancer",
+    "gcp:bootstrap": "bash scripts/bootstrap-gcp-terraform.sh",
     "deploy:gcp:multicloud": "bash scripts/deploy-gcp-multicloud.sh",
     "drill:lb": "bash scripts/load-balancer-failure-drill.sh",
     "drill:pgbouncer": "tsx scripts/pgbouncer-spike.ts",

@@ -18,7 +18,7 @@ Usage:
                [--default-workspace-name <name>] [--default-endpoint-name <name>] [--default-endpoint-url <url>]
                [--test-alert-email <email>] [--test-slack-webhook-url <url>] [--test-webhook-url <url>] [--show-testing-hints <true|false>]
                [--grafana-dashboard-url <url>] [--prometheus-url <url>] [--aws-load-balancer-url <url>]
-               [--gcp-load-balancer-url <url>] [--gcp-web-url <url>] [--load-balancer-health-path <path>]
+               [--gcp-load-balancer-url <url>] [--gcp-web-url <url>] [--load-balancer-health-path <path>] [--amplify-profile <aws-profile>]
 
 Example:
   $(basename "$0") --env dev --app-id d123example --branch dev --profile netpulse-base --demo-org-id org_demo_public \\
@@ -30,6 +30,7 @@ ENV_NAME=""
 APP_ID=""
 BRANCH_NAME=""
 PROFILE=""
+AMPLIFY_PROFILE=""
 REGION="${AWS_REGION:-us-east-1}"
 DEMO_ORG_ID="org_demo_public"
 DEFAULT_WORKSPACE_NAME="Recruiter Sandbox Workspace"
@@ -63,6 +64,10 @@ while [ $# -gt 0 ]; do
       ;;
     --profile)
       PROFILE="$2"
+      shift 2
+      ;;
+    --amplify-profile)
+      AMPLIFY_PROFILE="$2"
       shift 2
       ;;
     --region)
@@ -149,6 +154,9 @@ fi
 if [ -z "$PROFILE" ]; then
   PROFILE="netpulse-$ENV_NAME"
 fi
+if [ -z "$AMPLIFY_PROFILE" ]; then
+  AMPLIFY_PROFILE="$PROFILE"
+fi
 
 STACK_NAME="NetPulse-$ENV_NAME"
 
@@ -174,6 +182,10 @@ fi
 if [ -z "$AWS_LOAD_BALANCER_URL" ]; then
   AWS_LOAD_BALANCER_URL="$LOAD_BALANCER_URL"
 fi
+PRIMARY_LOAD_BALANCER_URL="$LOAD_BALANCER_URL"
+if [ -z "$PRIMARY_LOAD_BALANCER_URL" ] && [ -n "$GCP_LOAD_BALANCER_URL" ]; then
+  PRIMARY_LOAD_BALANCER_URL="$GCP_LOAD_BALANCER_URL"
+fi
 
 if [ -z "$API_BASE_URL" ] || [ "$API_BASE_URL" = "None" ]; then
   echo "Could not resolve API URL from $STACK_NAME outputs" >&2
@@ -185,7 +197,7 @@ ENV_JSON="$(jq -n \
   --arg ws "$WS_URL" \
   --arg pool "$COGNITO_USER_POOL_ID" \
   --arg client "$COGNITO_USER_POOL_CLIENT_ID" \
-  --arg lb "$LOAD_BALANCER_URL" \
+  --arg lb "$PRIMARY_LOAD_BALANCER_URL" \
   --arg awsLb "$AWS_LOAD_BALANCER_URL" \
   --arg gcpLb "$GCP_LOAD_BALANCER_URL" \
   --arg gcpWeb "$GCP_WEB_URL" \
@@ -232,13 +244,13 @@ fi
 
 aws amplify get-branch \
   --region "$REGION" \
-  --profile "$PROFILE" \
+  --profile "$AMPLIFY_PROFILE" \
   --app-id "$APP_ID" \
   --branch-name "$BRANCH_NAME" >/dev/null
 
 aws amplify update-branch \
   --region "$REGION" \
-  --profile "$PROFILE" \
+  --profile "$AMPLIFY_PROFILE" \
   --app-id "$APP_ID" \
   --branch-name "$BRANCH_NAME" \
   --environment-variables "$ENV_JSON" >/dev/null

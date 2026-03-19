@@ -9,3 +9,6 @@ coverage
 .DS_Store
 dist
 artifacts/drills/*.env
+.terraform/
+*.tfstate
+*.tfstate.*

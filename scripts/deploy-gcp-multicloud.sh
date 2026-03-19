@@ -10,6 +10,7 @@ Usage:
                [--api-base-url <aws-api-url>] [--ws-url <aws-websocket-url>]
                [--cognito-user-pool-id <pool-id>] [--cognito-user-pool-client-id <client-id>]
                [--aws-load-balancer-url <aws-runtime-url>] [--grafana-dashboard-url <url>] [--prometheus-url <url>]
+               [--billing-account <billing-account-id>] [--project-name <gcp-project-name>] [--skip-bootstrap]
                [--demo-org-id <org-id>] [--default-workspace-name <name>] [--default-endpoint-name <name>]
                [--default-endpoint-url <url>] [--dry-run]
 
@@ -56,6 +57,23 @@ build_and_push_image() {
 trim_trailing_slash() {
   local value="${1:-}"
   printf '%s' "${value%/}"
+}
+
+env_display_name() {
+  case "$1" in
+    dev)
+      echo "Dev"
+      ;;
+    staging)
+      echo "Staging"
+      ;;
+    prod)
+      echo "Prod"
+      ;;
+    *)
+      echo "$1"
+      ;;
+  esac
 }
 
 env_quote() {
@@ -107,6 +125,8 @@ ARTIFACT_REGION=""
 REPOSITORY="netpulse"
 AWS_PROFILE=""
 AWS_REGION="${AWS_REGION:-us-east-1}"
+BILLING_ACCOUNT=""
+PROJECT_NAME=""
 API_BASE_URL=""
 WS_URL=""
 COGNITO_USER_POOL_ID=""
@@ -118,6 +138,7 @@ DEMO_ORG_ID="org_demo_public"
 DEFAULT_WORKSPACE_NAME="Recruiter Sandbox Workspace"
 DEFAULT_ENDPOINT_NAME="Recruiter Drill Endpoint"
 DEFAULT_ENDPOINT_URL="https://example.com/health"
+SKIP_BOOTSTRAP="false"
 DRY_RUN="false"
 
 while [ $# -gt 0 ]; do
@@ -148,6 +169,14 @@ while [ $# -gt 0 ]; do
       ;;
     --aws-region)
       AWS_REGION="$2"
+      shift 2
+      ;;
+    --billing-account)
+      BILLING_ACCOUNT="$2"
+      shift 2
+      ;;
+    --project-name)
+      PROJECT_NAME="$2"
       shift 2
       ;;
     --api-base-url)
@@ -194,6 +223,10 @@ while [ $# -gt 0 ]; do
       DEFAULT_ENDPOINT_URL="$2"
       shift 2
       ;;
+    --skip-bootstrap)
+      SKIP_BOOTSTRAP="true"
+      shift
+      ;;
     --dry-run)
       DRY_RUN="true"
       shift
@@ -231,6 +264,9 @@ fi
 if [ -z "$AWS_PROFILE" ]; then
   AWS_PROFILE="netpulse-$ENV_NAME"
 fi
+if [ -z "$PROJECT_NAME" ]; then
+  PROJECT_NAME="NetPulse Multicloud $(env_display_name "$ENV_NAME")"
+fi
 
 STACK_NAME="NetPulse-$ENV_NAME"
 REGISTRY_HOST="${ARTIFACT_REGION}-docker.pkg.dev"
@@ -255,6 +291,28 @@ require_cmd docker
 
 if [ "$DRY_RUN" != "true" ]; then
   require_cmd gcloud
+fi
+
+if [ "$SKIP_BOOTSTRAP" != "true" ]; then
+  BOOTSTRAP_CMD=(
+    bash
+    scripts/bootstrap-gcp-terraform.sh
+    --env "$ENV_NAME"
+    --project "$PROJECT_ID"
+    --project-name "$PROJECT_NAME"
+    --region "$REGION"
+    --artifact-region "$ARTIFACT_REGION"
+    --repository "$REPOSITORY"
+  )
+
+  if [ -n "$BILLING_ACCOUNT" ]; then
+    BOOTSTRAP_CMD+=(--billing-account "$BILLING_ACCOUNT")
+  fi
+  if [ "$DRY_RUN" = "true" ]; then
+    BOOTSTRAP_CMD+=(--dry-run)
+  fi
+
+  run_cmd "${BOOTSTRAP_CMD[@]}"
 fi
 
 if [ -z "$API_BASE_URL" ]; then
@@ -359,7 +417,7 @@ run_cmd gcloud run deploy "$BACKEND_A_SERVICE" \
   --platform managed \
   --allow-unauthenticated \
   --port 8080 \
-  --min-instances 0 \
+  --min-instances 1 \
   --max-instances 5 \
   --cpu 1 \
   --memory 512Mi \
@@ -372,7 +430,7 @@ run_cmd gcloud run deploy "$BACKEND_B_SERVICE" \
   --platform managed \
   --allow-unauthenticated \
   --port 8080 \
-  --min-instances 0 \
+  --min-instances 1 \
   --max-instances 5 \
   --cpu 1 \
   --memory 512Mi \
@@ -394,11 +452,13 @@ write_env_file "$LOAD_BALANCER_ENV_FILE" \
   DISCOVERY_PROVIDER "static" \
   STATIC_BACKENDS "$GCP_STATIC_BACKENDS" \
   HEALTH_CHECK_INTERVAL_MS "5000" \
+  HEALTH_CHECK_TIMEOUT_MS "5000" \
   DISCOVERY_REFRESH_INTERVAL_MS "10000" \
-  REQUEST_TIMEOUT_MS "10000" \
+  LOAD_BALANCER_TIMEOUT_MS "10000" \
   CIRCUIT_OPEN_AFTER_FAILURES "3" \
-  CIRCUIT_HALF_OPEN_MAX_REQUESTS "1" \
-  CIRCUIT_RESET_TIMEOUT_MS "15000"
+  CIRCUIT_BASE_COOLDOWN_MS "5000" \
+  CIRCUIT_MAX_COOLDOWN_MS "15000" \
+  CIRCUIT_HALF_OPEN_SUCCESSES "1"
 
 run_cmd gcloud run deploy "$LOAD_BALANCER_SERVICE" \
   --project "$PROJECT_ID" \
@@ -407,7 +467,7 @@ run_cmd gcloud run deploy "$LOAD_BALANCER_SERVICE" \
   --platform managed \
   --allow-unauthenticated \
   --port 8080 \
-  --min-instances 0 \
+  --min-instances 1 \
   --max-instances 10 \
   --cpu 1 \
   --memory 512Mi \

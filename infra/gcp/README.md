@@ -45,6 +45,28 @@ Useful IAM roles for the deploying principal:
 - `roles/iam.serviceAccountUser`
 - permission to push images into the chosen Artifact Registry repository
 
+## Terraform bootstrap
+
+Terraform now manages the repeatable GCP bootstrap layer:
+
+- project creation
+- billing attachment
+- required API enablement (`cloudresourcemanager.googleapis.com`, `serviceusage.googleapis.com`, `run.googleapis.com`, `artifactregistry.googleapis.com`)
+- Artifact Registry repository
+
+Bootstrap only:
+
+```bash
+npm run gcp:bootstrap -- \
+  --env dev \
+  --project netpulse-multicloud-dev \
+  --project-name "NetPulse Multicloud Dev" \
+  --billing-account <billing-account-id> \
+  --region us-central1
+```
+
+The Terraform state is tracked per environment via Terraform workspaces under `infra/gcp`.
+
 ## Deploy
 
 Example for `dev`:
@@ -69,13 +91,14 @@ npm run deploy:gcp:multicloud -- \
 ## What the deploy script does
 
 1. Resolves the AWS control-plane outputs from `NetPulse-{env}` unless you override them explicitly.
-2. Builds and pushes three images to Artifact Registry:
+2. Applies the Terraform bootstrap unless `--skip-bootstrap` is set.
+3. Builds and pushes three images to Artifact Registry:
    - `demo-backend`
    - `load-balancer`
    - `web`
-3. Deploys two Cloud Run demo backends.
-4. Deploys the Cloud Run load balancer with `DISCOVERY_PROVIDER=static` and HTTPS backend targets.
-5. Deploys the Cloud Run web frontend pointed at the AWS API/WebSocket/Cognito outputs while surfacing both AWS and GCP runtime URLs.
+4. Deploys two Cloud Run demo backends.
+5. Deploys the Cloud Run load balancer with `DISCOVERY_PROVIDER=static` and HTTPS backend targets.
+6. Deploys the Cloud Run web frontend pointed at the AWS API/WebSocket/Cognito outputs while surfacing both AWS and GCP runtime URLs.
 
 ## Operator notes
 

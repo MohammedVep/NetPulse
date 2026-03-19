@@ -37,20 +37,21 @@ export default function HomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => hasAuthToken());
   const hasTestingPresets =
     Boolean(config.testAlertEmail) || Boolean(config.testSlackWebhookUrl) || Boolean(config.testWebhookUrl);
-  const loadBalancerBaseUrl = config.loadBalancerUrl.trim().replace(/\/$/, "");
-  const loadBalancerHealthPath = `/${config.loadBalancerHealthPath.trim().replace(/^\/+/, "") || "healthz"}`;
   const awsLoadBalancerBaseUrl = config.awsLoadBalancerUrl.trim().replace(/\/$/, "");
   const gcpLoadBalancerBaseUrl = config.gcpLoadBalancerUrl.trim().replace(/\/$/, "");
+  const loadBalancerBaseUrl = config.loadBalancerUrl.trim().replace(/\/$/, "");
+  const runtimeLoadBalancerBaseUrl = loadBalancerBaseUrl || gcpLoadBalancerBaseUrl || awsLoadBalancerBaseUrl;
+  const loadBalancerHealthPath = `/${config.loadBalancerHealthPath.trim().replace(/^\/+/, "") || "healthz"}`;
   const gcpWebUrl = config.gcpWebUrl.trim();
   const grafanaDashboardUrl = config.grafanaDashboardUrl.trim();
   const prometheusUrl = config.prometheusUrl.trim();
   const proofPackUrl = config.proofPackUrl.trim() || "/proof-pack";
-  const loadBalancerLinks = loadBalancerBaseUrl
+  const loadBalancerLinks = runtimeLoadBalancerBaseUrl
     ? {
-        healthz: `${loadBalancerBaseUrl}${loadBalancerHealthPath}`,
-        backends: `${loadBalancerBaseUrl}/backends`,
-        metrics: `${loadBalancerBaseUrl}/metrics`,
-        drill: `${loadBalancerBaseUrl}/admin/failure-mode?unhealthy=true`
+        healthz: `${runtimeLoadBalancerBaseUrl}${loadBalancerHealthPath}`,
+        backends: `${runtimeLoadBalancerBaseUrl}/backends`,
+        metrics: `${runtimeLoadBalancerBaseUrl}/metrics`,
+        drill: `${runtimeLoadBalancerBaseUrl}/admin/failure-mode?unhealthy=true`
       }
     : null;
 
@@ -260,7 +261,7 @@ export default function HomePage() {
             {loadBalancerLinks ? (
               <>
                 <p className="small" style={{ marginTop: 0 }}>
-                  Environment load balancer: <code>{loadBalancerBaseUrl}</code>
+                  Environment load balancer: <code>{runtimeLoadBalancerBaseUrl}</code>
                 </p>
                 <div className="control-row">
                   <a href={loadBalancerLinks.healthz} target="_blank" rel="noreferrer">
@@ -314,8 +315,8 @@ export default function HomePage() {
               </>
             ) : (
               <p className="small" style={{ marginTop: 0 }}>
-                Set <code>NEXT_PUBLIC_LOAD_BALANCER_URL</code> to surface live service discovery, routing, and drill
-                endpoints in this page.
+                Set <code>NEXT_PUBLIC_LOAD_BALANCER_URL</code> or <code>NEXT_PUBLIC_GCP_LOAD_BALANCER_URL</code> to
+                surface live service discovery, routing, and drill endpoints in this page.
               </p>
             )}
           </article>

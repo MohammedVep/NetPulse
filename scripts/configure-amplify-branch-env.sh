@@ -17,7 +17,8 @@ Usage:
   $(basename "$0") --env <dev|staging|prod> --app-id <AMPLIFY_APP_ID> --branch <BRANCH_NAME> [--profile <aws-profile>] [--region <aws-region>] [--demo-org-id <org_id>] [--dry-run]
                [--default-workspace-name <name>] [--default-endpoint-name <name>] [--default-endpoint-url <url>]
                [--test-alert-email <email>] [--test-slack-webhook-url <url>] [--test-webhook-url <url>] [--show-testing-hints <true|false>]
-               [--grafana-dashboard-url <url>] [--prometheus-url <url>]
+               [--grafana-dashboard-url <url>] [--prometheus-url <url>] [--aws-load-balancer-url <url>]
+               [--gcp-load-balancer-url <url>] [--gcp-web-url <url>]
 
 Example:
   $(basename "$0") --env dev --app-id d123example --branch dev --profile netpulse-base --demo-org-id org_demo_public \\
@@ -40,6 +41,9 @@ TEST_WEBHOOK_URL=""
 SHOW_TESTING_HINTS="false"
 GRAFANA_DASHBOARD_URL=""
 PROMETHEUS_URL=""
+AWS_LOAD_BALANCER_URL=""
+GCP_LOAD_BALANCER_URL=""
+GCP_WEB_URL=""
 DRY_RUN="false"
 
 while [ $# -gt 0 ]; do
@@ -104,6 +108,18 @@ while [ $# -gt 0 ]; do
       PROMETHEUS_URL="$2"
       shift 2
       ;;
+    --aws-load-balancer-url)
+      AWS_LOAD_BALANCER_URL="$2"
+      shift 2
+      ;;
+    --gcp-load-balancer-url)
+      GCP_LOAD_BALANCER_URL="$2"
+      shift 2
+      ;;
+    --gcp-web-url)
+      GCP_WEB_URL="$2"
+      shift 2
+      ;;
     --dry-run)
       DRY_RUN="true"
       shift
@@ -150,6 +166,9 @@ API_BASE_URL="${API_BASE_URL%/}"
 if [ "$LOAD_BALANCER_URL" = "None" ]; then
   LOAD_BALANCER_URL=""
 fi
+if [ -z "$AWS_LOAD_BALANCER_URL" ]; then
+  AWS_LOAD_BALANCER_URL="$LOAD_BALANCER_URL"
+fi
 
 if [ -z "$API_BASE_URL" ] || [ "$API_BASE_URL" = "None" ]; then
   echo "Could not resolve API URL from $STACK_NAME outputs" >&2
@@ -162,6 +181,9 @@ ENV_JSON="$(jq -n \
   --arg pool "$COGNITO_USER_POOL_ID" \
   --arg client "$COGNITO_USER_POOL_CLIENT_ID" \
   --arg lb "$LOAD_BALANCER_URL" \
+  --arg awsLb "$AWS_LOAD_BALANCER_URL" \
+  --arg gcpLb "$GCP_LOAD_BALANCER_URL" \
+  --arg gcpWeb "$GCP_WEB_URL" \
   --arg grafana "$GRAFANA_DASHBOARD_URL" \
   --arg prometheus "$PROMETHEUS_URL" \
   --arg demo "$DEMO_ORG_ID" \
@@ -178,6 +200,9 @@ ENV_JSON="$(jq -n \
     NEXT_PUBLIC_COGNITO_USER_POOL_ID: $pool,
     NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID: $client,
     NEXT_PUBLIC_LOAD_BALANCER_URL: $lb,
+    NEXT_PUBLIC_AWS_LOAD_BALANCER_URL: $awsLb,
+    NEXT_PUBLIC_GCP_LOAD_BALANCER_URL: $gcpLb,
+    NEXT_PUBLIC_GCP_WEB_URL: $gcpWeb,
     NEXT_PUBLIC_GRAFANA_DASHBOARD_URL: $grafana,
     NEXT_PUBLIC_PROMETHEUS_URL: $prometheus,
     NEXT_PUBLIC_DEMO_ORG_ID: $demo,

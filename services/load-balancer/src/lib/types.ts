@@ -1,9 +1,11 @@
 export type DiscoveryProvider = "static" | "consul" | "etcd";
+export type BackendProtocol = "http" | "https";
 
 export type CircuitState = "CLOSED" | "OPEN" | "HALF_OPEN";
 
 export interface BackendNode {
   id: string;
+  protocol: BackendProtocol;
   host: string;
   port: number;
   healthPath: string;

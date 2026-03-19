@@ -22,6 +22,12 @@ function hasBody(method: string): boolean {
   return method !== "GET" && method !== "HEAD";
 }
 
+function backendHostHeader(backend: BackendRuntime): string {
+  const isDefaultPort =
+    (backend.protocol === "http" && backend.port === 80) || (backend.protocol === "https" && backend.port === 443);
+  return isDefaultPort ? backend.host : `${backend.host}:${backend.port}`;
+}
+
 function copyRequestHeaders(request: IncomingMessage, backend: BackendRuntime): Headers {
   const headers = new Headers();
 
@@ -55,8 +61,8 @@ function copyRequestHeaders(request: IncomingMessage, backend: BackendRuntime): 
 
   headers.set("x-forwarded-for", forwardedFor);
   headers.set("x-forwarded-proto", socket.encrypted ? "https" : "http");
-  headers.set("x-forwarded-host", request.headers.host || `${backend.host}:${backend.port}`);
-  headers.set("host", `${backend.host}:${backend.port}`);
+  headers.set("x-forwarded-host", request.headers.host || backendHostHeader(backend));
+  headers.set("host", backendHostHeader(backend));
 
   return headers;
 }
@@ -69,7 +75,7 @@ export async function proxyRequest(
 ): Promise<number> {
   const method = requestMethod(request);
   const path = request.url || "/";
-  const targetUrl = new URL(path, `http://${backend.host}:${backend.port}`);
+  const targetUrl = new URL(path, `${backend.protocol}://${backend.host}:${backend.port}`);
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);

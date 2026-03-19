@@ -31,7 +31,7 @@ function logError(message: string, details?: Record<string, unknown>): void {
 }
 
 function healthUrl(backend: BackendRuntime): string {
-  return `http://${backend.host}:${backend.port}${backend.healthPath}`;
+  return `${backend.protocol}://${backend.host}:${backend.port}${backend.healthPath}`;
 }
 
 function isHealthyStatus(status: number): boolean {

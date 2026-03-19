@@ -9,6 +9,11 @@ Portfolio highlights:
 - "Implemented PgBouncer for advanced PostgreSQL connection pooling, preventing database connection exhaustion during simulated spikes of 10,000+ concurrent regional worker writes."
 - "Enforced Zero-Trust architecture by establishing Mutual TLS (mTLS) encryption between distributed regional checkers and the centralized monitoring engine."
 
+Multi-cloud note:
+
+- AWS currently remains the authoritative control plane for auth, APIs, queueing, and persistence.
+- Google Cloud Run can host the portable edge tier: demo backends, the service-discovered load balancer, and an optional web frontend pointed back at the AWS control plane.
+
 ## Monorepo structure
 
 - `apps/web`: Next.js dashboard (org overview, endpoint detail, incidents, live updates).
@@ -134,6 +139,24 @@ The CDK stack now provisions:
   - `NetPulseLoadBalancerDns-{env}`
   - `NetPulseLoadBalancerUrl-{env}`
 
+### Google Cloud multi-cloud deployment (Cloud Run)
+
+Phase 1 multi-cloud support deploys the portable runtime to Google Cloud while keeping the AWS control plane intact:
+
+- two demo backends on Cloud Run.
+- one Cloud Run load balancer using `DISCOVERY_PROVIDER=static` against those HTTPS backend URLs.
+- one optional Cloud Run web frontend that points at AWS API Gateway, Cognito, WebSocket, and exposes both AWS and GCP runtime links in the UI.
+
+Deploy:
+
+- `npm run deploy:gcp:multicloud -- --env dev --project <gcp-project-id> --region us-central1`
+- dry run without applying changes:
+  - `npm run deploy:gcp:multicloud -- --env dev --project <gcp-project-id> --region us-central1 --dry-run`
+
+More detail:
+
+- `infra/gcp/README.md`
+
 ## Massive concurrency + zero-trust extension
 
 This repo now includes an optional staging drill path for PostgreSQL burst writes and mTLS queue transport:
@@ -255,6 +278,10 @@ Deploy with:
   - `./scripts/configure-amplify-branch-env.sh --env dev --app-id <AMPLIFY_APP_ID> --branch dev --profile netpulse-dev`
   - `./scripts/configure-amplify-branch-env.sh --env staging --app-id <AMPLIFY_APP_ID> --branch staging --profile netpulse-staging`
   - `./scripts/configure-amplify-branch-env.sh --env prod --app-id <AMPLIFY_APP_ID> --branch main --profile netpulse-prod`
+  - include multi-cloud runtime URLs when available:
+    - `--aws-load-balancer-url <aws-runtime-url>`
+    - `--gcp-load-balancer-url <gcp-runtime-url>`
+    - `--gcp-web-url <gcp-web-url>`
   - Optional recruiter/demo GUI presets:
     - `NEXT_PUBLIC_DEFAULT_WORKSPACE_NAME`
     - `NEXT_PUBLIC_DEFAULT_ENDPOINT_NAME`

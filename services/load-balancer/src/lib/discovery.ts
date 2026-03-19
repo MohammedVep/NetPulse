@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 import type { LoadBalancerConfig } from "./config.js";
-import type { BackendNode } from "./types.js";
+import type { BackendNode, BackendProtocol } from "./types.js";
 
 type Fetcher = typeof fetch;
 
@@ -38,6 +38,10 @@ function ensurePath(input: string | undefined, fallback: string): string {
   return raw.startsWith("/") ? raw : `/${raw}`;
 }
 
+function toBackendProtocol(value: unknown): BackendProtocol {
+  return value === "https" ? "https" : "http";
+}
+
 function toStringMap(value: unknown): Record<string, string> {
   const obj = asObject(value);
 
@@ -69,10 +73,12 @@ function parseStaticEntry(entry: string, defaultHealthPath: string): BackendNode
 
   let host = "";
   let port = 0;
+  let protocol: BackendProtocol = "http";
   let healthPath = defaultHealthPath;
 
   if (targetPart.includes("://")) {
     const parsed = new URL(targetPart);
+    protocol = toBackendProtocol(parsed.protocol.replace(":", ""));
     host = parsed.hostname;
     port = Number(parsed.port || (parsed.protocol === "https:" ? 443 : 80));
     healthPath = ensurePath(parsed.pathname !== "/" ? parsed.pathname : undefined, defaultHealthPath);
@@ -99,6 +105,7 @@ function parseStaticEntry(entry: string, defaultHealthPath: string): BackendNode
 
   return {
     id,
+    protocol,
     host,
     port,
     healthPath,
@@ -160,9 +167,11 @@ export function parseConsulHealthResponse(input: unknown, defaultHealthPath: str
 
     const meta = toStringMap(service.Meta);
     const healthPath = ensurePath(meta.healthPath || meta.health_path, defaultHealthPath);
+    const protocol = toBackendProtocol(meta.protocol || meta.scheme);
 
     parsed.push({
       id: asString(service.ID) || asString(service.Service) || `${host}:${port}`,
+      protocol,
       host,
       port,
       healthPath,
@@ -226,6 +235,7 @@ function parseEtcdBackendValue(
 
     return {
       id: asString(obj.id) || fallbackId || `${host}:${port}`,
+      protocol: toBackendProtocol(asString(obj.protocol) || asString(obj.scheme) || metadata.protocol),
       host,
       port,
       healthPath: ensurePath(asString(obj.healthPath) || asString(obj.health_path), defaultHealthPath),
@@ -246,6 +256,7 @@ function parseEtcdBackendValue(
 
     return {
       id: fallbackId || `${host}:${port}`,
+      protocol: "http",
       host,
       port,
       healthPath: defaultHealthPath,

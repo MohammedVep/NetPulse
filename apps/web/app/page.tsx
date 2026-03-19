@@ -38,6 +38,9 @@ export default function HomePage() {
   const hasTestingPresets =
     Boolean(config.testAlertEmail) || Boolean(config.testSlackWebhookUrl) || Boolean(config.testWebhookUrl);
   const loadBalancerBaseUrl = config.loadBalancerUrl.trim().replace(/\/$/, "");
+  const awsLoadBalancerBaseUrl = config.awsLoadBalancerUrl.trim().replace(/\/$/, "");
+  const gcpLoadBalancerBaseUrl = config.gcpLoadBalancerUrl.trim().replace(/\/$/, "");
+  const gcpWebUrl = config.gcpWebUrl.trim();
   const grafanaDashboardUrl = config.grafanaDashboardUrl.trim();
   const prometheusUrl = config.prometheusUrl.trim();
   const proofPackUrl = config.proofPackUrl.trim() || "/proof-pack";
@@ -213,13 +216,14 @@ export default function HomePage() {
   return (
     <main>
       <section className="panel soft" style={{ marginTop: 26 }}>
-        <span className="pill">Monitoring SaaS · Massive Concurrency + Zero Trust</span>
+        <span className="pill">Monitoring SaaS · Multi-Cloud + Zero Trust</span>
         <h1 className="hero-title" style={{ marginTop: 14 }}>
           NetPulse Reliability Control Plane
         </h1>
         <p className="small hero-subtitle">
           NetPulse now combines dynamic load balancer service discovery, automatic circuit breaking, Prometheus +
-          Grafana observability, PgBouncer-backed write burst handling, and mTLS worker-to-core encryption.
+          Grafana observability, PgBouncer-backed write burst handling, mTLS worker-to-core encryption, and a
+          multi-cloud runtime split across AWS plus Google Cloud.
         </p>
 
         <div className="signal-grid" style={{ marginTop: 8 }}>
@@ -242,6 +246,10 @@ export default function HomePage() {
           <article className="signal-card">
             <strong>mTLS Zero-Trust Plane</strong>
             <p className="small">Regional checkers and queue core communicate over cert-authenticated encrypted links.</p>
+          </article>
+          <article className="signal-card">
+            <strong>Multi-Cloud Runtime</strong>
+            <p className="small">AWS remains the control plane while Google Cloud Run can host mirrored edge traffic.</p>
           </article>
         </div>
 
@@ -274,6 +282,25 @@ export default function HomePage() {
                   <p className="small" style={{ marginTop: 0 }}>
                     Prometheus: <a href={prometheusUrl}>{prometheusUrl}</a>
                   </p>
+                ) : null}
+                {awsLoadBalancerBaseUrl || gcpLoadBalancerBaseUrl || gcpWebUrl ? (
+                  <div className="grid" style={{ marginTop: 6 }}>
+                    {awsLoadBalancerBaseUrl ? (
+                      <p className="small" style={{ margin: 0 }}>
+                        AWS runtime: <a href={awsLoadBalancerBaseUrl}>{awsLoadBalancerBaseUrl}</a>
+                      </p>
+                    ) : null}
+                    {gcpLoadBalancerBaseUrl ? (
+                      <p className="small" style={{ margin: 0 }}>
+                        Google Cloud runtime: <a href={gcpLoadBalancerBaseUrl}>{gcpLoadBalancerBaseUrl}</a>
+                      </p>
+                    ) : null}
+                    {gcpWebUrl ? (
+                      <p className="small" style={{ margin: 0 }}>
+                        Google Cloud web: <a href={gcpWebUrl}>{gcpWebUrl}</a>
+                      </p>
+                    ) : null}
+                  </div>
                 ) : null}
                 <p className="small" style={{ marginTop: 0 }}>
                   Reliability proof:{" "}

@@ -58,6 +58,9 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
   const hasTestingPresets =
     Boolean(config.testAlertEmail) || Boolean(config.testSlackWebhookUrl) || Boolean(config.testWebhookUrl);
   const loadBalancerBaseUrl = config.loadBalancerUrl.trim().replace(/\/$/, "");
+  const awsLoadBalancerBaseUrl = config.awsLoadBalancerUrl.trim().replace(/\/$/, "");
+  const gcpLoadBalancerBaseUrl = config.gcpLoadBalancerUrl.trim().replace(/\/$/, "");
+  const gcpWebUrl = config.gcpWebUrl.trim();
   const grafanaDashboardUrl = config.grafanaDashboardUrl.trim();
   const prometheusUrl = config.prometheusUrl.trim();
   const proofPackUrl = config.proofPackUrl.trim() || "/proof-pack";
@@ -398,7 +401,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
         </h1>
         <p className="small" style={{ marginTop: 0, maxWidth: 900 }}>
           Live status for multi-region health checks, service-discovered load balancer routing, circuit-breaker
-          behavior, and SaaS reliability controls hardened by PgBouncer + mTLS.
+          behavior, and SaaS reliability controls hardened by PgBouncer + mTLS across AWS and Google Cloud.
         </p>
         {!isAuthenticated ? (
           <p className="small" style={{ margin: 0 }}>
@@ -522,6 +525,34 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
                     <code>{prometheusUrl}</code>
                   </a>
                 </p>
+              ) : null}
+              {awsLoadBalancerBaseUrl || gcpLoadBalancerBaseUrl || gcpWebUrl ? (
+                <div className="grid">
+                  {awsLoadBalancerBaseUrl ? (
+                    <p className="small" style={{ margin: 0 }}>
+                      AWS runtime:{" "}
+                      <a href={awsLoadBalancerBaseUrl} target="_blank" rel="noreferrer">
+                        <code>{awsLoadBalancerBaseUrl}</code>
+                      </a>
+                    </p>
+                  ) : null}
+                  {gcpLoadBalancerBaseUrl ? (
+                    <p className="small" style={{ margin: 0 }}>
+                      Google Cloud runtime:{" "}
+                      <a href={gcpLoadBalancerBaseUrl} target="_blank" rel="noreferrer">
+                        <code>{gcpLoadBalancerBaseUrl}</code>
+                      </a>
+                    </p>
+                  ) : null}
+                  {gcpWebUrl ? (
+                    <p className="small" style={{ margin: 0 }}>
+                      Google Cloud web:{" "}
+                      <a href={gcpWebUrl} target="_blank" rel="noreferrer">
+                        <code>{gcpWebUrl}</code>
+                      </a>
+                    </p>
+                  ) : null}
+                </div>
               ) : null}
               <p className="small" style={{ margin: 0 }}>
                 Proof Pack:{" "}

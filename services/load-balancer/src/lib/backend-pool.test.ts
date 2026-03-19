@@ -14,6 +14,7 @@ describe("BackendPool", () => {
       [
         {
           id: "backend-a",
+          protocol: "http",
           host: "127.0.0.1",
           port: 3001,
           healthPath: "/health",
@@ -53,6 +54,7 @@ describe("BackendPool", () => {
       [
         {
           id: "backend-a",
+          protocol: "http",
           host: "127.0.0.1",
           port: 3001,
           healthPath: "/health",
@@ -60,6 +62,7 @@ describe("BackendPool", () => {
         },
         {
           id: "backend-b",
+          protocol: "http",
           host: "127.0.0.1",
           port: 3002,
           healthPath: "/health",

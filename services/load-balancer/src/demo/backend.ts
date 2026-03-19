@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 
-const port = Number(process.env.BACKEND_PORT || "3001");
+const port = Number(process.env.PORT || process.env.BACKEND_PORT || "3001");
 const configuredAddress = process.env.BACKEND_ADDRESS;
 const serviceName = process.env.CONSUL_SERVICE_NAME || "netpulse-backend";
 const serviceId = process.env.CONSUL_SERVICE_ID || `${serviceName}-${randomUUID()}`;

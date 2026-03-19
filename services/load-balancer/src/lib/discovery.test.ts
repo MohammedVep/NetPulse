@@ -47,16 +47,36 @@ describe("parseStaticBackends", () => {
     expect(parsed).toHaveLength(2);
     expect(parsed[0]).toMatchObject({
       id: "127.0.0.1:3001",
+      protocol: "http",
       host: "127.0.0.1",
       port: 3001,
       healthPath: "/health"
     });
     expect(parsed[1]).toMatchObject({
       id: "blue",
+      protocol: "http",
       host: "127.0.0.1",
       port: 3002,
       healthPath: "/healthz"
     });
+  });
+
+  it("parses https URL backends for Cloud Run style targets", () => {
+    const parsed = parseStaticBackends(
+      "gcp=https://netpulse-backend-a-uc.a.run.app/health",
+      "/healthz"
+    );
+
+    expect(parsed).toEqual([
+      {
+        id: "gcp",
+        protocol: "https",
+        host: "netpulse-backend-a-uc.a.run.app",
+        port: 443,
+        healthPath: "/health",
+        metadata: {}
+      }
+    ]);
   });
 });
 
@@ -84,6 +104,7 @@ describe("parseConsulHealthResponse", () => {
     expect(parsed).toEqual([
       {
         id: "svc-1",
+        protocol: "http",
         host: "10.0.0.11",
         port: 9001,
         healthPath: "/ready",
@@ -104,11 +125,13 @@ describe("parseEtcdRangeResponse", () => {
           value: Buffer.from(
             JSON.stringify({
               id: "backend-a",
+              protocol: "https",
               host: "10.1.0.8",
               port: 9100,
               healthPath: "/alive",
               metadata: {
-                zone: "use1-a"
+                zone: "use1-a",
+                protocol: "https"
               }
             })
           ).toString("base64")
@@ -121,11 +144,13 @@ describe("parseEtcdRangeResponse", () => {
     expect(parsed).toEqual([
       {
         id: "backend-a",
+        protocol: "https",
         host: "10.1.0.8",
         port: 9100,
         healthPath: "/alive",
         metadata: {
-          zone: "use1-a"
+          zone: "use1-a",
+          protocol: "https"
         }
       }
     ]);
@@ -163,6 +188,7 @@ describe("createDiscoveryClient", () => {
     expect(backends).toEqual([
       {
         id: "svc-2",
+        protocol: "http",
         host: "10.0.0.9",
         port: 9002,
         healthPath: "/status",

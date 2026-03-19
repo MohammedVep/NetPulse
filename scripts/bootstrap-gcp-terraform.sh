@@ -7,7 +7,9 @@ usage() {
 Usage:
   $(basename "$0") --env <dev|staging|prod> --project <gcp-project-id> [--project-name <name>]
                [--billing-account <billing-account-id>] [--region <gcp-region>] [--artifact-region <gcp-region>]
-               [--repository <artifact-registry-repo>] [--terraform-dir <dir>] [--dry-run]
+               [--repository <artifact-registry-repo>] [--terraform-dir <dir>]
+               [--backend-bucket <s3-bucket>] [--backend-table <dynamodb-table>] [--backend-region <aws-region>]
+               [--backend-profile <aws-profile>] [--skip-backend-bootstrap] [--dry-run]
 USAGE
 }
 
@@ -27,12 +29,14 @@ run_cmd() {
   fi
 }
 
-tf_cmd() {
-  terraform -chdir="$TERRAFORM_DIR" "$@"
+cleanup() {
+  if [ -n "${TEMP_TF_DATA_DIR:-}" ] && [ -d "${TEMP_TF_DATA_DIR:-}" ]; then
+    rm -rf "$TEMP_TF_DATA_DIR"
+  fi
 }
 
-workspace_exists() {
-  tf_cmd workspace list | sed 's/*//g' | awk '{$1=$1};1' | grep -qx "$ENV_NAME"
+tf_cmd() {
+  terraform -chdir="$TERRAFORM_DIR" "$@"
 }
 
 state_has() {
@@ -88,6 +92,22 @@ wait_for_project() {
   exit 1
 }
 
+remote_state_key() {
+  printf 'infra/gcp/%s.tfstate' "$ENV_NAME"
+}
+
+local_state_path() {
+  printf '%s/terraform.tfstate.d/%s/terraform.tfstate' "$TERRAFORM_DIR_ABS" "$ENV_NAME"
+}
+
+remote_state_exists() {
+  aws s3api head-object \
+    --profile "$BACKEND_PROFILE" \
+    --region "$BACKEND_REGION" \
+    --bucket "$BACKEND_BUCKET" \
+    --key "$(remote_state_key)" >/dev/null 2>&1
+}
+
 ENV_NAME=""
 PROJECT_ID=""
 PROJECT_NAME=""
@@ -96,6 +116,11 @@ REGION="us-central1"
 ARTIFACT_REGION=""
 REPOSITORY="netpulse"
 TERRAFORM_DIR="infra/gcp"
+BACKEND_BUCKET=""
+BACKEND_TABLE="netpulse-terraform-locks"
+BACKEND_REGION="us-east-1"
+BACKEND_PROFILE="netpulse-root"
+SKIP_BACKEND_BOOTSTRAP="false"
 DRY_RUN="false"
 
 while [ $# -gt 0 ]; do
@@ -131,6 +156,26 @@ while [ $# -gt 0 ]; do
     --terraform-dir)
       TERRAFORM_DIR="$2"
       shift 2
+      ;;
+    --backend-bucket)
+      BACKEND_BUCKET="$2"
+      shift 2
+      ;;
+    --backend-table)
+      BACKEND_TABLE="$2"
+      shift 2
+      ;;
+    --backend-region)
+      BACKEND_REGION="$2"
+      shift 2
+      ;;
+    --backend-profile)
+      BACKEND_PROFILE="$2"
+      shift 2
+      ;;
+    --skip-backend-bootstrap)
+      SKIP_BACKEND_BOOTSTRAP="true"
+      shift
       ;;
     --dry-run)
       DRY_RUN="true"
@@ -170,13 +215,27 @@ if [ -z "$PROJECT_NAME" ]; then
   PROJECT_NAME="NetPulse Multicloud $(env_display_name "$ENV_NAME")"
 fi
 
+TERRAFORM_DIR_ABS="$(cd "$TERRAFORM_DIR" && pwd)"
+
 require_cmd terraform
 require_cmd gcloud
 require_cmd jq
+require_cmd aws
+
+TEMP_TF_DATA_DIR="$(mktemp -d "${TMPDIR:-/tmp}/netpulse-gcp-tf-${ENV_NAME}.XXXXXX")"
+export TF_DATA_DIR="$TEMP_TF_DATA_DIR"
+unset TF_WORKSPACE || true
+trap cleanup EXIT
 
 if [ -z "${GOOGLE_OAUTH_ACCESS_TOKEN:-}" ]; then
   GOOGLE_OAUTH_ACCESS_TOKEN="$(gcloud auth print-access-token)"
   export GOOGLE_OAUTH_ACCESS_TOKEN
+fi
+
+AWS_ACCOUNT_ID="$(aws sts get-caller-identity --profile "$BACKEND_PROFILE" --query Account --output text)"
+
+if [ -z "$BACKEND_BUCKET" ]; then
+  BACKEND_BUCKET="netpulse-terraform-state-${AWS_ACCOUNT_ID}-${BACKEND_REGION}"
 fi
 
 if [ -z "$BILLING_ACCOUNT" ]; then
@@ -215,12 +274,40 @@ TF_ARGS=(
   "${TF_VAR_ARGS[@]}"
 )
 
-run_cmd tf_cmd init -input=false
+if [ "$SKIP_BACKEND_BOOTSTRAP" != "true" ]; then
+  BACKEND_CMD=(
+    bash
+    scripts/bootstrap-terraform-s3-backend.sh
+    --bucket "$BACKEND_BUCKET"
+    --table "$BACKEND_TABLE"
+    --region "$BACKEND_REGION"
+    --profile "$BACKEND_PROFILE"
+  )
 
-if workspace_exists; then
-  run_cmd tf_cmd workspace select "$ENV_NAME"
-else
-  run_cmd tf_cmd workspace new "$ENV_NAME"
+  if [ "$DRY_RUN" = "true" ]; then
+    BACKEND_CMD+=(--dry-run)
+  fi
+
+  run_cmd "${BACKEND_CMD[@]}"
+fi
+
+INIT_ARGS=(
+  init
+  -input=false
+  -reconfigure
+  -backend-config="bucket=$BACKEND_BUCKET"
+  -backend-config="key=$(remote_state_key)"
+  -backend-config="region=$BACKEND_REGION"
+  -backend-config="dynamodb_table=$BACKEND_TABLE"
+  -backend-config="encrypt=true"
+  -backend-config="profile=$BACKEND_PROFILE"
+)
+
+run_cmd tf_cmd "${INIT_ARGS[@]}"
+
+LOCAL_STATE_PATH="$(local_state_path)"
+if [ "$DRY_RUN" != "true" ] && [ -s "$LOCAL_STATE_PATH" ] && ! remote_state_exists; then
+  run_cmd tf_cmd state push -force "$LOCAL_STATE_PATH"
 fi
 
 if [ "$DRY_RUN" != "true" ]; then

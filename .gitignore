@@ -9,6 +9,7 @@ coverage
 .DS_Store
 dist
 artifacts/drills/*.env
+artifacts/terraform-state-backups/
 .terraform/
 *.tfstate
 *.tfstate.*

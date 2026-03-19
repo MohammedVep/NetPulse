@@ -13,6 +13,7 @@
     "dev:web": "npm run dev --workspace @netpulse/web",
     "dev:lb": "npm run dev --workspace @netpulse/load-balancer",
     "gcp:bootstrap": "bash scripts/bootstrap-gcp-terraform.sh",
+    "tfstate:bootstrap": "bash scripts/bootstrap-terraform-s3-backend.sh",
     "deploy:gcp:multicloud": "bash scripts/deploy-gcp-multicloud.sh",
     "drill:lb": "bash scripts/load-balancer-failure-drill.sh",
     "drill:pgbouncer": "tsx scripts/pgbouncer-spike.ts",

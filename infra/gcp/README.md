@@ -47,12 +47,21 @@ Useful IAM roles for the deploying principal:
 
 ## Terraform bootstrap
 
-Terraform now manages the repeatable GCP bootstrap layer:
+Terraform now manages the repeatable GCP bootstrap layer, and its state now lives in a shared remote AWS backend rather than local workspaces:
 
 - project creation
 - billing attachment
 - required API enablement (`cloudresourcemanager.googleapis.com`, `serviceusage.googleapis.com`, `run.googleapis.com`, `artifactregistry.googleapis.com`)
 - Artifact Registry repository
+- remote Terraform state in S3 with DynamoDB locking
+
+Bootstrap the shared Terraform backend:
+
+```bash
+npm run tfstate:bootstrap -- \
+  --profile netpulse-root \
+  --region us-east-1
+```
 
 Bootstrap only:
 
@@ -65,7 +74,11 @@ npm run gcp:bootstrap -- \
   --region us-central1
 ```
 
-The Terraform state is tracked per environment via Terraform workspaces under `infra/gcp`.
+The Terraform state is tracked per environment with remote backend keys:
+
+- `infra/gcp/dev.tfstate`
+- `infra/gcp/staging.tfstate`
+- `infra/gcp/prod.tfstate`
 
 ## Deploy
 

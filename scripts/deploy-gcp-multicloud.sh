@@ -11,6 +11,7 @@ Usage:
                [--cognito-user-pool-id <pool-id>] [--cognito-user-pool-client-id <client-id>]
                [--aws-load-balancer-url <aws-runtime-url>] [--grafana-dashboard-url <url>] [--prometheus-url <url>]
                [--billing-account <billing-account-id>] [--project-name <gcp-project-name>] [--skip-bootstrap]
+               [--backend-bucket <s3-bucket>] [--backend-table <dynamodb-table>] [--backend-region <aws-region>] [--backend-profile <aws-profile>]
                [--demo-org-id <org-id>] [--default-workspace-name <name>] [--default-endpoint-name <name>]
                [--default-endpoint-url <url>] [--dry-run]
 
@@ -127,6 +128,10 @@ AWS_PROFILE=""
 AWS_REGION="${AWS_REGION:-us-east-1}"
 BILLING_ACCOUNT=""
 PROJECT_NAME=""
+BACKEND_BUCKET=""
+BACKEND_TABLE=""
+BACKEND_REGION=""
+BACKEND_PROFILE=""
 API_BASE_URL=""
 WS_URL=""
 COGNITO_USER_POOL_ID=""
@@ -177,6 +182,22 @@ while [ $# -gt 0 ]; do
       ;;
     --project-name)
       PROJECT_NAME="$2"
+      shift 2
+      ;;
+    --backend-bucket)
+      BACKEND_BUCKET="$2"
+      shift 2
+      ;;
+    --backend-table)
+      BACKEND_TABLE="$2"
+      shift 2
+      ;;
+    --backend-region)
+      BACKEND_REGION="$2"
+      shift 2
+      ;;
+    --backend-profile)
+      BACKEND_PROFILE="$2"
       shift 2
       ;;
     --api-base-url)
@@ -307,6 +328,18 @@ if [ "$SKIP_BOOTSTRAP" != "true" ]; then
 
   if [ -n "$BILLING_ACCOUNT" ]; then
     BOOTSTRAP_CMD+=(--billing-account "$BILLING_ACCOUNT")
+  fi
+  if [ -n "$BACKEND_BUCKET" ]; then
+    BOOTSTRAP_CMD+=(--backend-bucket "$BACKEND_BUCKET")
+  fi
+  if [ -n "$BACKEND_TABLE" ]; then
+    BOOTSTRAP_CMD+=(--backend-table "$BACKEND_TABLE")
+  fi
+  if [ -n "$BACKEND_REGION" ]; then
+    BOOTSTRAP_CMD+=(--backend-region "$BACKEND_REGION")
+  fi
+  if [ -n "$BACKEND_PROFILE" ]; then
+    BOOTSTRAP_CMD+=(--backend-profile "$BACKEND_PROFILE")
   fi
   if [ "$DRY_RUN" = "true" ]; then
     BOOTSTRAP_CMD+=(--dry-run)

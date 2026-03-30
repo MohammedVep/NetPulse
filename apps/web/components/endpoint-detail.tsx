@@ -11,8 +11,10 @@ import type {
   ProbeResult
 } from "../../../packages/shared/src/types";
 import { apiClient, hasAuthToken } from "@/lib/netpulse-client";
+import { config } from "@/lib/config";
 
 interface EndpointDetailProps {
+  orgId: string;
   endpointId: string;
 }
 
@@ -23,7 +25,9 @@ interface EndpointRiskTrend {
   score: number;
 }
 
-const READ_ONLY_MESSAGE = "Public demo is read-only. Add a JWT token on the home page to enable write actions.";
+const AUTH_REQUIRED_MESSAGE = "Sign in on the home page to manage failure simulations.";
+const DEMO_READ_ONLY_MESSAGE =
+  "Public demo is view-only. Create your own workspace to run failure simulations and edit endpoints.";
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
@@ -85,7 +89,7 @@ function getProjectedRiskDelta(baseScore: number, metrics: EndpointMetrics | nul
   return Math.round(Math.max(bounded, -baseScore));
 }
 
-export function EndpointDetail({ endpointId }: EndpointDetailProps) {
+export function EndpointDetail({ orgId, endpointId }: EndpointDetailProps) {
   const [endpoint, setEndpoint] = useState<Endpoint | null>(null);
   const [metrics, setMetrics] = useState<EndpointMetrics | null>(null);
   const [slaReport, setSlaReport] = useState<EndpointSlaReport | null>(null);
@@ -99,6 +103,9 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
   const [simulationLatencyMs, setSimulationLatencyMs] = useState("2500");
   const [simulationDurationMinutes, setSimulationDurationMinutes] = useState("15");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const isPublicDemoOrg = orgId === config.demoOrgId;
+  const writeDisabled = !isAuthenticated || isPublicDemoOrg;
+  const writeBlockedMessage = isPublicDemoOrg ? DEMO_READ_ONLY_MESSAGE : AUTH_REQUIRED_MESSAGE;
 
   const load = useCallback(async () => {
     const now = new Date();
@@ -170,10 +177,15 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
   );
 
   const applySimulation = useCallback(async () => {
+    if (isPublicDemoOrg) {
+      setError(DEMO_READ_ONLY_MESSAGE);
+      return;
+    }
+
     const authenticated = hasAuthToken();
     setIsAuthenticated(authenticated);
     if (!authenticated) {
-      setError(READ_ONLY_MESSAGE);
+      setError(AUTH_REQUIRED_MESSAGE);
       return;
     }
 
@@ -221,14 +233,20 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
     simulationDurationMinutes,
     simulationFailureStatusCode,
     simulationLatencyMs,
-    simulationMode
+    simulationMode,
+    isPublicDemoOrg
   ]);
 
   const clearSimulation = useCallback(async () => {
+    if (isPublicDemoOrg) {
+      setError(DEMO_READ_ONLY_MESSAGE);
+      return;
+    }
+
     const authenticated = hasAuthToken();
     setIsAuthenticated(authenticated);
     if (!authenticated) {
-      setError(READ_ONLY_MESSAGE);
+      setError(AUTH_REQUIRED_MESSAGE);
       return;
     }
 
@@ -240,7 +258,7 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
       const message = err instanceof Error ? err.message : "Failed to clear simulation";
       setError(message);
     }
-  }, [endpointId, load]);
+  }, [endpointId, isPublicDemoOrg, load]);
 
   if (error) {
     return (
@@ -261,7 +279,7 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
         <p className="small" style={{ fontFamily: "var(--font-mono)" }}>
           {endpoint?.url ?? "Loading..."}
         </p>
-        {!isAuthenticated ? <p className="small">{READ_ONLY_MESSAGE}</p> : null}
+        {writeDisabled ? <p className="small">{writeBlockedMessage}</p> : null}
         {endpoint ? <p className={`status ${endpoint.status}`}>Status: {endpoint.status}</p> : null}
       </section>
 
@@ -431,7 +449,7 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
           <select
             value={simulationMode}
             onChange={(event) => setSimulationMode(event.currentTarget.value as "FORCE_FAIL" | "FORCE_DEGRADED")}
-            disabled={!isAuthenticated}
+            disabled={writeDisabled}
           >
             <option value="FORCE_FAIL">FORCE_FAIL</option>
             <option value="FORCE_DEGRADED">FORCE_DEGRADED</option>
@@ -444,7 +462,7 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
               value={simulationFailureStatusCode}
               onChange={(event) => setSimulationFailureStatusCode(event.currentTarget.value)}
               placeholder="Status code"
-              disabled={!isAuthenticated}
+              disabled={writeDisabled}
             />
           ) : null}
           {simulationMode === "FORCE_DEGRADED" ? (
@@ -455,7 +473,7 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
               value={simulationLatencyMs}
               onChange={(event) => setSimulationLatencyMs(event.currentTarget.value)}
               placeholder="Forced latency ms"
-              disabled={!isAuthenticated}
+              disabled={writeDisabled}
             />
           ) : null}
           <input
@@ -465,12 +483,12 @@ export function EndpointDetail({ endpointId }: EndpointDetailProps) {
             value={simulationDurationMinutes}
             onChange={(event) => setSimulationDurationMinutes(event.currentTarget.value)}
             placeholder="Duration minutes"
-            disabled={!isAuthenticated}
+            disabled={writeDisabled}
           />
-          <button type="button" disabled={!isAuthenticated} onClick={() => void applySimulation()}>
+          <button type="button" disabled={writeDisabled} onClick={() => void applySimulation()}>
             Apply Simulation
           </button>
-          <button type="button" disabled={!isAuthenticated} onClick={() => void clearSimulation()}>
+          <button type="button" disabled={writeDisabled} onClick={() => void clearSimulation()}>
             Clear Simulation
           </button>
         </div>

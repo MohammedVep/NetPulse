@@ -31,7 +31,9 @@ interface StreamEvent {
 
 const windows: MetricsWindow[] = ["24h", "7d", "30d"];
 const availableRegions: MonitoringRegion[] = ["us-east-1", "us-west-2", "eu-west-1", "ap-southeast-1"];
-const READ_ONLY_MESSAGE = "Public demo is read-only. Add a JWT token on the home page to enable write actions.";
+const AUTH_REQUIRED_MESSAGE = "Sign in on the home page to manage endpoints, simulations, and alert channels.";
+const DEMO_READ_ONLY_MESSAGE =
+  "Public demo is view-only. Create your own workspace to add endpoints, pause checks, run drills, and manage alerts.";
 
 function isMembershipBlockedError(message: string): boolean {
   return message.toLowerCase().includes("active org member");
@@ -55,6 +57,9 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
   const [slackWebhook, setSlackWebhook] = useState(config.testSlackWebhookUrl);
   const [genericWebhook, setGenericWebhook] = useState(config.testWebhookUrl);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const isPublicDemoOrg = orgId === config.demoOrgId;
+  const writeDisabled = !isAuthenticated || isPublicDemoOrg;
+  const writeBlockedMessage = isPublicDemoOrg ? DEMO_READ_ONLY_MESSAGE : AUTH_REQUIRED_MESSAGE;
   const hasTestingPresets =
     Boolean(config.testAlertEmail) || Boolean(config.testSlackWebhookUrl) || Boolean(config.testWebhookUrl);
   const awsLoadBalancerBaseUrl = config.awsLoadBalancerUrl.trim().replace(/\/$/, "");
@@ -196,10 +201,15 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
   }, [endpoints]);
 
   const createEndpoint = useCallback(async () => {
+    if (isPublicDemoOrg) {
+      setError(DEMO_READ_ONLY_MESSAGE);
+      return;
+    }
+
     const authenticated = hasAuthToken();
     setIsAuthenticated(authenticated);
     if (!authenticated) {
-      setError(READ_ONLY_MESSAGE);
+      setError(AUTH_REQUIRED_MESSAGE);
       return;
     }
 
@@ -232,14 +242,19 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
       const message = err instanceof Error ? err.message : "Failed to create endpoint";
       setError(message);
     }
-  }, [newEndpointName, newEndpointRegions, newEndpointSlaTarget, newEndpointUrl, orgId, refresh]);
+  }, [isPublicDemoOrg, newEndpointName, newEndpointRegions, newEndpointSlaTarget, newEndpointUrl, orgId, refresh]);
 
   const togglePause = useCallback(
     async (endpoint: Endpoint) => {
+      if (isPublicDemoOrg) {
+        setError(DEMO_READ_ONLY_MESSAGE);
+        return;
+      }
+
       const authenticated = hasAuthToken();
       setIsAuthenticated(authenticated);
       if (!authenticated) {
-        setError(READ_ONLY_MESSAGE);
+        setError(AUTH_REQUIRED_MESSAGE);
         return;
       }
 
@@ -252,15 +267,20 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
         setError(message);
       }
     },
-    [refresh]
+    [isPublicDemoOrg, refresh]
   );
 
   const deleteEndpoint = useCallback(
     async (endpointId: string) => {
+      if (isPublicDemoOrg) {
+        setError(DEMO_READ_ONLY_MESSAGE);
+        return;
+      }
+
       const authenticated = hasAuthToken();
       setIsAuthenticated(authenticated);
       if (!authenticated) {
-        setError(READ_ONLY_MESSAGE);
+        setError(AUTH_REQUIRED_MESSAGE);
         return;
       }
 
@@ -273,7 +293,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
         setError(message);
       }
     },
-    [refresh]
+    [isPublicDemoOrg, refresh]
   );
 
   const toggleRegionSelection = useCallback((region: MonitoringRegion) => {
@@ -320,10 +340,15 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
   }, [orgId, refresh]);
 
   const registerEmailAlert = useCallback(async () => {
+    if (isPublicDemoOrg) {
+      setError(DEMO_READ_ONLY_MESSAGE);
+      return;
+    }
+
     const authenticated = hasAuthToken();
     setIsAuthenticated(authenticated);
     if (!authenticated) {
-      setError(READ_ONLY_MESSAGE);
+      setError(AUTH_REQUIRED_MESSAGE);
       return;
     }
 
@@ -337,13 +362,18 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
       const message = err instanceof Error ? err.message : "Failed to register email alert";
       setError(message);
     }
-  }, [alertEmail, orgId]);
+  }, [alertEmail, isPublicDemoOrg, orgId]);
 
   const registerSlackAlert = useCallback(async () => {
+    if (isPublicDemoOrg) {
+      setError(DEMO_READ_ONLY_MESSAGE);
+      return;
+    }
+
     const authenticated = hasAuthToken();
     setIsAuthenticated(authenticated);
     if (!authenticated) {
-      setError(READ_ONLY_MESSAGE);
+      setError(AUTH_REQUIRED_MESSAGE);
       return;
     }
 
@@ -357,13 +387,18 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
       const message = err instanceof Error ? err.message : "Failed to register Slack alert";
       setError(message);
     }
-  }, [orgId, slackWebhook]);
+  }, [isPublicDemoOrg, orgId, slackWebhook]);
 
   const registerWebhookAlert = useCallback(async () => {
+    if (isPublicDemoOrg) {
+      setError(DEMO_READ_ONLY_MESSAGE);
+      return;
+    }
+
     const authenticated = hasAuthToken();
     setIsAuthenticated(authenticated);
     if (!authenticated) {
-      setError(READ_ONLY_MESSAGE);
+      setError(AUTH_REQUIRED_MESSAGE);
       return;
     }
 
@@ -387,7 +422,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
       const message = err instanceof Error ? err.message : "Failed to register webhook alert";
       setError(message);
     }
-  }, [genericWebhook, orgId]);
+  }, [genericWebhook, isPublicDemoOrg, orgId]);
 
   return (
     <main>
@@ -405,9 +440,9 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
           Live status for multi-region health checks, service-discovered load balancer routing, circuit-breaker
           behavior, and SaaS reliability controls hardened by PgBouncer + mTLS across AWS and Google Cloud.
         </p>
-        {!isAuthenticated ? (
+        {writeDisabled ? (
           <p className="small" style={{ margin: 0 }}>
-            {READ_ONLY_MESSAGE}
+            {writeBlockedMessage}
           </p>
         ) : null}
         <div className="control-row">
@@ -691,6 +726,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
               placeholder="Endpoint name"
               value={newEndpointName}
               onChange={(event) => setNewEndpointName(event.currentTarget.value)}
+              disabled={isPublicDemoOrg}
             />
             <input
               type="text"
@@ -698,6 +734,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
               value={newEndpointUrl}
               onChange={(event) => setNewEndpointUrl(event.currentTarget.value)}
               style={{ minWidth: 260 }}
+              disabled={isPublicDemoOrg}
             />
             <input
               type="number"
@@ -708,11 +745,12 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
               value={newEndpointSlaTarget}
               onChange={(event) => setNewEndpointSlaTarget(event.currentTarget.value)}
               style={{ width: 130 }}
+              disabled={isPublicDemoOrg}
             />
-            <button type="button" disabled={!isAuthenticated} onClick={() => void createEndpoint()}>
+            <button type="button" disabled={writeDisabled} onClick={() => void createEndpoint()}>
               Add Endpoint
             </button>
-            {(config.showTestingHints || hasTestingPresets) && isAuthenticated ? (
+            {(config.showTestingHints || hasTestingPresets) && !writeDisabled ? (
               <button type="button" onClick={loadTestingPresets}>
                 Load Test Presets
               </button>
@@ -726,6 +764,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
                   type="checkbox"
                   checked={newEndpointRegions.includes(region)}
                   onChange={() => toggleRegionSelection(region)}
+                  disabled={isPublicDemoOrg}
                 />
                 {region}
               </label>
@@ -760,12 +799,12 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
                 <div className="small">Regions: {(endpoint.checkRegions ?? ["us-east-1"]).join(", ")}</div>
                 <div className="small">SLA target: {endpoint.slaTargetPct ?? 99.9}%</div>
                 <div className="input-row" style={{ marginTop: 10 }}>
-                  <button type="button" disabled={!isAuthenticated} onClick={() => void togglePause(endpoint)}>
+                  <button type="button" disabled={writeDisabled} onClick={() => void togglePause(endpoint)}>
                     {endpoint.paused ? "Resume" : "Pause"}
                   </button>
                   <button
                     type="button"
-                    disabled={!isAuthenticated}
+                    disabled={writeDisabled}
                     onClick={() => void deleteEndpoint(endpoint.endpointId)}
                     style={{ background: "linear-gradient(135deg, #8f2f46, #d2555f)" }}
                   >
@@ -808,8 +847,9 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
               value={alertEmail}
               onChange={(event) => setAlertEmail(event.currentTarget.value)}
               style={{ minWidth: 280 }}
+              disabled={isPublicDemoOrg}
             />
-            <button type="button" disabled={!isAuthenticated} onClick={() => void registerEmailAlert()}>
+            <button type="button" disabled={writeDisabled} onClick={() => void registerEmailAlert()}>
               Add Email Channel
             </button>
           </div>
@@ -820,8 +860,9 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
               value={slackWebhook}
               onChange={(event) => setSlackWebhook(event.currentTarget.value)}
               style={{ minWidth: 360 }}
+              disabled={isPublicDemoOrg}
             />
-            <button type="button" disabled={!isAuthenticated} onClick={() => void registerSlackAlert()}>
+            <button type="button" disabled={writeDisabled} onClick={() => void registerSlackAlert()}>
               Add Slack Channel
             </button>
           </div>
@@ -832,8 +873,9 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
               value={genericWebhook}
               onChange={(event) => setGenericWebhook(event.currentTarget.value)}
               style={{ minWidth: 360 }}
+              disabled={isPublicDemoOrg}
             />
-            <button type="button" disabled={!isAuthenticated} onClick={() => void registerWebhookAlert()}>
+            <button type="button" disabled={writeDisabled} onClick={() => void registerWebhookAlert()}>
               Add Webhook Channel
             </button>
           </div>

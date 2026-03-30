@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { config } from "@/lib/config";
 import { apiClient, hasAuthToken } from "@/lib/netpulse-client";
+import { createSandboxWorkspaceFromDemo } from "@/lib/demo-sandbox";
 import {
   confirmSignUp,
   resendSignUpCode,
@@ -31,6 +32,9 @@ export default function HomePage() {
   const [authNotice, setAuthNotice] = useState<string | null>(null);
   const [isCreatingOrg, setIsCreatingOrg] = useState(false);
   const [createOrgError, setCreateOrgError] = useState<string | null>(null);
+  const [isCloningDemo, setIsCloningDemo] = useState(false);
+  const [cloneDemoError, setCloneDemoError] = useState<string | null>(null);
+  const [cloneDemoNotice, setCloneDemoNotice] = useState<string | null>(null);
   const [isJoiningOrg, setIsJoiningOrg] = useState(false);
   const [joinOrgError, setJoinOrgError] = useState<string | null>(null);
   const [joinOrgNotice, setJoinOrgNotice] = useState<string | null>(null);
@@ -212,6 +216,35 @@ export default function HomePage() {
       setJoinOrgNotice(null);
     } finally {
       setIsJoiningOrg(false);
+    }
+  };
+
+  const handleCreateSandboxFromDemo = async () => {
+    if (!hasAuthToken()) {
+      setCloneDemoError("Sign in first to create a writable sandbox from the demo");
+      setCloneDemoNotice(null);
+      return;
+    }
+
+    try {
+      setIsCloningDemo(true);
+      setCloneDemoError(null);
+      setCloneDemoNotice(null);
+      const result = await createSandboxWorkspaceFromDemo(orgName);
+      if (result.failedEndpointNames.length > 0) {
+        setCloneDemoNotice(
+          `Workspace created. Cloned ${result.clonedEndpointCount} of ${result.sourceEndpointCount} demo endpoints. Redirecting...`
+        );
+      } else {
+        setCloneDemoNotice(`Workspace created with ${result.clonedEndpointCount} demo endpoints. Redirecting...`);
+      }
+      router.push(`/org/${encodeURIComponent(result.organization.orgId)}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to create sandbox from demo";
+      setCloneDemoError(message);
+      setCloneDemoNotice(null);
+    } finally {
+      setIsCloningDemo(false);
     }
   };
 
@@ -498,8 +531,13 @@ export default function HomePage() {
             <button type="button" disabled={isCreatingOrg} onClick={() => void handleCreateWorkspace()}>
               {isCreatingOrg ? "Creating..." : "Create Workspace & Open"}
             </button>
+            <button type="button" disabled={isCloningDemo} onClick={() => void handleCreateSandboxFromDemo()}>
+              {isCloningDemo ? "Cloning Demo..." : "Create Sandbox From Demo"}
+            </button>
           </div>
           {createOrgError ? <p style={{ color: "var(--down)", margin: 0 }}>{createOrgError}</p> : null}
+          {cloneDemoError ? <p style={{ color: "var(--down)", margin: 0 }}>{cloneDemoError}</p> : null}
+          {cloneDemoNotice ? <p style={{ color: "var(--ok)", margin: 0 }}>{cloneDemoNotice}</p> : null}
 
           {(config.showTestingHints || hasTestingPresets) ? (
             <div className="panel soft stack">

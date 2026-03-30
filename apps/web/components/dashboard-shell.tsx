@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type {
   DashboardSummary,
   Endpoint,
@@ -12,6 +13,7 @@ import type {
 } from "../../../packages/shared/src/types";
 import { apiClient, hasAuthToken } from "@/lib/netpulse-client";
 import { config } from "@/lib/config";
+import { createSandboxWorkspaceFromDemo } from "@/lib/demo-sandbox";
 
 interface DashboardShellProps {
   orgId: string;
@@ -40,6 +42,7 @@ function isMembershipBlockedError(message: string): boolean {
 }
 
 export function DashboardShell({ orgId }: DashboardShellProps) {
+  const router = useRouter();
   const [selectedWindow, setSelectedWindow] = useState<MetricsWindow>("24h");
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [aiInsights, setAiInsights] = useState<OrgAiInsights | null>(null);
@@ -49,6 +52,8 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
   const [membershipBlocked, setMembershipBlocked] = useState(false);
   const [isJoiningOrg, setIsJoiningOrg] = useState(false);
   const [joinNotice, setJoinNotice] = useState<string | null>(null);
+  const [sandboxNotice, setSandboxNotice] = useState<string | null>(null);
+  const [isCreatingSandbox, setIsCreatingSandbox] = useState(false);
   const [newEndpointName, setNewEndpointName] = useState(config.defaultEndpointName);
   const [newEndpointUrl, setNewEndpointUrl] = useState(config.defaultEndpointUrl);
   const [newEndpointSlaTarget, setNewEndpointSlaTarget] = useState("99.9");
@@ -339,6 +344,33 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
     }
   }, [orgId, refresh]);
 
+  const createSandbox = useCallback(async () => {
+    if (!hasAuthToken()) {
+      setError("Sign in first to create a writable sandbox from the demo");
+      return;
+    }
+
+    try {
+      setIsCreatingSandbox(true);
+      setError(null);
+      setSandboxNotice(null);
+      const result = await createSandboxWorkspaceFromDemo();
+      if (result.failedEndpointNames.length > 0) {
+        setSandboxNotice(
+          `Sandbox created. Cloned ${result.clonedEndpointCount} of ${result.sourceEndpointCount} endpoints. Redirecting...`
+        );
+      } else {
+        setSandboxNotice(`Sandbox created with ${result.clonedEndpointCount} demo endpoints. Redirecting...`);
+      }
+      router.push(`/org/${encodeURIComponent(result.organization.orgId)}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to create sandbox";
+      setError(message);
+    } finally {
+      setIsCreatingSandbox(false);
+    }
+  }, [router]);
+
   const registerEmailAlert = useCallback(async () => {
     if (isPublicDemoOrg) {
       setError(DEMO_READ_ONLY_MESSAGE);
@@ -445,6 +477,13 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
             {writeBlockedMessage}
           </p>
         ) : null}
+        {isPublicDemoOrg ? (
+          <div className="control-row">
+            <button type="button" disabled={!isAuthenticated || isCreatingSandbox} onClick={() => void createSandbox()}>
+              {isCreatingSandbox ? "Creating Sandbox..." : "Create Writable Sandbox From Demo"}
+            </button>
+          </div>
+        ) : null}
         <div className="control-row">
           <label className="small" htmlFor="window">
             Window
@@ -465,6 +504,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
           </button>
         </div>
         {error ? <p style={{ color: "var(--down)", margin: 0 }}>{error}</p> : null}
+        {sandboxNotice ? <p style={{ color: "var(--ok)", margin: 0 }}>{sandboxNotice}</p> : null}
       </section>
 
       {membershipBlocked && isAuthenticated ? (

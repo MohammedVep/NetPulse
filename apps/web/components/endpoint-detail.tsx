@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type {
   Endpoint,
   IncidentTimeline,
@@ -12,6 +13,7 @@ import type {
 } from "../../../packages/shared/src/types";
 import { apiClient, hasAuthToken } from "@/lib/netpulse-client";
 import { config } from "@/lib/config";
+import { createSandboxWorkspaceFromDemo } from "@/lib/demo-sandbox";
 
 interface EndpointDetailProps {
   orgId: string;
@@ -90,6 +92,7 @@ function getProjectedRiskDelta(baseScore: number, metrics: EndpointMetrics | nul
 }
 
 export function EndpointDetail({ orgId, endpointId }: EndpointDetailProps) {
+  const router = useRouter();
   const [endpoint, setEndpoint] = useState<Endpoint | null>(null);
   const [metrics, setMetrics] = useState<EndpointMetrics | null>(null);
   const [slaReport, setSlaReport] = useState<EndpointSlaReport | null>(null);
@@ -103,6 +106,8 @@ export function EndpointDetail({ orgId, endpointId }: EndpointDetailProps) {
   const [simulationLatencyMs, setSimulationLatencyMs] = useState("2500");
   const [simulationDurationMinutes, setSimulationDurationMinutes] = useState("15");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [sandboxNotice, setSandboxNotice] = useState<string | null>(null);
+  const [isCreatingSandbox, setIsCreatingSandbox] = useState(false);
   const isPublicDemoOrg = orgId === config.demoOrgId;
   const writeDisabled = !isAuthenticated || isPublicDemoOrg;
   const writeBlockedMessage = isPublicDemoOrg ? DEMO_READ_ONLY_MESSAGE : AUTH_REQUIRED_MESSAGE;
@@ -260,6 +265,33 @@ export function EndpointDetail({ orgId, endpointId }: EndpointDetailProps) {
     }
   }, [endpointId, isPublicDemoOrg, load]);
 
+  const createSandbox = useCallback(async () => {
+    if (!hasAuthToken()) {
+      setError("Sign in first to create a writable sandbox from the demo");
+      return;
+    }
+
+    try {
+      setIsCreatingSandbox(true);
+      setError(null);
+      setSandboxNotice(null);
+      const result = await createSandboxWorkspaceFromDemo();
+      if (result.failedEndpointNames.length > 0) {
+        setSandboxNotice(
+          `Sandbox created. Cloned ${result.clonedEndpointCount} of ${result.sourceEndpointCount} endpoints. Redirecting...`
+        );
+      } else {
+        setSandboxNotice(`Sandbox created with ${result.clonedEndpointCount} demo endpoints. Redirecting...`);
+      }
+      router.push(`/org/${encodeURIComponent(result.organization.orgId)}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to create sandbox";
+      setError(message);
+    } finally {
+      setIsCreatingSandbox(false);
+    }
+  }, [router]);
+
   if (error) {
     return (
       <main>
@@ -280,6 +312,14 @@ export function EndpointDetail({ orgId, endpointId }: EndpointDetailProps) {
           {endpoint?.url ?? "Loading..."}
         </p>
         {writeDisabled ? <p className="small">{writeBlockedMessage}</p> : null}
+        {isPublicDemoOrg ? (
+          <div className="control-row">
+            <button type="button" disabled={!isAuthenticated || isCreatingSandbox} onClick={() => void createSandbox()}>
+              {isCreatingSandbox ? "Creating Sandbox..." : "Create Writable Sandbox From Demo"}
+            </button>
+          </div>
+        ) : null}
+        {sandboxNotice ? <p className="small" style={{ color: "var(--ok)" }}>{sandboxNotice}</p> : null}
         {endpoint ? <p className={`status ${endpoint.status}`}>Status: {endpoint.status}</p> : null}
       </section>
 

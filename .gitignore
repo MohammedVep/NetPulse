@@ -11,5 +11,6 @@ dist
 artifacts/drills/*.env
 artifacts/terraform-state-backups/
 .terraform/
+*.tsbuildinfo
 *.tfstate
 *.tfstate.*

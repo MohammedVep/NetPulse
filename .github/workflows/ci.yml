@@ -31,3 +31,13 @@ jobs:
         run: npm run cdk:synth
       - name: Production readiness checks
         run: npm run prod:check
+      - name: Public demo smoke
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          npm run smoke:public-demo -- \
+            --api staging=https://t5t1ojh1zj.execute-api.us-east-1.amazonaws.com \
+            --api prod=https://qw4l1qrrle.execute-api.us-east-1.amazonaws.com \
+            --frontend aws-staging=https://staging.dpl90cw6xnizn.amplifyapp.com \
+            --frontend aws-prod=https://main.dpl90cw6xnizn.amplifyapp.com \
+            --frontend gcp-staging=https://np-web-staging-gcp-uknfwku4cq-uc.a.run.app \
+            --frontend gcp-prod=https://np-web-prod-gcp-pdfdlgnxtq-uc.a.run.app

@@ -1,4 +1,5 @@
 import {
+  DeleteCommand,
   GetCommand,
   PutCommand,
   QueryCommand,
@@ -6,10 +7,15 @@ import {
   UpdateCommand,
   type QueryCommandInput
 } from "@aws-sdk/lib-dynamodb";
-import { CreateSecretCommand, SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
+import {
+  CreateSecretCommand,
+  DeleteSecretCommand,
+  SecretsManagerClient
+} from "@aws-sdk/client-secrets-manager";
 import {
   aiInsightsQuerySchema,
   cloneDemoOrganizationSchema,
+  type CleanupSandboxOrganizationResult,
   createEndpointSchema,
   createOrganizationSchema,
   dashboardSummaryQuerySchema,
@@ -68,6 +74,21 @@ const WINDOW_MINUTES: Record<MetricsWindow, number> = {
   "30d": 30 * 24 * 60
 };
 const secretsManager = new SecretsManagerClient({});
+type DynamoKey = Record<string, unknown>;
+
+interface ProbeResultRecord extends ProbeResult {
+  probePk: string;
+}
+
+interface IncidentRecord extends Incident {
+  incidentPk: string;
+  openedAtIso: string;
+}
+
+interface WsConnectionRecord {
+  orgId: string;
+  connectionId: string;
+}
 
 function parseProtocol(url: string): EndpointProtocol {
   if (url.startsWith("https://")) {
@@ -369,6 +390,83 @@ async function listAllEndpointsForOrg(orgId: string): Promise<Endpoint[]> {
   return items;
 }
 
+async function queryAllItems<T>(input: QueryCommandInput): Promise<T[]> {
+  const items: T[] = [];
+  let lastKey: DynamoKey | undefined;
+
+  do {
+    const page = await ddb.send(
+      new QueryCommand({
+        ...input,
+        ExclusiveStartKey: lastKey
+      })
+    );
+    items.push(...((page.Items ?? []) as T[]));
+    lastKey = page.LastEvaluatedKey;
+  } while (lastKey);
+
+  return items;
+}
+
+async function deleteByKeys(tableName: string, keys: DynamoKey[], concurrency = 12): Promise<number> {
+  if (keys.length === 0) {
+    return 0;
+  }
+
+  await mapWithConcurrency(keys, concurrency, async (key) => {
+    await ddb.send(
+      new DeleteCommand({
+        TableName: tableName,
+        Key: key
+      })
+    );
+  });
+
+  return keys.length;
+}
+
+function isSecretNotFound(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "name" in error &&
+    String((error as { name?: string }).name) === "ResourceNotFoundException"
+  );
+}
+
+async function deleteChannelSecrets(channels: AlertChannel[]): Promise<number> {
+  const secretIds = [
+    ...new Set(
+      channels
+        .filter((channel) => (channel.type === "SLACK" || channel.type === "WEBHOOK") && channel.target.startsWith("arn:"))
+        .map((channel) => channel.target)
+    )
+  ];
+
+  if (secretIds.length === 0) {
+    return 0;
+  }
+
+  const results = await mapWithConcurrency(secretIds, 4, async (secretId) => {
+    try {
+      await secretsManager.send(
+        new DeleteSecretCommand({
+          SecretId: secretId,
+          ForceDeleteWithoutRecovery: true
+        })
+      );
+      return 1;
+    } catch (error) {
+      if (isSecretNotFound(error)) {
+        return 0;
+      }
+      throw error;
+    }
+  });
+
+  return results.reduce<number>((sum, value) => sum + value, 0);
+}
+
 export async function cloneDemoOrganization(
   input: unknown,
   identity: { userId: string; email: string }
@@ -403,6 +501,142 @@ export async function cloneDemoOrganization(
     sourceEndpointCount: sourceEndpoints.length,
     clonedEndpointCount: sourceEndpoints.length - failedEndpointNames.length,
     failedEndpointNames
+  };
+}
+
+export async function cleanupSandboxOrganization(orgId: string): Promise<CleanupSandboxOrganizationResult> {
+  if (orgId === env.publicDemoOrgId) {
+    throw new Error("Public demo organization cannot be cleaned up");
+  }
+
+  const organization = await getOrganization(orgId);
+  if (!organization.name.startsWith(DEMO_SANDBOX_NAME_PREFIX)) {
+    throw new Error("Only demo sandbox organizations can be cleaned up through this route");
+  }
+
+  const [memberships, endpoints, channels, wsConnections, incidents] = await Promise.all([
+    queryAllItems<Membership>({
+      TableName: env.membershipsTable,
+      KeyConditionExpression: "orgId = :orgId",
+      ExpressionAttributeValues: {
+        ":orgId": orgId
+      }
+    }),
+    queryAllItems<Endpoint>({
+      TableName: env.endpointsTable,
+      KeyConditionExpression: "orgId = :orgId",
+      ExpressionAttributeValues: {
+        ":orgId": orgId
+      }
+    }),
+    queryAllItems<AlertChannel>({
+      TableName: env.alertChannelsTable,
+      KeyConditionExpression: "orgId = :orgId",
+      ExpressionAttributeValues: {
+        ":orgId": orgId
+      }
+    }),
+    queryAllItems<WsConnectionRecord>({
+      TableName: env.wsConnectionsTable,
+      KeyConditionExpression: "orgId = :orgId",
+      ExpressionAttributeValues: {
+        ":orgId": orgId
+      }
+    }),
+    queryAllItems<IncidentRecord>({
+      TableName: env.incidentsTable,
+      IndexName: INCIDENT_GSI,
+      KeyConditionExpression: "orgId = :orgId",
+      ExpressionAttributeValues: {
+        ":orgId": orgId
+      }
+    })
+  ]);
+
+  const probeResultKeys = (
+    await mapWithConcurrency(endpoints, 8, async (endpoint) => {
+      const rows = await queryAllItems<ProbeResultRecord>({
+        TableName: env.probeResultsTable,
+        KeyConditionExpression: "probePk = :probePk",
+        ExpressionAttributeValues: {
+          ":probePk": `${orgId}#${endpoint.endpointId}`
+        }
+      });
+
+      return rows.map((row) => ({
+        probePk: row.probePk,
+        timestampIso: row.timestampIso
+      }));
+    })
+  ).flat();
+
+  const deletedSecrets = await deleteChannelSecrets(channels);
+
+  const [
+    deletedProbeResults,
+    deletedIncidents,
+    deletedAlertChannels,
+    deletedWsConnections,
+    deletedMemberships,
+    deletedEndpoints
+  ] = await Promise.all([
+    deleteByKeys(env.probeResultsTable, probeResultKeys),
+    deleteByKeys(
+      env.incidentsTable,
+      incidents.map((incident) => ({
+        incidentPk: incident.incidentPk,
+        openedAtIso: incident.openedAtIso
+      }))
+    ),
+    deleteByKeys(
+      env.alertChannelsTable,
+      channels.map((channel) => ({
+        orgId: channel.orgId,
+        channelId: channel.channelId
+      }))
+    ),
+    deleteByKeys(
+      env.wsConnectionsTable,
+      wsConnections.map((connection) => ({
+        orgId: connection.orgId,
+        connectionId: connection.connectionId
+      }))
+    ),
+    deleteByKeys(
+      env.membershipsTable,
+      memberships.map((membership) => ({
+        orgId: membership.orgId,
+        userId: membership.userId
+      }))
+    ),
+    deleteByKeys(
+      env.endpointsTable,
+      endpoints.map((endpoint) => ({
+        orgId: endpoint.orgId,
+        endpointId: endpoint.endpointId
+      }))
+    )
+  ]);
+
+  await ddb.send(
+    new DeleteCommand({
+      TableName: env.organizationsTable,
+      Key: { orgId }
+    })
+  );
+
+  return {
+    orgId,
+    deleted: {
+      organizations: 1,
+      memberships: deletedMemberships,
+      endpoints: deletedEndpoints,
+      probeResults: deletedProbeResults,
+      incidents: deletedIncidents,
+      alertChannels: deletedAlertChannels,
+      webhookSecrets: deletedSecrets,
+      wsConnections: deletedWsConnections
+    }
   };
 }
 

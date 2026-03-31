@@ -79,6 +79,20 @@ export interface CloneDemoOrganizationResult {
   failedEndpointNames: string[];
 }
 
+export interface CleanupSandboxOrganizationResult {
+  orgId: string;
+  deleted: {
+    organizations: number;
+    memberships: number;
+    endpoints: number;
+    probeResults: number;
+    incidents: number;
+    alertChannels: number;
+    webhookSecrets: number;
+    wsConnections: number;
+  };
+}
+
 export interface Membership {
   orgId: string;
   userId: string;

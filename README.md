@@ -199,6 +199,7 @@ Frontend evidence view:
 ## API surface (`/v1`)
 
 - `POST /organizations`
+- `DELETE /organizations/{orgId}/sandbox`
 - `GET /organizations/{orgId}`
 - `POST /organizations/{orgId}/members`
 - `PATCH /organizations/{orgId}/members/{memberId}`
@@ -267,6 +268,8 @@ Deploy with:
 - Live sandbox UI smoke (creates a temporary Cognito user, signs in through the real frontend, clones the public demo, adds an endpoint, and pauses it):
   - `npm run smoke:sandbox-ui -- --env staging --admin-profile netpulse-root`
   - defaults to both AWS Amplify and GCP staging frontends when `--frontend` is not provided
+  - resolves the GCP frontend dynamically from Cloud Run when `gcloud` is available
+  - cleans up each temporary demo sandbox org through the backend after the writability check completes
 - Production baseline regression gate (fails on missing auth/rate-limit/retry/logging-cost-failure controls):
   - `npm run prod:check`
 - Full deployed dev integration (API + WS + notifier + incident lifecycle):

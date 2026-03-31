@@ -622,15 +622,20 @@ export class NetPulseStack extends Stack {
     organizationsTable.grantReadWriteData(apiRest);
     membershipsTable.grantReadWriteData(apiRest);
     endpointsTable.grantReadWriteData(apiRest);
-    probeResultsTable.grantReadData(apiRest);
-    incidentsTable.grantReadData(apiRest);
+    probeResultsTable.grantReadWriteData(apiRest);
+    incidentsTable.grantReadWriteData(apiRest);
+    wsConnectionsTable.grantReadWriteData(apiRest);
     wsConnectionsTable.grantReadWriteData(apiWebsocket);
     membershipsTable.grantReadData(apiWebsocket);
     alertChannelsTable.grantReadWriteData(apiRest);
     rateLimitsTable.grantReadWriteData(apiRest);
     apiRest.addToRolePolicy(
       new PolicyStatement({
-        actions: ["secretsmanager:CreateSecret", "secretsmanager:TagResource"],
+        actions: [
+          "secretsmanager:CreateSecret",
+          "secretsmanager:DeleteSecret",
+          "secretsmanager:TagResource"
+        ],
         resources: [`arn:aws:secretsmanager:${this.region}:${this.account}:secret:netpulse/*`]
       })
     );

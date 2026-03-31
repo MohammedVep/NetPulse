@@ -29,11 +29,16 @@ test("public demo can be cloned into a writable sandbox", async ({ page }) => {
   await expect(page.getByText(/Public demo is view-only\./)).toBeVisible();
 
   await Promise.all([
-    page.waitForURL(/\/org\/org_[^/]+$/),
+    page.waitForURL(/\/org\/org_(?!demo_public$)[^/]+$/),
     page.getByTestId("create-writable-sandbox").click()
   ]);
 
-  await expect(page).toHaveURL(/\/org\/org_[^/]+$/);
+  await expect(page).toHaveURL(/\/org\/org_(?!demo_public$)[^/]+$/);
+  const sandboxOrgId = page.url().match(/\/org\/([^/?#]+)/)?.[1];
+  if (!sandboxOrgId) {
+    throw new Error("Expected redirected sandbox organization id in URL");
+  }
+  console.log(`SANDBOX_ORG_ID=${sandboxOrgId}`);
   await expect(page.getByText(/Public demo is view-only\./)).toHaveCount(0);
   await expect(page.getByTestId("add-endpoint")).toBeEnabled();
 

@@ -18,6 +18,7 @@ import {
 } from "@netpulse/shared";
 import {
   applyEndpointSimulation,
+  cleanupSandboxOrganization,
   cloneDemoOrganization,
   createEndpoint,
   createOrganization,
@@ -214,6 +215,14 @@ export async function handler(event: ApiEvent): Promise<APIGatewayProxyResultV2>
       const payload = cloneDemoOrganizationSchema.parse(getBody(event.body) ?? {});
       const result = await cloneDemoOrganization(payload, identity);
       return respondJson(201, result);
+    }
+
+    const sandboxCleanupMatch = path.match(/^\/v1\/organizations\/([^/]+)\/sandbox$/);
+    if (method === "DELETE" && sandboxCleanupMatch) {
+      const orgId = getCapture(sandboxCleanupMatch, 1, "orgId");
+      await requireOrgAccess(event, orgId, "org:write", context);
+      const result = await cleanupSandboxOrganization(orgId);
+      return respondJson(200, result);
     }
 
     const orgMatch = path.match(/^\/v1\/organizations\/([^/]+)$/);

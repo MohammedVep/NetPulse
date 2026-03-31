@@ -1,6 +1,7 @@
 import type {
   AlertChannel,
   CloneDemoOrganizationResult,
+  CleanupSandboxOrganizationResult,
   DashboardSummary,
   Endpoint,
   EndpointSlaReport,
@@ -130,6 +131,10 @@ export function createApiClient(options: ApiClientOptions) {
       request<CloneDemoOrganizationResult>(options, "/v1/organizations/clone-demo", {
         method: "POST",
         body: JSON.stringify(name ? { name } : {})
+      }),
+    cleanupSandboxOrganization: (orgId: string) =>
+      request<CleanupSandboxOrganizationResult>(options, `/v1/organizations/${orgId}/sandbox`, {
+        method: "DELETE"
       }),
     getOrganization: (orgId: string) => request<Organization>(options, `/v1/organizations/${orgId}`),
     joinOrganization: (orgId: string) =>

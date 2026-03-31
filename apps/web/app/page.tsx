@@ -460,6 +460,7 @@ export default function HomePage() {
               value={email}
               onChange={(event) => setEmail(event.currentTarget.value)}
               style={{ minWidth: 250 }}
+              data-testid="auth-email"
             />
             <input
               type="password"
@@ -467,6 +468,7 @@ export default function HomePage() {
               value={password}
               onChange={(event) => setPassword(event.currentTarget.value)}
               style={{ minWidth: 220 }}
+              data-testid="auth-password"
             />
             {authMode === "register" ? (
               <input
@@ -481,7 +483,7 @@ export default function HomePage() {
 
           <div className="control-row">
             {authMode === "signin" ? (
-              <button type="button" disabled={isBusy} onClick={() => void handleSignIn()}>
+              <button type="button" disabled={isBusy} onClick={() => void handleSignIn()} data-testid="auth-submit">
                 {isBusy ? "Signing In..." : "Sign In"}
               </button>
             ) : (
@@ -531,7 +533,12 @@ export default function HomePage() {
             <button type="button" disabled={isCreatingOrg} onClick={() => void handleCreateWorkspace()}>
               {isCreatingOrg ? "Creating..." : "Create Workspace & Open"}
             </button>
-            <button type="button" disabled={isCloningDemo} onClick={() => void handleCreateSandboxFromDemo()}>
+            <button
+              type="button"
+              disabled={isCloningDemo}
+              onClick={() => void handleCreateSandboxFromDemo()}
+              data-testid="create-sandbox-from-demo"
+            >
               {isCloningDemo ? "Cloning Demo..." : "Create Sandbox From Demo"}
             </button>
           </div>

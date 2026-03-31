@@ -88,6 +88,10 @@ export const createOrganizationSchema = z.object({
   name: z.string().min(3).max(80)
 });
 
+export const cloneDemoOrganizationSchema = z.object({
+  name: z.string().min(3).max(80).optional()
+});
+
 export const upsertMemberSchema = z.object({
   userId: z.string().min(1),
   email: z.string().email(),

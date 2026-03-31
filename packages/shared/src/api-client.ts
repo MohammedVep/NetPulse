@@ -1,5 +1,6 @@
 import type {
   AlertChannel,
+  CloneDemoOrganizationResult,
   DashboardSummary,
   Endpoint,
   EndpointSlaReport,
@@ -124,6 +125,11 @@ export function createApiClient(options: ApiClientOptions) {
       request<Organization>(options, "/v1/organizations", {
         method: "POST",
         body: JSON.stringify({ name })
+      }),
+    cloneDemoOrganization: (name?: string) =>
+      request<CloneDemoOrganizationResult>(options, "/v1/organizations/clone-demo", {
+        method: "POST",
+        body: JSON.stringify(name ? { name } : {})
       }),
     getOrganization: (orgId: string) => request<Organization>(options, `/v1/organizations/${orgId}`),
     joinOrganization: (orgId: string) =>

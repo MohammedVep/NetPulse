@@ -457,7 +457,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
   }, [genericWebhook, isPublicDemoOrg, orgId]);
 
   return (
-    <main>
+    <main data-testid="dashboard-shell">
       <section className="panel soft stack" style={{ marginBottom: 14 }}>
         <div className="control-row">
           <span className="pill">Reliability Control Plane</span>
@@ -479,7 +479,12 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
         ) : null}
         {isPublicDemoOrg ? (
           <div className="control-row">
-            <button type="button" disabled={!isAuthenticated || isCreatingSandbox} onClick={() => void createSandbox()}>
+            <button
+              type="button"
+              disabled={!isAuthenticated || isCreatingSandbox}
+              onClick={() => void createSandbox()}
+              data-testid="create-writable-sandbox"
+            >
               {isCreatingSandbox ? "Creating Sandbox..." : "Create Writable Sandbox From Demo"}
             </button>
           </div>
@@ -767,6 +772,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
               value={newEndpointName}
               onChange={(event) => setNewEndpointName(event.currentTarget.value)}
               disabled={isPublicDemoOrg}
+              data-testid="endpoint-name-input"
             />
             <input
               type="text"
@@ -775,6 +781,7 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
               onChange={(event) => setNewEndpointUrl(event.currentTarget.value)}
               style={{ minWidth: 260 }}
               disabled={isPublicDemoOrg}
+              data-testid="endpoint-url-input"
             />
             <input
               type="number"
@@ -787,7 +794,12 @@ export function DashboardShell({ orgId }: DashboardShellProps) {
               style={{ width: 130 }}
               disabled={isPublicDemoOrg}
             />
-            <button type="button" disabled={writeDisabled} onClick={() => void createEndpoint()}>
+            <button
+              type="button"
+              disabled={writeDisabled}
+              onClick={() => void createEndpoint()}
+              data-testid="add-endpoint"
+            >
               Add Endpoint
             </button>
             {(config.showTestingHints || hasTestingPresets) && !writeDisabled ? (

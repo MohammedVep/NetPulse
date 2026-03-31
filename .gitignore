@@ -3,6 +3,8 @@ node_modules
 .next
 cdk.out
 coverage
+playwright-report
+test-results
 *.log
 .env
 .env.*

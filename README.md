@@ -264,6 +264,9 @@ Deploy with:
 
 - Smoke test all environments (auth + core API paths):
   - `./scripts/smoke-test-apis.sh --admin-profile netpulse-root`
+- Live sandbox UI smoke (creates a temporary Cognito user, signs in through the real frontend, clones the public demo, adds an endpoint, and pauses it):
+  - `npm run smoke:sandbox-ui -- --env staging --admin-profile netpulse-root`
+  - defaults to both AWS Amplify and GCP staging frontends when `--frontend` is not provided
 - Production baseline regression gate (fails on missing auth/rate-limit/retry/logging-cost-failure controls):
   - `npm run prod:check`
 - Full deployed dev integration (API + WS + notifier + incident lifecycle):

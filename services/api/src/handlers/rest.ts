@@ -6,6 +6,7 @@ import { getIdentity, requireRole, enforcePermission } from "@netpulse/authz";
 import {
   aiInsightsQuerySchema,
   checksQuerySchema,
+  cloneDemoOrganizationSchema,
   dashboardSummaryQuerySchema,
   endpointSlaQuerySchema,
   failureSimulationSchema,
@@ -17,6 +18,7 @@ import {
 } from "@netpulse/shared";
 import {
   applyEndpointSimulation,
+  cloneDemoOrganization,
   createEndpoint,
   createOrganization,
   ensureOrganization,
@@ -205,6 +207,13 @@ export async function handler(event: ApiEvent): Promise<APIGatewayProxyResultV2>
       const identity = getIdentity(event);
       const organization = await createOrganization(getBody(event.body), identity);
       return respondJson(201, organization);
+    }
+
+    if (method === "POST" && path === "/v1/organizations/clone-demo") {
+      const identity = getIdentity(event);
+      const payload = cloneDemoOrganizationSchema.parse(getBody(event.body) ?? {});
+      const result = await cloneDemoOrganization(payload, identity);
+      return respondJson(201, result);
     }
 
     const orgMatch = path.match(/^\/v1\/organizations\/([^/]+)$/);

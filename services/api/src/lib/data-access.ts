@@ -9,6 +9,7 @@ import {
 import { CreateSecretCommand, SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
 import {
   aiInsightsQuerySchema,
+  cloneDemoOrganizationSchema,
   createEndpointSchema,
   createOrganizationSchema,
   dashboardSummaryQuerySchema,
@@ -24,6 +25,7 @@ import {
   webhookChannelSchema,
   websocketSubscriptionSchema,
   type AlertChannel,
+  type CloneDemoOrganizationResult,
   type DashboardSummary,
   type Endpoint,
   type FailureClassification,
@@ -57,6 +59,8 @@ const DEFAULT_REGION: MonitoringRegion = "us-east-1";
 const DEFAULT_SLA_TARGET_PCT = 99.9;
 const DEFAULT_LATENCY_THRESHOLD_MS = 2000;
 const DEFAULT_FAILURE_RATE_THRESHOLD_PCT = 5;
+const DEMO_ORG_DEFAULT_NAME = "NetPulse Public Demo";
+const DEMO_SANDBOX_NAME_PREFIX = "NetPulse Demo Sandbox";
 const BURN_RATE_ALERT_THRESHOLD = 2;
 const WINDOW_MINUTES: Record<MetricsWindow, number> = {
   "24h": 24 * 60,
@@ -79,6 +83,11 @@ function parseProtocol(url: string): EndpointProtocol {
 
 function nowIso(): string {
   return new Date().toISOString();
+}
+
+function defaultCloneDemoOrganizationName(fromIso = nowIso()): string {
+  const stamp = fromIso.slice(0, 16).replace("T", " ");
+  return `${DEMO_SANDBOX_NAME_PREFIX} ${stamp}`;
 }
 
 function getRetentionEpoch(fromIso = nowIso()): number {
@@ -329,6 +338,72 @@ export async function ensureOrganization(
     }
     throw error;
   }
+}
+
+function toClonedEndpointPayload(endpoint: Endpoint, orgId: string) {
+  return {
+    orgId,
+    name: endpoint.name,
+    url: endpoint.url,
+    timeoutMs: endpoint.timeoutMs,
+    tags: endpoint.tags,
+    checkRegions: endpoint.checkRegions,
+    slaTargetPct: endpoint.slaTargetPct,
+    ...(endpoint.latencyThresholdMs !== undefined ? { latencyThresholdMs: endpoint.latencyThresholdMs } : {}),
+    ...(endpoint.failureRateThresholdPct !== undefined
+      ? { failureRateThresholdPct: endpoint.failureRateThresholdPct }
+      : {})
+  };
+}
+
+async function listAllEndpointsForOrg(orgId: string): Promise<Endpoint[]> {
+  const items: Endpoint[] = [];
+  let cursor: string | undefined;
+
+  do {
+    const page = await listEndpoints({ orgId, cursor, limit: 100 });
+    items.push(...page.items.filter((endpoint) => endpoint.status !== "DELETED"));
+    cursor = page.nextCursor;
+  } while (cursor);
+
+  return items;
+}
+
+export async function cloneDemoOrganization(
+  input: unknown,
+  identity: { userId: string; email: string }
+): Promise<CloneDemoOrganizationResult> {
+  if (!env.publicDemoEnabled) {
+    throw new Error("Public demo access is disabled");
+  }
+
+  const payload = cloneDemoOrganizationSchema.parse(input ?? {});
+  const createdAt = nowIso();
+  const organization = await createOrganization(
+    {
+      name: payload.name?.trim() || defaultCloneDemoOrganizationName(createdAt)
+    },
+    identity
+  );
+
+  await ensureOrganization(env.publicDemoOrgId, { name: DEMO_ORG_DEFAULT_NAME, isActive: true });
+  const sourceEndpoints = await listAllEndpointsForOrg(env.publicDemoOrgId);
+  const cloneResults = await mapWithConcurrency(sourceEndpoints, 8, async (endpoint) => {
+    try {
+      await createEndpoint(toClonedEndpointPayload(endpoint, organization.orgId));
+      return null;
+    } catch {
+      return endpoint.name;
+    }
+  });
+  const failedEndpointNames = cloneResults.filter((name): name is string => typeof name === "string");
+
+  return {
+    organization,
+    sourceEndpointCount: sourceEndpoints.length,
+    clonedEndpointCount: sourceEndpoints.length - failedEndpointNames.length,
+    failedEndpointNames
+  };
 }
 
 export async function upsertMember(orgId: string, input: unknown): Promise<Membership> {

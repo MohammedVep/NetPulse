@@ -72,6 +72,13 @@ export interface Organization {
   isActive: boolean;
 }
 
+export interface CloneDemoOrganizationResult {
+  organization: Organization;
+  sourceEndpointCount: number;
+  clonedEndpointCount: number;
+  failedEndpointNames: string[];
+}
+
 export interface Membership {
   orgId: string;
   userId: string;

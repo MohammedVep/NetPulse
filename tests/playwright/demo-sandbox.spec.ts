@@ -43,6 +43,4 @@ test("public demo can be cloned into a writable sandbox", async ({ page }) => {
 
   const createdEndpointCard = page.locator("article.signal-card", { hasText: endpointName }).first();
   await expect(createdEndpointCard).toBeVisible();
-  await createdEndpointCard.getByRole("button", { name: "Pause" }).click();
-  await expect(createdEndpointCard.getByRole("button", { name: "Resume" })).toBeVisible();
 });

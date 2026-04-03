@@ -116,6 +116,7 @@ export interface Endpoint {
   updatedAt: string;
   paused: boolean;
   lastCheckedAt?: string;
+  lastProbeResultStoredAt?: string;
   lastStatusCode?: number;
   lastLatencyMs?: number;
   consecutiveFailures: number;

@@ -21,6 +21,7 @@
     "drill:mtls": "tsx scripts/mtls-queue-drill.ts",
     "drill:mtls:chaos": "tsx scripts/mtls-chaos-drill.ts",
     "check:repo-hygiene": "bash scripts/check-duplicate-artifacts.sh",
+    "cost:audit": "bash scripts/aws-cost-audit.sh",
     "smoke:public-demo": "bash scripts/smoke-test-public-demo.sh",
     "smoke:sandbox-ui": "bash scripts/smoke-test-sandbox-ui.sh",
     "lint": "npm run lint --workspaces --if-present",

@@ -27,6 +27,7 @@ import { ManagedPolicy, PolicyStatement, Role, ServicePrincipal } from "aws-cdk-
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import * as elbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
+import * as appScheduler from "aws-cdk-lib/aws-scheduler";
 import { Construct } from "constructs";
 
 interface NetPulseStackProps extends StackProps {
@@ -38,6 +39,17 @@ export class NetPulseStack extends Stack {
     super(scope, id, props);
 
     const suffix = props.envName;
+    const isProd = suffix === "prod";
+    const isNonProd = !isProd;
+    const probeScheduleMinutes = isProd ? 5 : 15;
+    const lambdaTracing = isProd ? Tracing.ACTIVE : Tracing.PASS_THROUGH;
+    const apiLogRetention = isProd
+      ? RetentionDays.THREE_MONTHS
+      : suffix === "staging"
+        ? RetentionDays.TWO_WEEKS
+        : RetentionDays.ONE_WEEK;
+    const backendDesiredCount = isProd ? 2 : 1;
+    const healthyProbePersistIntervalMinutes = isProd ? 0 : 60;
 
     const organizationsTable = new Table(this, "OrganizationsTable", {
       tableName: `np_organizations_${suffix}`,
@@ -246,7 +258,7 @@ export class NetPulseStack extends Stack {
     const loadBalancerCluster = new ecs.Cluster(this, "LoadBalancerCluster", {
       clusterName: `np-lb-cluster-${suffix}`,
       vpc: loadBalancerVpcRef,
-      containerInsightsV2: ecs.ContainerInsights.ENABLED
+      containerInsightsV2: isProd ? ecs.ContainerInsights.ENABLED : ecs.ContainerInsights.DISABLED
     });
     const loadBalancerClusterRef = loadBalancerCluster as ecs.ICluster;
     const serviceNamespace = loadBalancerCluster.addDefaultCloudMapNamespace({
@@ -358,7 +370,7 @@ export class NetPulseStack extends Stack {
       serviceName: `np-demo-backend-${suffix}`,
       cluster: loadBalancerClusterRef,
       taskDefinition: backendTaskDefinition,
-      desiredCount: 2,
+      desiredCount: backendDesiredCount,
       minHealthyPercent: 50,
       assignPublicIp: true,
       securityGroups: [backendTaskSecurityGroup],
@@ -462,7 +474,7 @@ export class NetPulseStack extends Stack {
       },
       timeout: Duration.seconds(20),
       memorySize: 512,
-      tracing: Tracing.ACTIVE,
+      tracing: lambdaTracing,
       environment: {
         ORGANIZATIONS_TABLE: organizationsTable.tableName,
         MEMBERSHIPS_TABLE: membershipsTable.tableName,
@@ -476,6 +488,7 @@ export class NetPulseStack extends Stack {
         RATE_LIMIT_PUBLIC_RPM: "60",
         RATE_LIMIT_AUTH_RPM: suffix === "prod" ? "600" : "300",
         ENDPOINT_LIMIT_DEFAULT: "2000",
+        DEPLOYMENT_ENV: suffix,
         PUBLIC_DEMO_ENABLED: "true",
         PUBLIC_DEMO_ORG_ID: "org_demo_public"
       }
@@ -495,10 +508,11 @@ export class NetPulseStack extends Stack {
       },
       timeout: Duration.seconds(20),
       memorySize: 512,
-      tracing: Tracing.ACTIVE,
+      tracing: lambdaTracing,
       environment: {
         MEMBERSHIPS_TABLE: membershipsTable.tableName,
         WS_CONNECTIONS_TABLE: wsConnectionsTable.tableName,
+        DEPLOYMENT_ENV: suffix,
         ALLOW_UNAUTHENTICATED_WS: suffix === "dev" ? "true" : "false",
         PUBLIC_DEMO_ENABLED: "true",
         PUBLIC_DEMO_ORG_ID: "org_demo_public",
@@ -521,11 +535,12 @@ export class NetPulseStack extends Stack {
       },
       timeout: Duration.seconds(60),
       memorySize: 512,
-      tracing: Tracing.ACTIVE,
+      tracing: lambdaTracing,
       environment: {
         ORGANIZATIONS_TABLE: organizationsTable.tableName,
         ENDPOINTS_TABLE: endpointsTable.tableName,
         PROBE_JOBS_QUEUE_URL: probeJobsQueue.queueUrl,
+        DEPLOYMENT_ENV: suffix,
         SCHEDULER_MAX_JOBS_PER_CYCLE: "60000",
         SCHEDULER_MAX_ENDPOINTS_PER_ORG: "2000"
       }
@@ -545,13 +560,15 @@ export class NetPulseStack extends Stack {
       },
       timeout: Duration.seconds(60),
       memorySize: 1024,
-      tracing: Tracing.ACTIVE,
+      tracing: lambdaTracing,
       environment: {
         ENDPOINTS_TABLE: endpointsTable.tableName,
         PROBE_RESULTS_TABLE: probeResultsTable.tableName,
         INCIDENTS_TABLE: incidentsTable.tableName,
         INCIDENT_EVENTS_QUEUE_URL: incidentEventsQueue.queueUrl,
-        WS_EVENTS_QUEUE_URL: wsEventsQueue.queueUrl
+        WS_EVENTS_QUEUE_URL: wsEventsQueue.queueUrl,
+        DEPLOYMENT_ENV: suffix,
+        PROBE_RESULT_HEALTHY_PERSIST_INTERVAL_MINUTES: String(healthyProbePersistIntervalMinutes)
       }
     });
 
@@ -569,10 +586,11 @@ export class NetPulseStack extends Stack {
       },
       timeout: Duration.seconds(30),
       memorySize: 512,
-      tracing: Tracing.ACTIVE,
+      tracing: lambdaTracing,
       environment: {
         ALERT_CHANNELS_TABLE: alertChannelsTable.tableName,
         ALERT_DEDUPE_TABLE: alertDedupeTable.tableName,
+        DEPLOYMENT_ENV: suffix,
         EMAIL_TOPIC_ARN: emailTopic.topicArn
       }
     });
@@ -591,9 +609,10 @@ export class NetPulseStack extends Stack {
       },
       timeout: Duration.seconds(30),
       memorySize: 512,
-      tracing: Tracing.ACTIVE,
+      tracing: lambdaTracing,
       environment: {
-        WS_CONNECTIONS_TABLE: wsConnectionsTable.tableName
+        WS_CONNECTIONS_TABLE: wsConnectionsTable.tableName,
+        DEPLOYMENT_ENV: suffix
       }
     });
 
@@ -611,11 +630,34 @@ export class NetPulseStack extends Stack {
       },
       timeout: Duration.seconds(300),
       memorySize: 1024,
-      tracing: Tracing.ACTIVE,
+      tracing: lambdaTracing,
       environment: {
         ORGANIZATIONS_TABLE: organizationsTable.tableName,
         PROBE_RESULTS_TABLE: probeResultsTable.tableName,
+        DEPLOYMENT_ENV: suffix,
         MONTHLY_REPORTS_BUCKET: reportsBucket.bucketName
+      }
+    });
+
+    const secretJanitor = new NodejsFunction(this, "SecretJanitorLambda", {
+      functionName: `np-secret-janitor-${suffix}`,
+      runtime: apiRuntime,
+      entry: path.join(repositoryRoot, "services/api/src/handlers/secret-janitor.ts"),
+      handler: "handler",
+      depsLockFilePath,
+      projectRoot: repositoryRoot,
+      bundling: {
+        minify: true,
+        sourceMap: true,
+        target: "node24"
+      },
+      timeout: Duration.minutes(5),
+      memorySize: 512,
+      tracing: lambdaTracing,
+      environment: {
+        ALERT_CHANNELS_TABLE: alertChannelsTable.tableName,
+        DEPLOYMENT_ENV: suffix,
+        SECRET_JANITOR_GRACE_HOURS: "24"
       }
     });
 
@@ -665,6 +707,19 @@ export class NetPulseStack extends Stack {
     organizationsTable.grantReadData(monthlyExporter);
     probeResultsTable.grantReadData(monthlyExporter);
     reportsBucket.grantPut(monthlyExporter);
+    alertChannelsTable.grantReadData(secretJanitor);
+    secretJanitor.addToRolePolicy(
+      new PolicyStatement({
+        actions: ["secretsmanager:ListSecrets"],
+        resources: ["*"]
+      })
+    );
+    secretJanitor.addToRolePolicy(
+      new PolicyStatement({
+        actions: ["secretsmanager:DescribeSecret", "secretsmanager:DeleteSecret"],
+        resources: [`arn:aws:secretsmanager:${this.region}:${this.account}:secret:netpulse/*`]
+      })
+    );
 
     worker.addEventSource(new SqsEventSource(probeJobsQueue, { batchSize: 10, reportBatchItemFailures: true }));
     notifier.addEventSource(
@@ -672,8 +727,9 @@ export class NetPulseStack extends Stack {
     );
     wsBroadcaster.addEventSource(new SqsEventSource(wsEventsQueue, { batchSize: 10, reportBatchItemFailures: true }));
 
-    new Rule(this, "ProbeScheduleRule", {
-      schedule: Schedule.rate(Duration.minutes(5)),
+    const probeScheduleRule = new Rule(this, "ProbeScheduleRule", {
+      ruleName: `np-probe-schedule-${suffix}`,
+      schedule: Schedule.rate(Duration.minutes(probeScheduleMinutes)),
       targets: [new LambdaTarget(scheduler)]
     });
 
@@ -685,6 +741,95 @@ export class NetPulseStack extends Stack {
       }),
       targets: [new LambdaTarget(monthlyExporter)]
     });
+
+    new Rule(this, "SecretJanitorRule", {
+      ruleName: `np-secret-janitor-${suffix}`,
+      schedule: Schedule.cron({
+        minute: "45",
+        hour: "3"
+      }),
+      targets: [new LambdaTarget(secretJanitor)]
+    });
+
+    if (isNonProd) {
+      const scaleController = new NodejsFunction(this, "NonProdScaleControllerLambda", {
+        functionName: `np-scale-controller-${suffix}`,
+        runtime: apiRuntime,
+        entry: path.join(repositoryRoot, "services/prober/src/handlers/scale-controller.ts"),
+        handler: "handler",
+        depsLockFilePath,
+        projectRoot: repositoryRoot,
+        bundling: {
+          minify: true,
+          sourceMap: true,
+          target: "node24"
+        },
+        timeout: Duration.minutes(15),
+        memorySize: 512,
+        tracing: lambdaTracing,
+        environment: {
+          CONTROLLED_CLUSTER: loadBalancerCluster.clusterName,
+          CONTROLLED_SERVICES: JSON.stringify([
+            { serviceName: consulService.serviceName, desiredCount: 1 },
+            { serviceName: backendService.serviceName, desiredCount: backendDesiredCount },
+            { serviceName: lbService.serviceName, desiredCount: 1 }
+          ]),
+          CONTROLLED_PROBE_RULE_NAME: probeScheduleRule.ruleName
+        }
+      });
+
+      scaleController.addToRolePolicy(
+        new PolicyStatement({
+          actions: ["ecs:UpdateService", "ecs:DescribeServices"],
+          resources: [
+            consulService.serviceArn,
+            backendService.serviceArn,
+            lbService.serviceArn
+          ]
+        })
+      );
+      scaleController.addToRolePolicy(
+        new PolicyStatement({
+          actions: ["events:DescribeRule", "events:DisableRule", "events:EnableRule"],
+          resources: [probeScheduleRule.ruleArn]
+        })
+      );
+
+      const scaleScheduleInvokeRole = new Role(this, "NonProdScaleScheduleInvokeRole", {
+        assumedBy: new ServicePrincipal("scheduler.amazonaws.com")
+      });
+      scaleController.grantInvoke(scaleScheduleInvokeRole);
+
+      new appScheduler.CfnSchedule(this, "NonProdScaleUpSchedule", {
+        name: `np-${suffix}-runtime-start`,
+        description: `Start NetPulse ${suffix} runtime for working hours`,
+        flexibleTimeWindow: {
+          mode: "OFF"
+        },
+        scheduleExpression: "cron(0 8 ? * MON-FRI *)",
+        scheduleExpressionTimezone: "America/Toronto",
+        target: {
+          arn: scaleController.functionArn,
+          roleArn: scaleScheduleInvokeRole.roleArn,
+          input: JSON.stringify({ action: "start" })
+        }
+      });
+
+      new appScheduler.CfnSchedule(this, "NonProdScaleDownSchedule", {
+        name: `np-${suffix}-runtime-stop`,
+        description: `Stop NetPulse ${suffix} runtime outside working hours`,
+        flexibleTimeWindow: {
+          mode: "OFF"
+        },
+        scheduleExpression: "cron(0 20 ? * MON-FRI *)",
+        scheduleExpressionTimezone: "America/Toronto",
+        target: {
+          arn: scaleController.functionArn,
+          roleArn: scaleScheduleInvokeRole.roleArn,
+          input: JSON.stringify({ action: "stop" })
+        }
+      });
+    }
 
     const httpApi = new HttpApi(this, "NetPulseHttpApi", {
       apiName: `np-http-${suffix}`,
@@ -703,7 +848,7 @@ export class NetPulseStack extends Stack {
 
     const httpApiAccessLogGroup = new LogGroup(this, "HttpApiAccessLogs", {
       logGroupName: `/aws/apigateway/np-http-${suffix}`,
-      retention: RetentionDays.THREE_MONTHS,
+      retention: apiLogRetention,
       removalPolicy: RemovalPolicy.RETAIN
     });
 
@@ -781,7 +926,7 @@ export class NetPulseStack extends Stack {
 
     const wsApiAccessLogGroup = new LogGroup(this, "WsApiAccessLogs", {
       logGroupName: `/aws/apigateway/np-ws-${suffix}`,
-      retention: RetentionDays.THREE_MONTHS,
+      retention: apiLogRetention,
       removalPolicy: RemovalPolicy.RETAIN
     });
 

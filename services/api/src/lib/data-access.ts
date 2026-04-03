@@ -106,6 +106,10 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
+function managedSecretName(orgId: string, type: "SLACK" | "WEBHOOK", channelId: string): string {
+  return `netpulse/${env.deploymentEnv}/${orgId}/${type.toLowerCase()}/${channelId}`;
+}
+
 function defaultCloneDemoOrganizationName(fromIso = nowIso()): string {
   const stamp = fromIso.slice(0, 16).replace("T", " ");
   return `${DEMO_SANDBOX_NAME_PREFIX} ${stamp}`;
@@ -1347,11 +1351,18 @@ async function createSecretBackedChannel(
   }
 ): Promise<AlertChannel> {
   const current = nowIso();
-  const secretName = `netpulse/${orgId}/${type.toLowerCase()}/${channelId}`;
+  const secretName = managedSecretName(orgId, type, channelId);
   const secret = await secretsManager.send(
     new CreateSecretCommand({
       Name: secretName,
-      SecretString: secretValue
+      SecretString: secretValue,
+      Tags: [
+        { Key: "netpulse:managed", Value: "true" },
+        { Key: "netpulse:env", Value: env.deploymentEnv },
+        { Key: "netpulse:orgId", Value: orgId },
+        { Key: "netpulse:channelId", Value: channelId },
+        { Key: "netpulse:channelType", Value: type }
+      ]
     })
   );
 

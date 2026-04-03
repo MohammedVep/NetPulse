@@ -30,7 +30,7 @@ Multi-cloud note:
 - Multi-tenant org + membership model with `Owner/Admin/Editor/Viewer` role checks.
 - Self-service user registration with Cognito email verification plus password login.
 - Endpoint CRUD (`HTTP/HTTPS`) and soft delete semantics.
-- Scheduled probing every 5 minutes through EventBridge + SQS fan-out.
+- Scheduled probing every 5 minutes in `prod` and every 15 minutes in `dev`/`staging` through EventBridge + SQS fan-out.
 - Multi-region probe fan-out (`us-east-1`, `us-west-2`, `eu-west-1`, `ap-southeast-1`) per endpoint.
 - Probe write path to DynamoDB with 90-day TTL.
 - Incident lifecycle:
@@ -41,9 +41,10 @@ Multi-cloud note:
 - Live dashboard updates via WebSocket queue + broadcaster Lambda.
 - Incident notifications via SNS email topic + Slack/webhook channels.
 - Slack and webhook URLs are stored in AWS Secrets Manager (DynamoDB stores only secret ARNs).
+- Future Slack/webhook secrets are environment-scoped and tagged for automatic orphan cleanup.
 - Alert deduplication window of 10 minutes via DynamoDB TTL table.
 - WebSocket auth supports Cognito JWT verification (required by default outside `dev`).
-- Lambda X-Ray tracing enabled across API/prober/notifier/exporter paths.
+- Lambda X-Ray tracing stays active in `prod` and is reduced in non-prod to lower cost.
 - API Gateway HTTP/WebSocket access logs with structured JSON fields in CloudWatch Logs.
 - Monthly compressed CSV + manifest export to S3 for each org.
 - Public demo read path at `/v1/public/*` for unauthenticated read-only portfolio access.
@@ -62,7 +63,8 @@ How this is implemented:
 - Scale health checks:
   - EventBridge invokes `scheduler` every 5 minutes.
   - `scheduler` fans out endpoint-region jobs into SQS.
-  - `worker` Lambdas process jobs concurrently and can scale horizontally with queue depth.
+- `worker` Lambdas process jobs concurrently and can scale horizontally with queue depth.
+- `dev` and `staging` persist healthy probe rows at most hourly unless status changes, which reduces non-prod DynamoDB write cost without removing failure evidence.
 - Avoid duplicate alerts:
   - `notifier` claims a dedupe slot in DynamoDB (`alertDedupeTable`) with a TTL window.
   - duplicate notifications inside the dedupe window are dropped by conditional-write failure.
@@ -138,6 +140,7 @@ The CDK stack now provisions:
 - internet-facing ALB exporting:
   - `NetPulseLoadBalancerDns-{env}`
   - `NetPulseLoadBalancerUrl-{env}`
+- `dev` and `staging` also get a timezone-aware runtime schedule that starts the ECS load-balancer tier at `08:00` and stops it at `20:00` Monday-Friday in `America/Toronto`.
 
 ### Google Cloud multi-cloud deployment (Cloud Run)
 
@@ -157,6 +160,13 @@ Deploy:
 More detail:
 
 - `infra/gcp/README.md`
+
+### AWS cost audit
+
+Re-run the AWS cost and inventory audit:
+
+- `npm run cost:audit -- --profile netpulse-root --region us-east-1 --start 2026-03-01 --end 2026-04-01`
+- report snapshot: `docs/reports/AWS_COST_REDUCTION_2026-04-03.md`
 
 ## Massive concurrency + zero-trust extension
 

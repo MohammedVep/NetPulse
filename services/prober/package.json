@@ -11,6 +11,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@aws-sdk/client-ecs": "3.1000.0",
+    "@aws-sdk/client-eventbridge": "3.1000.0",
     "@aws-sdk/client-apigatewaymanagementapi": "3.1000.0",
     "@aws-sdk/client-dynamodb": "3.1000.0",
     "@aws-sdk/client-s3": "3.1000.0",

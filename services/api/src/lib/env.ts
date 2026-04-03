@@ -6,6 +6,8 @@ export const env = {
   incidentsTable: process.env.INCIDENTS_TABLE ?? "np_incidents",
   wsConnectionsTable: process.env.WS_CONNECTIONS_TABLE ?? "np_ws_connections",
   alertChannelsTable: process.env.ALERT_CHANNELS_TABLE ?? "np_alert_channels",
+  deploymentEnv: process.env.DEPLOYMENT_ENV ?? "dev",
+  secretJanitorGraceHours: Number(process.env.SECRET_JANITOR_GRACE_HOURS ?? "24"),
   rateLimitsTable: process.env.RATE_LIMITS_TABLE ?? "np_rate_limits",
   rateLimitWindowSeconds: Number(process.env.RATE_LIMIT_WINDOW_SECONDS ?? "60"),
   rateLimitPublicRpm: Number(process.env.RATE_LIMIT_PUBLIC_RPM ?? "60"),

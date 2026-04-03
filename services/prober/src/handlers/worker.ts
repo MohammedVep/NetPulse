@@ -98,6 +98,20 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
+function minutesBetween(fromIso: string | undefined, toIso: string): number | null {
+  if (!fromIso) {
+    return null;
+  }
+
+  const fromTs = Date.parse(fromIso);
+  const toTs = Date.parse(toIso);
+  if (Number.isNaN(fromTs) || Number.isNaN(toTs)) {
+    return null;
+  }
+
+  return (toTs - fromTs) / (60 * 1000);
+}
+
 function isoPlusSeconds(iso: string, seconds: number): string {
   return new Date(Date.parse(iso) + seconds * 1000).toISOString();
 }
@@ -224,6 +238,43 @@ function nextStatusForRegions(
 function maxConsecutiveFailures(regionFailures: Partial<Record<MonitoringRegion, number>>): number {
   const values = Object.values(regionFailures).filter((value): value is number => typeof value === "number");
   return values.length === 0 ? 0 : Math.max(...values);
+}
+
+function shouldPersistProbeResult(
+  endpoint: Endpoint,
+  nextStatus: EndpointStatus,
+  probe: {
+    ok: boolean;
+    simulated?: boolean;
+    timestampIso: string;
+  },
+  nextRegionCircuitState: Partial<Record<MonitoringRegion, RegionCircuitState>>,
+  region: MonitoringRegion
+): boolean {
+  if (env.probeResultHealthyPersistIntervalMinutes <= 0) {
+    return true;
+  }
+
+  if (!probe.ok || probe.simulated) {
+    return true;
+  }
+
+  if (endpoint.status !== nextStatus) {
+    return true;
+  }
+
+  const previousCircuitState = endpoint.regionCircuitState?.[region]?.state ?? "CLOSED";
+  const nextCircuit = nextRegionCircuitState[region]?.state ?? "CLOSED";
+  if (previousCircuitState !== nextCircuit) {
+    return true;
+  }
+
+  const elapsedMinutes = minutesBetween(endpoint.lastProbeResultStoredAt, probe.timestampIso);
+  if (elapsedMinutes === null) {
+    return true;
+  }
+
+  return elapsedMinutes >= env.probeResultHealthyPersistIntervalMinutes;
 }
 
 async function getOpenIncident(
@@ -421,56 +472,85 @@ async function processJob(job: ProbeJob): Promise<void> {
     probe.simulationMode === "FORCE_DEGRADED"
   );
   const consecutiveFailures = maxConsecutiveFailures(regionFailures);
+  const persistProbeResult = shouldPersistProbeResult(
+    endpoint,
+    status,
+    probe,
+    nextRegionCircuitState,
+    region
+  );
+  const updateExpressionParts = [
+    "#status = :status",
+    "#lastCheckedAt = :lastCheckedAt",
+    "#lastStatusCode = :lastStatusCode",
+    "#lastLatencyMs = :lastLatencyMs",
+    "#consecutiveFailures = :consecutiveFailures",
+    "#regionFailures = :regionFailures",
+    "#regionCircuitState = :regionCircuitState",
+    "#updatedAt = :updatedAt",
+    "#statusUpdatedAt = :statusUpdatedAt"
+  ];
+  const expressionNames: Record<string, string> = {
+    "#status": "status",
+    "#lastCheckedAt": "lastCheckedAt",
+    "#lastStatusCode": "lastStatusCode",
+    "#lastLatencyMs": "lastLatencyMs",
+    "#consecutiveFailures": "consecutiveFailures",
+    "#regionFailures": "regionFailures",
+    "#regionCircuitState": "regionCircuitState",
+    "#updatedAt": "updatedAt",
+    "#statusUpdatedAt": "statusUpdatedAt"
+  };
+  const expressionValues: Record<string, unknown> = {
+    ":status": status,
+    ":lastCheckedAt": probe.timestampIso,
+    ":lastStatusCode": probe.statusCode ?? -1,
+    ":lastLatencyMs": probe.latencyMs ?? 0,
+    ":consecutiveFailures": consecutiveFailures,
+    ":regionFailures": regionFailures,
+    ":regionCircuitState": nextRegionCircuitState,
+    ":updatedAt": probe.timestampIso,
+    ":statusUpdatedAt": `${status}#${probe.timestampIso}`
+  };
+
+  if (persistProbeResult) {
+    updateExpressionParts.push("#lastProbeResultStoredAt = :lastProbeResultStoredAt");
+    expressionNames["#lastProbeResultStoredAt"] = "lastProbeResultStoredAt";
+    expressionValues[":lastProbeResultStoredAt"] = probe.timestampIso;
+  }
 
   await Promise.all([
-    ddb.send(
-      new PutCommand({
-        TableName: env.probeResultsTable,
-        Item: {
-          probePk: `${job.orgId}#${job.endpointId}`,
-          timestampIso: probe.timestampIso,
-          orgId: job.orgId,
-          endpointId: job.endpointId,
-          region,
-          statusCode: probe.statusCode,
-          latencyMs: probe.latencyMs,
-          ok: probe.ok,
-          errorType: probe.errorType,
-          classification: probe.classification,
-          simulated: probe.simulated === true,
-          traceId,
-          expiresAt: ttlFromIso(probe.timestampIso)
-        }
-      })
-    ),
+    ...(persistProbeResult
+      ? [
+          ddb.send(
+            new PutCommand({
+              TableName: env.probeResultsTable,
+              Item: {
+                probePk: `${job.orgId}#${job.endpointId}`,
+                timestampIso: probe.timestampIso,
+                orgId: job.orgId,
+                endpointId: job.endpointId,
+                region,
+                statusCode: probe.statusCode,
+                latencyMs: probe.latencyMs,
+                ok: probe.ok,
+                errorType: probe.errorType,
+                classification: probe.classification,
+                simulated: probe.simulated === true,
+                traceId,
+                expiresAt: ttlFromIso(probe.timestampIso)
+              }
+            })
+          )
+        ]
+      : []),
     ddb.send(
       new UpdateCommand({
         TableName: env.endpointsTable,
         Key: { orgId: job.orgId, endpointId: job.endpointId },
-        UpdateExpression:
-          "SET #status = :status, #lastCheckedAt = :lastCheckedAt, #lastStatusCode = :lastStatusCode, #lastLatencyMs = :lastLatencyMs, #consecutiveFailures = :consecutiveFailures, #regionFailures = :regionFailures, #regionCircuitState = :regionCircuitState, #updatedAt = :updatedAt, #statusUpdatedAt = :statusUpdatedAt",
-        ExpressionAttributeNames: {
-          "#status": "status",
-          "#lastCheckedAt": "lastCheckedAt",
-          "#lastStatusCode": "lastStatusCode",
-          "#lastLatencyMs": "lastLatencyMs",
-          "#consecutiveFailures": "consecutiveFailures",
-          "#regionFailures": "regionFailures",
-          "#regionCircuitState": "regionCircuitState",
-          "#updatedAt": "updatedAt",
-          "#statusUpdatedAt": "statusUpdatedAt"
-        },
-        ExpressionAttributeValues: {
-          ":status": status,
-          ":lastCheckedAt": probe.timestampIso,
-          ":lastStatusCode": probe.statusCode ?? -1,
-          ":lastLatencyMs": probe.latencyMs ?? 0,
-          ":consecutiveFailures": consecutiveFailures,
-          ":regionFailures": regionFailures,
-          ":regionCircuitState": nextRegionCircuitState,
-          ":updatedAt": probe.timestampIso,
-          ":statusUpdatedAt": `${status}#${probe.timestampIso}`
-        }
+        UpdateExpression: `SET ${updateExpressionParts.join(", ")}`,
+        ExpressionAttributeNames: expressionNames,
+        ExpressionAttributeValues: expressionValues
       })
     )
   ]);
@@ -487,6 +567,7 @@ async function processJob(job: ProbeJob): Promise<void> {
       latencyMs: probe.latencyMs,
       classification: probe.classification,
       attempts: probe.attemptCount ?? 1,
+      persisted: persistProbeResult,
       circuitState: nextRegionCircuitState[region]?.state ?? "CLOSED"
     })
   );

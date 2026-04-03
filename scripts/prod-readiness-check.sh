@@ -65,8 +65,8 @@ check_pattern "packages/shared/src/api-client.ts" "shouldRetryStatus\\(" \
 
 echo
 echo "== Logging and tracing =="
-check_pattern "infra/cdk/lib/netpulse-stack.ts" "tracing:\\s*Tracing\\.ACTIVE" \
-  "Lambda X-Ray tracing is enabled"
+check_pattern "infra/cdk/lib/netpulse-stack.ts" "lambdaTracing\\s*=\\s*isProd\\s*\\?\\s*Tracing\\.ACTIVE\\s*:\\s*Tracing\\.PASS_THROUGH" \
+  "Prod Lambda X-Ray tracing stays enabled while non-prod tracing can be reduced"
 check_pattern "infra/cdk/lib/netpulse-stack.ts" "accessLogSettings\\s*=\\s*\\{" \
   "API Gateway access logs are configured"
 check_pattern "services/api/src/lib/observability.ts" "logInfo\\(" \

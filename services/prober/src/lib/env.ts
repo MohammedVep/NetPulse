@@ -6,6 +6,7 @@ export const env = {
   wsConnectionsTable: process.env.WS_CONNECTIONS_TABLE ?? "np_ws_connections",
   alertChannelsTable: process.env.ALERT_CHANNELS_TABLE ?? "np_alert_channels",
   alertDedupeTable: process.env.ALERT_DEDUPE_TABLE ?? "np_alert_dedupe",
+  deploymentEnv: process.env.DEPLOYMENT_ENV ?? "dev",
   probeQueueUrl: process.env.PROBE_JOBS_QUEUE_URL ?? "",
   incidentEventsQueueUrl: process.env.INCIDENT_EVENTS_QUEUE_URL ?? "",
   wsEventsQueueUrl: process.env.WS_EVENTS_QUEUE_URL ?? "",
@@ -13,6 +14,9 @@ export const env = {
   websocketEndpoint: process.env.WEBSOCKET_ENDPOINT ?? "",
   emailTopicArn: process.env.EMAIL_TOPIC_ARN ?? "",
   region: process.env.AWS_REGION ?? "us-east-1",
+  probeResultHealthyPersistIntervalMinutes: Number(
+    process.env.PROBE_RESULT_HEALTHY_PERSIST_INTERVAL_MINUTES ?? "0"
+  ),
   schedulerMaxJobsPerCycle: Number(process.env.SCHEDULER_MAX_JOBS_PER_CYCLE ?? "60000"),
   schedulerMaxEndpointsPerOrg: Number(process.env.SCHEDULER_MAX_ENDPOINTS_PER_ORG ?? "2000")
 };

@@ -115,6 +115,7 @@ cat >"$CFN_EXEC_POLICY_FILE" <<JSON
       "Sid": "NetPulseProvisioning",
       "Effect": "Allow",
       "Action": [
+        "application-autoscaling:*",
         "apigateway:*",
         "cloudwatch:*",
         "cognito-idp:*",

@@ -432,6 +432,21 @@ export class NetPulseStack extends Stack {
     lbService.node.addDependency(consulService);
     lbService.node.addDependency(backendService);
 
+    const lbServiceScaling = lbService.autoScaleTaskCount({
+      minCapacity: isProd ? 1 : 0,
+      maxCapacity: isProd ? 4 : 2
+    });
+    lbServiceScaling.scaleOnCpuUtilization("LoadBalancerCpuAutoscaling", {
+      targetUtilizationPercent: isProd ? 60 : 70,
+      scaleOutCooldown: Duration.seconds(60),
+      scaleInCooldown: Duration.minutes(5)
+    });
+    lbServiceScaling.scaleOnMemoryUtilization("LoadBalancerMemoryAutoscaling", {
+      targetUtilizationPercent: isProd ? 70 : 75,
+      scaleOutCooldown: Duration.seconds(60),
+      scaleInCooldown: Duration.minutes(5)
+    });
+
     const externalLoadBalancer = new elbv2.ApplicationLoadBalancer(this, "ExternalLoadBalancer", {
       loadBalancerName: `np-lb-${suffix}`,
       vpc: loadBalancerVpcRef,

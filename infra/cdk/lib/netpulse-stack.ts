@@ -384,8 +384,8 @@ export class NetPulseStack extends Stack {
     backendService.node.addDependency(consulService);
 
     const lbTaskDefinition = new ecs.FargateTaskDefinition(this, "LoadBalancerTaskDefinition", {
-      cpu: 512,
-      memoryLimitMiB: 1024,
+      cpu: 256,
+      memoryLimitMiB: 512,
       runtimePlatform: arm64RuntimePlatform
     });
     const lbContainer = lbTaskDefinition.addContainer("LoadBalancerContainer", {
